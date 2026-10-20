@@ -7,11 +7,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +32,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -37,13 +45,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import nyc.juliet.ferrykitty.contract.FerryUiState
 import nyc.juliet.ferrykitty.core.DepartureGroup
+import nyc.juliet.ferrykitty.core.DeparturePauses
 import nyc.juliet.ferrykitty.core.DisplayData
 import nyc.juliet.ferrykitty.core.Realtime
 import nyc.juliet.ferrykitty.core.ScheduledDeparture
 import nyc.juliet.ferrykitty.ui.FerryUi
 import nyc.juliet.ferrykitty.ui.components.RouteBadge
+import nyc.juliet.ferrykitty.ui.components.ScheduledClock
 import nyc.juliet.ferrykitty.ui.components.StatusPill
 import nyc.juliet.ferrykitty.ui.components.TouchTarget
 import nyc.juliet.ferrykitty.ui.sheets.FilterLogic
@@ -85,10 +96,16 @@ internal fun rememberBoardContext(state: FerryUiState, accessibilityText: Boolea
  * By route the group already names the destination, so the first line names the boat.
  */
 @Composable
-internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRoute: Boolean, onOpen: (ScheduledDeparture) -> Unit, modifier: Modifier = Modifier) {
+internal fun DepartureRow(
+	row: ScheduledDeparture,
+	context: BoardContext,
+	showRoute: Boolean,
+	onOpen: (ScheduledDeparture) -> Unit,
+	modifier: Modifier = Modifier,
+	pauses: DeparturePauses? = remember(row, context.display, context.realtime) { BoardModel.pauses(context.display, row, context.realtime) },
+) {
 	val departure = row.departure
 	val route = context.schedule?.routes?.get(departure.routeId)
-	val pauses = remember(row, context.display, context.realtime) { BoardModel.pauses(context.display, row, context.realtime) }
 	val canOpen = remember(row, context.schedule) { BoardModel.canOpen(context.schedule, row) }
 	val operatorName = FilterLogic.operatorName(departure, context.schedule)
 	val otherOperator = BoardFormat.otherOperator(departure.routeId, operatorName)
@@ -107,7 +124,12 @@ internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRo
 		}
 		details.forEachIndexed { index, part ->
 			if (index > 0) append(" · ")
-			if (part.startsWith("VIA ")) withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(part) } else append(part)
+			if (part.text.startsWith("VIA ")) withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(part.text) } else append(part.text)
+			// The joiner keeps the clock on the line of the minutes it belongs to; the text itself may still wrap.
+			if (part.scheduledClock) {
+				append(WORD_JOINER)
+				appendInlineContent(SCHEDULED_CLOCK, "scheduled")
+			}
 		}
 	}
 	val last = row.isLastOfDay || row.isLastGovernorsIsland
@@ -136,33 +158,35 @@ internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRo
 				if (showRoute) {
 					Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
 						RouteBadge(departure.routeId, departure.variant, route, operatorName)
-						Text(departure.destination, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = ferryColors.heading)
+						Text(departure.destination, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = ferryColors.heading,
+							modifier = Modifier.testTag("departureDestination"))
 					}
 				} else if (vessel != null) Text(vessel, style = MaterialTheme.typography.bodyMedium, color = ferryColors.ink)
 				Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-					StatusPill(status.text, status.tone)
+					StatusBadge(status)
 					if (last) StatusPill("LAST", BoardFormat.Tone.DANGER)
 					final?.let { StatusPill(it, BoardFormat.Tone.WARNING) }
 				}
-				if (detailLine.isNotEmpty()) Text(detailLine, style = FerryText.caption, color = ferryColors.muted)
+				if (detailLine.isNotEmpty()) Text(detailLine, style = FerryText.caption, color = ferryColors.muted, inlineContent = DetailInline,
+					modifier = Modifier.testTag("departureDetail"))
 			}
 		} else {
 			Row {
-				Column(Modifier.width(context.timeWidth)) {
+				Column(Modifier.width(context.timeWidth).testTag("departureTime")) {
 					Text(timeLabel, style = FerryText.clock, color = ferryColors.ink, maxLines = 1, softWrap = false)
 					if (showRoute && countdown.isNotEmpty()) {
 						Text(countdown, style = FerryText.countdown, color = ferryColors.accent, maxLines = 1, softWrap = false)
 					}
 				}
 				Spacer(Modifier.width(8.dp))
-				Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+				Column(Modifier.weight(1f).testTag("departureMain"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
 					// Top-aligned so a two-line destination keeps its badge and status beside the first line, as on iOS.
 					Row(verticalAlignment = Alignment.Top) {
 						if (showRoute) {
 							RouteBadge(departure.routeId, departure.variant, route, operatorName)
 							Spacer(Modifier.width(6.dp))
 							Text(departure.destination, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
-								color = ferryColors.heading, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+								color = ferryColors.heading, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).testTag("departureDestination"))
 						} else {
 							Text(countdown, style = FerryText.countdown, color = ferryColors.accent, maxLines = 1, softWrap = false,
 								modifier = Modifier.width(context.countdownWidth))
@@ -170,7 +194,7 @@ internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRo
 								overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
 						}
 						Spacer(Modifier.width(4.dp))
-						StatusPill(status.text, status.tone)
+						StatusBadge(status)
 					}
 					if (last || final != null || detailLine.isNotEmpty()) {
 						Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -178,7 +202,7 @@ internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRo
 							final?.let { StatusPill(it, BoardFormat.Tone.WARNING) }
 							if (detailLine.isNotEmpty()) {
 								Text(detailLine, style = FerryText.caption, color = ferryColors.muted, maxLines = 3, overflow = TextOverflow.Ellipsis,
-									modifier = Modifier.weight(1f, fill = false))
+									inlineContent = DetailInline, modifier = Modifier.weight(1f, fill = false).testTag("departureDetail"))
 							}
 						}
 					}
@@ -186,6 +210,23 @@ internal fun DepartureRow(row: ScheduledDeparture, context: BoardContext, showRo
 			}
 		}
 	}
+}
+
+private const val SCHEDULED_CLOCK = "scheduledClock"
+private const val WORD_JOINER = "\u2060"
+
+/** The clock after a scheduled layover. It scales with the text, so it stays beside the minutes at any font size. */
+private val DetailInline = mapOf(
+	SCHEDULED_CLOCK to InlineTextContent(Placeholder(width = 16.sp, height = 12.sp, placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter)) {
+		Icon(Icons.Outlined.Schedule, contentDescription = null, tint = ferryColors.muted,
+			modifier = Modifier.fillMaxSize().padding(start = 4.dp).testTag("layoverClock"))
+	},
+)
+
+/** SCHED is drawn as a small clock; every other status keeps its words. The row's spoken text carries the meaning. */
+@Composable
+private fun StatusBadge(status: BoardFormat.Status) {
+	if (status.scheduled) ScheduledClock(Modifier.testTag("departureStatus")) else StatusPill(status.text, status.tone, Modifier.testTag("departureStatus"))
 }
 
 /** Working number and vessel: confirmed, predicted with a question mark, or the crew boats. */
@@ -212,7 +253,13 @@ private fun vesselText(row: ScheduledDeparture, shortName: String?): AnnotatedSt
 
 /** A route's next departures under one heading; a shorter group beside a longer one ends early. */
 @Composable
-internal fun RouteGroupCard(group: DepartureGroup, context: BoardContext, ui: FerryUi, modifier: Modifier = Modifier) {
+internal fun RouteGroupCard(
+	group: DepartureGroup,
+	context: BoardContext,
+	ui: FerryUi,
+	modifier: Modifier = Modifier,
+	pausesOf: ((ScheduledDeparture) -> DeparturePauses?)? = null,
+) {
 	val route = context.schedule?.routes?.get(group.routeId)
 	Column(modifier) {
 		Row(
@@ -229,7 +276,9 @@ internal fun RouteGroupCard(group: DepartureGroup, context: BoardContext, ui: Fe
 				overflow = TextOverflow.Ellipsis)
 		}
 		group.departures.forEachIndexed { index, row ->
-			DepartureRow(row, context, showRoute = false, onOpen = { ui.send(nyc.juliet.ferrykitty.contract.FerryAction.OpenTrip(it)) })
+			val open = { it: ScheduledDeparture -> ui.send(nyc.juliet.ferrykitty.contract.FerryAction.OpenTrip(it)) }
+			if (pausesOf == null) DepartureRow(row, context, showRoute = false, onOpen = open)
+			else DepartureRow(row, context, showRoute = false, onOpen = open, pauses = pausesOf(row))
 			if (index < group.departures.lastIndex) HorizontalDivider(Modifier.padding(start = 12.dp), thickness = 0.5.dp, color = ferryColors.line)
 		}
 	}

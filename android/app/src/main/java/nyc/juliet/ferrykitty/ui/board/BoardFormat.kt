@@ -56,7 +56,11 @@ object BoardFormat {
 
 	enum class Tone { POSITIVE, WARNING, DANGER, NEUTRAL }
 
-	data class Status(val text: String, val tone: Tone)
+	/** [scheduled] marks a plain timetable departure; the board draws a clock for it, while [text] keeps the SCHED meaning. */
+	data class Status(val text: String, val tone: Tone, val scheduled: Boolean = false)
+
+	/** One fact on a row's detail line. A scheduled layover is drawn as its text followed by an inline clock. */
+	data class Detail(val text: String, val scheduledClock: Boolean = false)
 
 	fun noPickup(departure: Departure): Boolean =
 		departure.arrival == true || departure.outOfService == true || departure.crewShuttle == true
@@ -70,7 +74,7 @@ object BoardFormat {
 			departure.crewShuttle == true || departure.outOfService == true -> Status("NO PICKUP", Tone.WARNING)
 			row.hasLiveTiming && row.delay >= 60 -> Status("+${(row.delay / 60).roundToInt()}m", Tone.WARNING)
 			row.hasLiveTiming -> Status("ON TIME", Tone.POSITIVE)
-			else -> Status("SCHED", Tone.NEUTRAL)
+			else -> Status("SCHED", Tone.NEUTRAL, scheduled = true)
 		}
 	}
 
@@ -113,23 +117,23 @@ object BoardFormat {
 		if (partner(routeId) == null && !routeId.startsWith("nyc:") && operatorName != "NYC Ferry") operatorName else null
 
 	/** Everything after the vessel on a row's second line, in the iOS order. */
-	fun details(row: ScheduledDeparture, pauses: DeparturePauses?, twelveHour: Boolean, otherOperator: String?): List<String> {
+	fun details(row: ScheduledDeparture, pauses: DeparturePauses?, twelveHour: Boolean, otherOperator: String?): List<Detail> {
 		val departure = row.departure
-		val parts = mutableListOf<String>()
+		val parts = mutableListOf<Detail>()
 		val until = until(departure, twelveHour)
 		when {
-			departure.crewShuttle == true -> parts += listOfNotNull("Crew shuttle", until).joinToString(" ")
-			departure.outOfService == true -> parts += listOfNotNull("Out of service", until).joinToString(" ")
+			departure.crewShuttle == true -> parts += Detail(listOfNotNull("Crew shuttle", until).joinToString(" "))
+			departure.outOfService == true -> parts += Detail(listOfNotNull("Out of service", until).joinToString(" "))
 			else -> {
-				until?.let { parts += it }
-				otherOperator?.let { parts += it }
+				until?.let { parts += Detail(it) }
+				otherOperator?.let { parts += Detail(it) }
 			}
 		}
-		via(departure)?.let { parts += it }
+		via(departure)?.let { parts += Detail(it) }
 		// Most feeds repeat the arrival time as the departure time; a zero dwell says nothing.
-		pauses?.dwellMinutes?.takeIf { it > 0 }?.let { parts += "Dwell ${it}m" }
-		pauses?.layover?.let { parts += "Layover ${it.minutes}m ${if (it.hasLiveTiming) "est" else "sched"}" }
-		if (departure.approximate == true && departure.fromHomePort == true) parts += "Approx. · first pickup at destination"
+		pauses?.dwellMinutes?.takeIf { it > 0 }?.let { parts += Detail("Dwell ${it}m") }
+		pauses?.layover?.let { parts += if (it.hasLiveTiming) Detail("Layover ${it.minutes}m est") else Detail("Layover ${it.minutes}m", scheduledClock = true) }
+		if (departure.approximate == true && departure.fromHomePort == true) parts += Detail("Approx. · first pickup at destination")
 		return parts
 	}
 

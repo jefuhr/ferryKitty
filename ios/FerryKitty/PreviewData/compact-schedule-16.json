@@ -1,0 +1,372 @@
+{
+  "meta": {
+    "schemaVersion": 11,
+    "timezone": "America/New_York",
+    "landingNumber": 16,
+    "landing": {
+      "id": 16,
+      "name": "Pier 11",
+      "displayName": "Pier 11 / Wall St",
+      "latitude": 40.703161,
+      "longitude": -74.006144,
+      "stopIds": [
+        "1"
+      ]
+    },
+    "departureWindowMinutes": 1440,
+    "departuresShown": 5,
+    "generatedAt": "2026-09-04T12:50:00Z"
+  },
+  "routes": {
+    "ER": {
+      "id": "ER",
+      "name": "East River",
+      "shortName": "ER",
+      "color": "#0070AB",
+      "textColor": "#FFFFFF",
+      "operator": "NYC Ferry"
+    },
+    "RS": {
+      "id": "RS",
+      "name": "Rockaway",
+      "shortName": "RS",
+      "color": "#4F1F91",
+      "textColor": "#FFFFFF",
+      "operator": "NYC Ferry"
+    },
+    "SG": {
+      "id": "SG",
+      "name": "South Brooklyn",
+      "shortName": "SG",
+      "color": "#C41F78",
+      "textColor": "#FFFFFF",
+      "operator": "NYC Ferry"
+    },
+    "AS": {
+      "id": "AS",
+      "name": "Astoria",
+      "shortName": "AS",
+      "color": "#E8590C",
+      "textColor": "#FFFFFF",
+      "operator": "NYC Ferry"
+    }
+  },
+  "calendars": [
+    {
+      "serviceId": "daily",
+      "startDate": "2026-01-01",
+      "endDate": "2026-12-31",
+      "weekdays": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "exceptions": [
+    {
+      "serviceId": "daily",
+      "date": "2026-09-07",
+      "added": false
+    },
+    {
+      "serviceId": "holiday",
+      "date": "2026-09-07",
+      "added": true
+    }
+  ],
+  "departures": [
+    {
+      "tripId": "cl-er-live",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "East 34th Street",
+      "seconds": 32400,
+      "departureTime": "09:00:00",
+      "boatAssignment": 4
+    },
+    {
+      "tripId": "cl-rs-late",
+      "routeId": "RS",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Rockaway",
+      "seconds": 32700,
+      "departureTime": "09:05:00",
+      "boatAssignment": 3
+    },
+    {
+      "tripId": "cl-sg-sched",
+      "routeId": "SG",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Midtown West/W 39th St-Pier 79",
+      "seconds": 33000,
+      "departureTime": "09:10:00",
+      "boatAssignment": 4
+    },
+    {
+      "tripId": "cl-as-sched",
+      "routeId": "AS",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "East 90th St",
+      "seconds": 33120,
+      "departureTime": "09:12:00",
+      "boatAssignment": 2
+    },
+    {
+      "tripId": "cl-rs-sched",
+      "routeId": "RS",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Rockaway",
+      "seconds": 33600,
+      "departureTime": "09:20:00",
+      "boatAssignment": 3
+    },
+    {
+      "tripId": "cl-er-plain",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "East 34th Street",
+      "seconds": 34200,
+      "departureTime": "09:30:00"
+    },
+    {
+      "tripId": "cl-sg-via",
+      "routeId": "SG",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Midtown West/W 39th St-Pier 79",
+      "seconds": 34800,
+      "departureTime": "09:40:00",
+      "boatAssignment": 4,
+      "via": [
+        "Brooklyn Army Terminal",
+        "Governors Island"
+      ]
+    },
+    {
+      "tripId": "cl-drop",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier 11",
+      "seconds": 35400,
+      "departureTime": "09:50:00",
+      "arrival": true
+    },
+    {
+      "tripId": "cl-nopickup",
+      "routeId": "ER",
+      "serviceId": "daily",
+      "stopId": "1",
+      "directionId": "0",
+      "destination": "Pier C",
+      "seconds": 36000,
+      "departureTime": "10:00:00",
+      "outOfService": true
+    }
+  ],
+  "tripSchedules": {
+    "cl-er-live": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 32400,
+          "departureSeconds": 32400
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 33000,
+          "departureSeconds": 33060
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 300
+      }
+    },
+    "cl-rs-late": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 32700,
+          "departureSeconds": 32700
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 33300,
+          "departureSeconds": 33360
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 600
+      }
+    },
+    "cl-sg-sched": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 33000,
+          "departureSeconds": 33000
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 33600,
+          "departureSeconds": 33660
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 360
+      }
+    },
+    "cl-as-sched": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 33120,
+          "departureSeconds": 33120
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 33720,
+          "departureSeconds": 33780
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 300
+      }
+    },
+    "cl-rs-sched": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 33600,
+          "departureSeconds": 33600
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 34200,
+          "departureSeconds": 34260
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 600
+      }
+    },
+    "cl-er-plain": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 34200,
+          "departureSeconds": 34200
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 34800,
+          "departureSeconds": 34860
+        }
+      ]
+    },
+    "cl-sg-via": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 34800,
+          "departureSeconds": 34800
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 35400,
+          "departureSeconds": 35460
+        }
+      ],
+      "turnaround": {
+        "stopId": "1",
+        "nextTripId": "cl-next",
+        "scheduledLayoverSeconds": 360
+      }
+    },
+    "cl-drop": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 35400,
+          "departureSeconds": 35400
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 36000,
+          "departureSeconds": 36060
+        }
+      ]
+    },
+    "cl-nopickup": {
+      "stops": [
+        {
+          "stopId": "1",
+          "sequence": 1,
+          "arrivalSeconds": 36000,
+          "departureSeconds": 36000
+        },
+        {
+          "stopId": "2",
+          "sequence": 2,
+          "arrivalSeconds": 36600,
+          "departureSeconds": 36660
+        }
+      ]
+    }
+  },
+  "stops": {
+    "1": {
+      "name": "Pier 11",
+      "landingId": 16
+    },
+    "2": {
+      "name": "DUMBO",
+      "landingId": 17
+    }
+  }
+}

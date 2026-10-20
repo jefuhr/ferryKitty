@@ -1,0 +1,61 @@
+{
+  "available": true,
+  "stale": false,
+  "fetchedAt": "2026-09-04T12:50:00Z",
+  "updates": [
+    {
+      "tripId": "cl-er-live",
+      "stopId": "1",
+      "delaySeconds": 0
+    },
+    {
+      "tripId": "cl-rs-late",
+      "stopId": "1",
+      "delaySeconds": 240
+    }
+  ],
+  "vehicles": [
+    {
+      "tripId": "cl-er-live",
+      "boat": "ER4",
+      "boatName": "Happy Hauler",
+      "vesselId": "happy-hauler",
+      "updatedAtEpochSeconds": 1788526200
+    },
+    {
+      "tripId": "cl-rs-late",
+      "boat": "RS3",
+      "boatName": "Signs to Liberty",
+      "vesselId": "signs-to-liberty",
+      "updatedAtEpochSeconds": 1788526200
+    },
+    {
+      "tripId": "cl-sg-sched",
+      "boat": "SG4",
+      "boatName": "Tooth Ferry",
+      "vesselId": "tooth-ferry",
+      "updatedAtEpochSeconds": 1788526200
+    },
+    {
+      "tripId": "cl-as-sched",
+      "boat": "AS2",
+      "boatName": "Jewel of the Harbor",
+      "vesselId": "jewel-of-the-harbor",
+      "updatedAtEpochSeconds": 1788526200
+    },
+    {
+      "tripId": "cl-rs-sched",
+      "boat": "RS3",
+      "boatName": "Signs to Liberty",
+      "vesselId": "signs-to-liberty",
+      "updatedAtEpochSeconds": 1788526200
+    },
+    {
+      "tripId": "cl-sg-via",
+      "boat": "SG4",
+      "boatName": "Tooth Ferry",
+      "vesselId": "tooth-ferry",
+      "updatedAtEpochSeconds": 1788526200
+    }
+  ]
+}

@@ -134,11 +134,16 @@ button.trip-stop-head{cursor:pointer}
 .trip-stop.is-current .trip-stop-head{border-color:var(--blue);background:var(--sunken)}
 .trip-stop-timing{display:flex;flex:0 0 auto;align-items:baseline;gap:7px;white-space:nowrap}
 .trip-stop-time{flex:0 0 auto;color:var(--muted);font:650 14px/1 Oswald,sans-serif}
-/* Rides beside whatever it follows — the destination in the timeline, the status line on the route
-   board — so it is held to its own width and kept a size down from its neighbour. The rule carries
-   its own separator, which disappears with it rather than leaving a stray bar on a row with no turn. */
-.departure-layover{flex:0 0 auto;color:var(--navy);font:800 clamp(10px,1.5vh,14px)/1.15 Lato,Arial,sans-serif;white-space:nowrap}
-.departure-layover::before{content:"|";margin:0 .35em;color:var(--line);font-weight:700}
+/* Rides at the end of whatever it follows -- the destination in the timeline, the status line on the
+   route board -- so it is held to its own width and kept a size down from its neighbour. It is
+   inline-block, not a flex item, so it joins the last line of a destination that has had to wrap
+   instead of dropping to a line of its own, and it carries no leading bar for a wrap to strand. A
+   layover read from the timetable ends in the same clock as the SCHEDULED badge; an estimate gets
+   the live colour and no clock. */
+.departure-layover{display:inline-block;flex:0 0 auto;margin-inline-start:.55em;color:var(--navy);font:800 clamp(10px,1.5vh,14px)/1.15 Lato,Arial,sans-serif;white-space:nowrap}
+.departure-layover-estimated{color:var(--route-accent,#00749e)}
+.scheduled-clock{display:block;flex:0 0 auto;width:1.1em;height:1.1em}
+.departure-layover .scheduled-clock{display:inline-block;margin-inline-start:.3em;vertical-align:-.15em}
 .trip-stop-layover{padding:2px 5px;border-radius:4px;color:#fff;background:var(--blue);font:900 10px/1.2 Lato,Arial,sans-serif;letter-spacing:.02em}
 .trip-stop-you{flex:0 0 auto;color:var(--blue);font:900 10px/1 Lato,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase}
 .trip-conns{display:flex;flex-direction:column;gap:3px;margin:0;padding:2px 0 2px 10px;border-left:2px solid var(--line);list-style:none}
@@ -184,10 +189,10 @@ button.trip-stop-head{cursor:pointer}
 .timeline-row .route-badge{flex:0 0 auto}
 /* Pushed right, and the only thing on that edge of the top line, so countdowns form a column. */
 .tl-relative{flex:0 0 auto;margin-left:auto;color:var(--route-accent,#00749e);font:900 clamp(11px,1.6vh,15px)/1 Lato,Arial,sans-serif;white-space:nowrap}
-/* Destination and the turn it ends in, on one line. A row rather than a block so the name takes
-   the squeeze on its own: it is the only part long enough to need truncating, and the layover is
-   the part that would be meaningless half-shown. */
-.tl-dest{display:flex;align-items:baseline;min-width:0;color:var(--navy);font:800 clamp(14px,2.1vh,21px)/1.15 Lato,Arial,sans-serif}
+/* Destination and the turn it ends in, running on as one piece of text. A block, not a flex row: when
+   the name has to wrap, the layover follows its last word on the same line instead of being left
+   alone on a line of its own, and it moves down only when it truly does not fit beside it. */
+.tl-dest{display:block;min-width:0;color:var(--navy);font:800 clamp(14px,2.1vh,21px)/1.15 Lato,Arial,sans-serif}
 .tl-dest-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-via{font-weight:700;color:var(--muted)}
 .tl-meta{display:flex;align-items:center;gap:.5vw;min-width:0}
@@ -825,8 +830,9 @@ html[data-theme="hacker"] body *{
 :root .tl-head { gap: 12px; }
 :root .tl-head time { font-variant-numeric: tabular-nums; }
 :root .tl-relative { font-size: 14px; }
-:root .tl-dest { font-size: 22px; line-height: 1.2; flex-wrap: wrap; }
-:root :is(.tl-dest, .tl-dest-name, .departure-layover, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+:root .tl-dest { font-size: 22px; line-height: 1.2; }
+:root :is(.tl-dest, .tl-dest-name, .destination strong, .via, .route-name, .boat-name, .tl-boat, .tl-context) { white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
+:root .departure-layover { display: inline-block; white-space: nowrap; overflow-wrap: normal; }
 :root :is(.tl-meta, .tl-status, .departure-last-slot) { flex-wrap: wrap; overflow: visible; white-space: normal; line-height: 1.5; gap: 6px; }
 :root :is(.tl-context, .tl-boat, .boat-name) { font-size: 14px; }
 :root .departure-slot { min-height: 72px; padding: 12px 8px; }
