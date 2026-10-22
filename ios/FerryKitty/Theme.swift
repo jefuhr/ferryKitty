@@ -37,15 +37,6 @@ struct StatusPill: View {
     }
 }
 
-/// A scheduled departure's neutral marker. VoiceOver hears "scheduled" from the row's own spoken label.
-struct ScheduledBadge: View {
-    var body: some View {
-        Image(systemName: "clock").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
-            .padding(.horizontal, 5).padding(.vertical, 2).background(Color.secondary.opacity(0.14), in: Capsule())
-            .accessibilityLabel("Scheduled").accessibilityIdentifier("scheduledBadge")
-    }
-}
-
 struct MessageCard: View {
     let title: String
     let message: String

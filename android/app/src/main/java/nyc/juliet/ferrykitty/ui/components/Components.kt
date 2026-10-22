@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -51,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -99,19 +97,6 @@ fun StatusPill(text: String, tone: BoardFormat.Tone, modifier: Modifier = Modifi
 			.background(color.copy(alpha = 0.12f), CircleShape)
 			.padding(horizontal = 6.dp, vertical = 2.dp),
 	)
-}
-
-/**
- * A small neutral clock for a departure that runs to the timetable, in a capsule the height of [StatusPill] so rows keep
- * their rhythm. The glyph scales with text size. It says nothing to TalkBack: the row's sentence already says "scheduled".
- */
-@Composable
-fun ScheduledClock(modifier: Modifier = Modifier) {
-	val color = toneColor(BoardFormat.Tone.NEUTRAL)
-	val glyph = with(LocalDensity.current) { 14.sp.toDp() }
-	Box(contentAlignment = Alignment.Center, modifier = modifier.background(color.copy(alpha = 0.12f), CircleShape).padding(horizontal = 6.dp, vertical = 2.dp)) {
-		Icon(Icons.Outlined.Schedule, contentDescription = null, tint = color, modifier = Modifier.size(glyph).testTag("scheduledClock"))
-	}
 }
 
 /** Partner operators are shown by their own marks, as on iOS and the web board. */

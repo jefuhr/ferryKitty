@@ -37,20 +37,6 @@ enum BoardLayout {
                         remainder > 0 ? "\(remainder) minute\(remainder == 1 ? "" : "s")" : nil].compactMap { $0 }.joined(separator: " ")
     }
 
-    /// Drop-off and no-pickup outrank live timing, which outranks the scheduled clock.
-    static func status(arrival: Bool, noPickup: Bool, hasLiveTiming: Bool, delay: Double) -> DepartureStatus {
-        if arrival { return .dropOff }
-        if noPickup { return .noPickup }
-        if hasLiveTiming { return delay >= 60 ? .late(minutes: Int((delay / 60).rounded())) : .onTime }
-        return .scheduled
-    }
-
-    /// A scheduled layover carries an inline clock; an estimated one says "est" instead.
-    static func layover(minutes: Int, estimated: Bool) -> LayoverLabel {
-        LayoverLabel(text: "Layover \(minutes)m" + (estimated ? " est" : ""), showsClock: !estimated,
-                     spoken: "layover \(minutes) minutes \(estimated ? "estimated" : "scheduled")")
-    }
-
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -63,35 +49,6 @@ enum BoardLayout {
     static func dateLabel(_ key: String) -> String {
         ServiceClock.date(key).map(dateFormatter.string(from:)) ?? key
     }
-}
-
-enum DepartureStatus: Equatable {
-    case dropOff, noPickup, onTime, late(minutes: Int), scheduled
-
-    /// Nil for a scheduled departure, which shows a clock icon rather than text.
-    var text: String? {
-        switch self {
-        case .dropOff: "DROP OFF ONLY"
-        case .noPickup: "NO PICKUP"
-        case .onTime: "ON TIME"
-        case .late(let minutes): "+\(minutes)m"
-        case .scheduled: nil
-        }
-    }
-    var spoken: String { text?.lowercased() ?? "scheduled" }
-    var color: Color {
-        switch self {
-        case .dropOff, .noPickup, .late: .orange
-        case .onTime: .green
-        case .scheduled: .secondary
-        }
-    }
-}
-
-struct LayoverLabel: Equatable {
-    let text: String
-    let showsClock: Bool
-    let spoken: String
 }
 
 struct BoardView: View {
@@ -379,7 +336,6 @@ struct DepartureButton: View {
                     if showRoute {
                         RouteBadge(routeID: departure.routeId, variant: departure.variant)
                         Text(departure.destination).font(.subheadline.weight(.semibold)).lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
                     } else {
                         ZStack(alignment: .leading) { Text("00h 00m").font(.caption.weight(.semibold)).hidden(); countdown }
                         vessel.map { $0.font(.subheadline) }.lineLimit(1)
@@ -393,8 +349,7 @@ struct DepartureButton: View {
                     if showRoute { countdown } else { Color.clear.frame(width: 0, height: 0) }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         flags
-                        // Height follows the lines the text needs at the column's final width, never its one-line ideal.
-                        details.map { $0.font(.caption).foregroundStyle(.secondary).lineLimit(3).fixedSize(horizontal: false, vertical: true) }
+                        details.map { $0.font(.caption).foregroundStyle(.secondary).lineLimit(3) }
                     }
                 }
             }
@@ -454,9 +409,7 @@ struct DepartureButton: View {
         // Most feeds repeat the arrival time as the departure time; a zero dwell says nothing.
         if let minutes = pauses?.dwellMinutes, minutes > 0 { parts.append(Text("Dwell \(minutes)m").monospacedDigit()) }
         if let layover = pauses?.layover {
-            let label = BoardLayout.layover(minutes: layover.minutes, estimated: layover.hasLiveTiming)
-            // The clock follows the text inline. A no-break space glues it to the minutes, so it never wraps alone.
-            parts.append((label.showsClock ? Text(label.text + "\u{00A0}") + Text(Image(systemName: "clock")) : Text(label.text)).monospacedDigit())
+            parts.append(Text("Layover \(layover.minutes)m \(layover.hasLiveTiming ? "est" : "sched")").monospacedDigit())
         }
         if departure.approximate == true && departure.fromHomePort == true { parts.append(Text("Approx. · first pickup at destination")) }
         return join(parts, " · ")
@@ -471,14 +424,15 @@ struct DepartureButton: View {
         return parts.dropFirst().reduce(first) { $0 + Text(separator) + $1 }
     }
 
-    private var statusKind: DepartureStatus {
-        BoardLayout.status(arrival: departure.arrival == true, noPickup: departure.crewShuttle == true || departure.outOfService == true,
-                           hasLiveTiming: row.hasLiveTiming, delay: row.delay)
+    private var statusLabel: (text: String, color: Color) {
+        if departure.arrival == true { return ("DROP OFF ONLY", .orange) }
+        if departure.crewShuttle == true || departure.outOfService == true { return ("NO PICKUP", .orange) }
+        if row.hasLiveTiming {
+            return row.delay >= 60 ? ("+\(Int((row.delay / 60).rounded()))m", .orange) : ("ON TIME", .green)
+        }
+        return ("SCHED", .secondary)
     }
-    /// Unconfirmed times show a small clock; every other state keeps its own pill.
-    @ViewBuilder private var status: some View {
-        if let text = statusKind.text { StatusPill(text: text, color: statusKind.color) } else { ScheduledBadge() }
-    }
+    private var status: some View { StatusPill(text: statusLabel.text, color: statusLabel.color) }
     private var final: String? {
         guard let end = departure.endsShift, departure.outOfService != true, departure.crewShuttle != true else { return nil }
         return end == "unsure" ? "FINAL?" : "FINAL"
@@ -511,7 +465,7 @@ struct DepartureButton: View {
             parts.append("\(store.schedule?.routes[departure.routeId]?.shortName ?? departure.routeId) to \(departure.destination)")
             if let name = otherOperator ?? RouteBadge.partnerMark(departure.routeId).map({ _ in store.operatorName(departure.routeId) }) { parts.append(name) }
         }
-        parts.append(statusKind.spoken)
+        parts.append(statusLabel.text == "SCHED" ? "scheduled" : statusLabel.text.lowercased())
         if let slip { parts.append("boards at \(slip)") }
         if row.isLastOfDay { parts.append("last departure") } else if row.isLastGovernorsIsland { parts.append("last to Governors Island") }
         if let final { parts.append(final == "FINAL" ? "final, no return trip" : "final, return trip unconfirmed") }
@@ -524,7 +478,7 @@ struct DepartureButton: View {
         if let via = departure.viaTerminals, !via.isEmpty { parts.append("via " + via.map { $0.name ?? $0.code }.joined(separator: ", ")) }
         else if let via = departure.via, !via.isEmpty { parts.append("via " + via.joined(separator: ", ")) }
         if let minutes = pauses?.dwellMinutes, minutes > 0 { parts.append("dwell \(minutes) minutes") }
-        if let layover = pauses?.layover { parts.append(BoardLayout.layover(minutes: layover.minutes, estimated: layover.hasLiveTiming).spoken) }
+        if let layover = pauses?.layover { parts.append("layover \(layover.minutes) minutes \(layover.hasLiveTiming ? "estimated" : "scheduled")") }
         if departure.approximate == true && departure.fromHomePort == true { parts.append("first pickup time at destination") }
         return parts.joined(separator: ", ")
     }
