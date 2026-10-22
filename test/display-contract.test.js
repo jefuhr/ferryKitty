@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile as readDisk } from "node:fs/promises";
 import { clientSource } from "./helpers/client-source.js";
+import { NOW as SCHEDULED_NOW, scheduledBoardPayload, scheduledBoardRealtime } from "./helpers/scheduled-board-fixture.js";
 import { activeServices } from "../public/assets/schedule.js";
 const readFile = (file, encoding) => file.pathname?.endsWith("/public/app.js") ? clientSource(file) : readDisk(file, encoding);
 import vm from "node:vm";
@@ -44,7 +45,7 @@ test("shows fresh late and on-time status in the reserved badge row", async () =
   assert.match(app, /delaySeconds >= 60/);
   assert.match(app, />\+\$\{Math\.max\(1, Math\.round\(delaySeconds \/ 60\)\)\} min<\/span>/);
   assert.match(app, /class="on-time-badge"[^>]*>ON TIME<\/span>/);
-  assert.match(app, /class="scheduled-badge"[^>]*>SCHEDULED<\/span>/);
+  assert.match(app, /class="scheduled-badge"[^>]*aria-label="Status: Scheduled"[^>]*>\$\{scheduledClock\(\)\}<\/span>/);
   assert.match(app, /!isLast && !delayLabel && !onTimeLabel/);
   // ARRIVAL sits with the other "what kind of move is this" badges, ahead of the running status,
   // because whether a boat can be boarded at all is read before whether it is late.
@@ -506,7 +507,7 @@ const SAMPLE = {
   tripSchedules: {}
 };
 
-async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = {}, query = "" } = {}) {
+async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = {}, query = "", realtime = null } = {}) {
   const [app, index] = await Promise.all([readFile(appPath, "utf8"), readFile(indexPath, "utf8")]);
   const ids = [...index.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
   const nodes = new Map(), classes = new Map(), listeners = new Map(), store = new Map(Object.entries(stored));
@@ -562,7 +563,7 @@ async function board({ now = "2026-08-13T14:30:00Z", payload = SAMPLE, stored = 
       // fixture by reference lets one test's `data.calendars = []` reach every later test.
       const body = path.startsWith("/api/display-data") ? structuredClone(payload)
         : path.startsWith("/api/landings") ? { landings: [] }
-          : path.startsWith("/api/realtime") ? { available: false, stale: true, updates: [], vehicles: [] }
+          : path.startsWith("/api/realtime") ? (realtime ? structuredClone(realtime) : { available: false, stale: true, updates: [], vehicles: [] })
             : path.startsWith("/api/alerts") ? { available: true, stale: false, alerts: [] }
               : { active: false, message: "", updatedAt: null };
       return { ok: true, json: async () => body };
@@ -1427,26 +1428,26 @@ test("a terminating trip shows its scheduled and live layover beside the eta", a
       assert.equal(tripLabel.includes("scheduled 5 min"), layover);
     }
     view.run(`selectSort("${sort}"); render()`);
-    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
+    assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover 5m<svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/small>/);
   }
   // A turn is taken at the trip's last stop, which is the destination the label sits beside in the
   // timeline — so the pier is named once, by the destination, and the turn shares its line.
   view.run(`selectSort("time"); render()`);
   const timeline = view.node("departures").innerHTML;
   assert.doesNotMatch(timeline, /Layover at East 34th Street/);
-  assert.match(timeline, /<strong class="tl-dest">.*<small class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small><\/strong>/);
+  assert.match(timeline, /<strong class="tl-dest">[\s\S]*<small class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover 5m<svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/small><\/strong>/);
   view.run(`realtime = { stale: false, vehicles: [], updates: [
     { tripId: "turning", stopId: "1", delaySeconds: 60 },
     { tripId: "turning", stopId: "2", delaySeconds: 480 },
     { tripId: "return", stopId: "2", delaySeconds: 120 }
   ] }; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover -1m<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover -1m<\/small>/);
   view.run(`realtime.updates[2].canceled = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover 5m<svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/small>/);
   view.run(`realtime.updates[2].canceled = false; realtime.stale = true; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover 5m<svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/small>/);
   view.run(`realtime.stale = false; viewDate = "2026-08-14"; render()`);
-  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m Layover 5m<\/small>/);
+  assert.match(view.node("departures").innerHTML, /class="departure-layover"[^>]*>Dwell 2m<\/small><small class="departure-layover[^"]*"[^>]*>Layover 5m<svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/small>/);
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], outOfService: true })`), "");
   assert.equal(view.run(`departureLayoverLabel({ ...data.departures[0], endsShift: "certain" })`), "");
 
@@ -1590,4 +1591,148 @@ test("Unmatched Sukkot rows stay scheduled and explain why onward trip connectio
   assert.equal(view.node("tripMapLink").hidden,true);
   view.run("renderBoardNote()");
   assert.match(view.node("boardNote").textContent,/Sukkot: published departures/);
+});
+
+// Compact scheduled indicators.
+//
+// A boat that has no live timing shows a small clock, not the word SCHEDULED, and a layover taken
+// from the timetable carries the same clock after it. The clock is decoration: the accessible name
+// stays the full sentence it always was, and a layover that is an estimate gets no clock at all, so
+// the two read differently without anyone having to know the colours.
+//
+// Failure modes covered: the clock leaking into the accessibility tree, a delayed / on-time /
+// service-status badge losing its slot to the scheduled one, an estimate wearing the timetable's
+// clock, a layover shown after the setting hides it, and any of that differing by sort order, by
+// connectivity (offline, saved snapshot, partly live) or by browsing another day.
+
+const CLOCK = /<svg[^>]*class="scheduled-clock"[^>]*aria-hidden="true"[^>]*focusable="false"[\s\S]*?<\/svg>/;
+
+async function scheduledView({ realtime = "offline", sort = "time", layovers = true } = {}) {
+  const view = await board({
+    now: SCHEDULED_NOW, payload: scheduledBoardPayload({ layovers }), realtime: scheduledBoardRealtime(realtime),
+    stored: { "nyc-ferry-did-selected-landing": "16", "nyc-ferry-did-sort": sort }
+  });
+  view.run("loadRealtime()");
+  await new Promise((resolve) => setImmediate(resolve));
+  view.run("render()");
+  return view;
+}
+
+function rowFor(html, tripId) {
+  const marker = `data-trip-id="${tripId}"`;
+  const start = html.indexOf(marker);
+  assert.ok(start >= 0, `${tripId} should be on the board`);
+  const end = [html.indexOf('data-key="', start), html.indexOf("</article>", start)].filter((i) => i > 0).sort((a, b) => a - b)[0];
+  return html.slice(start, end);
+}
+
+test("a scheduled boat shows a clock badge that keeps the full accessible status", async () => {
+  for (const sort of ["time", "route"]) {
+    for (const realtime of ["offline", "stale"]) {
+      const view = await scheduledView({ sort, realtime });
+      const html = view.node("departures").innerHTML;
+      const badges = [...html.matchAll(/<span class="scheduled-badge"[^>]*>[\s\S]*?<\/span>/g)].map((match) => match[0]);
+      assert.ok(badges.length >= 4, `${sort}/${realtime}: expected scheduled badges, got ${badges.length}`);
+      for (const badge of badges) {
+        assert.match(badge, /role="img"/);
+        assert.match(badge, /aria-label="Status: Scheduled"/);
+        assert.match(badge, CLOCK);
+        assert.equal(badge.replace(/<[^>]+>/g, "").trim(), "", "the word is gone, the icon replaces it");
+      }
+      assert.doesNotMatch(view.text(), /SCHEDULED/);
+    }
+  }
+});
+
+test("a scheduled layover is Layover Nm and a clock, with the full wording for assistive technology", async () => {
+  for (const sort of ["time", "route"]) {
+    const view = await scheduledView({ sort });
+    const html = view.node("departures").innerHTML;
+    const layovers = [...html.matchAll(/<small class="departure-layover[^"]*"[^>]*>[\s\S]*?<\/small>/g)].map((match) => match[0]);
+    assert.ok(layovers.length >= 4, `${sort}: a layover per visible sailing`);
+    for (const layover of layovers) {
+      assert.match(layover, /aria-label="Scheduled layover \d+ minutes"/);
+      assert.match(layover, /Layover \d+m<svg/);
+      assert.match(layover, CLOCK);
+      assert.match(layover, /role="img"/);
+      assert.doesNotMatch(layover.replace(/<[^>]+>/g, ""), /sched/i, "no 'sched' suffix");
+    }
+    assert.match(rowFor(html, "t5"), /aria-label="Scheduled layover 10 minutes"[^>]*>Layover 10m</);
+  }
+});
+
+test("an estimated layover stays distinguishable: no clock, and it says it is estimated", async () => {
+  const view = await scheduledView({ realtime: "live" });
+  const html = view.node("departures").innerHTML;
+  const estimated = rowFor(html, "t4").match(/<small class="departure-layover[^"]*"[^>]*>[\s\S]*?<\/small>/)[0];
+  assert.match(estimated, /aria-label="Estimated layover 3 minutes"/);
+  assert.match(estimated, /class="departure-layover departure-layover-estimated"/);
+  assert.match(estimated, />Layover 3m<\/small>$/);
+  assert.doesNotMatch(estimated, /<svg/);
+  const scheduled = rowFor(html, "t1").match(/<small class="departure-layover[^"]*"[^>]*>[\s\S]*?<\/small>/)[0];
+  assert.match(scheduled, /class="departure-layover departure-layover-scheduled"/);
+  assert.match(scheduled, CLOCK);
+});
+
+test("late, on-time and service-status badges still outrank the scheduled clock", async () => {
+  const view = await scheduledView({ realtime: "live" });
+  const html = view.node("departures").innerHTML;
+  const late = rowFor(html, "t2");
+  assert.match(late, /aria-label="Status: \+4 min"/);
+  assert.doesNotMatch(late, /scheduled-badge/);
+  const onTime = rowFor(html, "t4");
+  assert.match(onTime, /aria-label="Status: On time"/);
+  assert.doesNotMatch(onTime, /scheduled-badge/);
+  // The rest of the board has no live timing yet, so it is still the timetable.
+  assert.match(rowFor(html, "t1"), /aria-label="Status: Scheduled"/);
+
+  const status = (item) => view.run(`departureStatus(${JSON.stringify(item)})`);
+  const base = view.run("data.departures[0]");
+  for (const [name, override] of [
+    ["crew shuttle", { crewShuttle: true }], ["out of service", { outOfService: true }],
+    ["arrival", { arrival: true }], ["last of day", { isLastOfDay: true }], ["last to Governors Island", { isLastGovernorsIsland: true }]
+  ]) {
+    assert.equal(status({ ...base, ...override }).scheduledLabel, "", `${name} must not also read as scheduled`);
+  }
+  assert.match(status({ ...base, hasLiveTiming: true, delay: 300 }).delayLabel, /\+5 min/);
+  assert.equal(status({ ...base, hasLiveTiming: true, delay: 300 }).scheduledLabel, "");
+  // Boarding is the countdown column, not a badge, and does not displace the clock.
+  assert.equal(view.run("relativeTime(60, true)"), "Boarding");
+  assert.match(status({ ...base, delta: 60 }).scheduledLabel, /Status: Scheduled/);
+});
+
+test("a saved snapshot never promotes a delay to a live status", async () => {
+  const view = await scheduledView({ realtime: "stale" });
+  const html = view.node("departures").innerHTML;
+  assert.match(rowFor(html, "t2"), /aria-label="Status: Scheduled"/);
+  assert.doesNotMatch(html, /Status: \+|Status: On time/);
+});
+
+test("a browsed day is all timetable: clocks, no countdown", async () => {
+  const view = await scheduledView({ realtime: "live" });
+  view.click("dateNext");
+  const html = view.node("departures").innerHTML;
+  assert.doesNotMatch(html, /Status: \+|Status: On time/);
+  assert.match(html, /aria-label="Status: Scheduled"/);
+  assert.match(html, /aria-label="Scheduled layover \d+ minutes"/);
+  assert.doesNotMatch(html, /Estimated layover/);
+});
+
+test("the layover setting still hides the layover, clock and all", async () => {
+  const view = await scheduledView({ layovers: false });
+  const html = view.node("departures").innerHTML;
+  assert.doesNotMatch(html, /departure-layover/);
+  assert.match(html, /Status: Scheduled/);
+});
+
+test("the clock and the layover are drawn inline so they can never wrap onto a line of their own", async () => {
+  const [app, css] = await Promise.all([readFile(appPath, "utf8"), readFile(cssPath, "utf8")]);
+  assert.match(css, /\.scheduled-clock\{[^}]*width:1\.1em[^}]*height:1\.1em/);
+  assert.match(css, /\.scheduled-badge\{[^}]*display:inline-flex/);
+  assert.match(css, /\.departure-layover\{[^}]*display:inline-block[^}]*white-space:nowrap/);
+  // The late :root block makes everything wrap; the layover must be exempted after it.
+  assert.ok(css.lastIndexOf(":root .departure-layover { display: inline-block; white-space: nowrap") > css.lastIndexOf(".destination strong, .via, .route-name"));
+  assert.doesNotMatch(css, /:root :is\([^)]*\.departure-layover[^)]*\) \{ white-space: normal/, "the broader wrapping selector must exclude the layover; :is inherits its most specific member");
+  assert.doesNotMatch(css, /\.departure-layover::before\{[^}]*content:"\|"/, "a leading bar is orphaned when the layover wraps");
+  assert.doesNotMatch(app.replace(/^\s*\/\/.*$/gm, ""), /SCHEDULED<\/span>/);
 });

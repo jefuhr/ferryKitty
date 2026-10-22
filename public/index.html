@@ -18,23 +18,23 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Ferry Kitty" />
     <title>Ferry Kitty</title>
-    <link rel="icon" href="/assets/app-icon.png?v=128" type="image/png" />
+    <link rel="icon" href="/assets/app-icon.png?v=129" type="image/png" />
     <!-- iOS reads this one specifically when the board is added to a home screen, and shows a
          screenshot of the page instead of an icon without it. 180px is the size it asks for. -->
-    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=128" />
+    <link rel="apple-touch-icon" href="/assets/app-icon-180.png?v=129" />
     <!-- Android has no equivalent meta tags: name, standalone launch, splash screen and icons all
          come from the manifest, which is why the board installs as a bare shortcut without it.
          It lives under /assets/ because that is a path the deployment's proxy forwards to this
          server — a manifest at the site root is served by the landing page, not by the board. -->
-    <link rel="manifest" href="/assets/site.webmanifest?v=128" />
-    <link rel="stylesheet" href="/styles.css?v=128" />
-    <link rel="stylesheet" href="/assets/map.css?v=128" />
-    <link rel="stylesheet" href="/assets/app-shell.css?v=128" />
-    <link rel="stylesheet" href="/assets/ride.css?v=128" />
+    <link rel="manifest" href="/assets/site.webmanifest?v=129" />
+    <link rel="stylesheet" href="/styles.css?v=129" />
+    <link rel="stylesheet" href="/assets/map.css?v=129" />
+    <link rel="stylesheet" href="/assets/app-shell.css?v=129" />
+    <link rel="stylesheet" href="/assets/ride.css?v=129" />
     <!-- The theme has to be on the document before the first paint. app.js is a module, so it runs
          after the board has already been drawn once, and a saved theme applied there arrives as a
          visible flash of the other one. -->
-    <script src="/assets/map-theme.js?v=128"></script>
+    <script src="/assets/map-theme.js?v=129"></script>
   </head>
   <body class="app-shell">
     <header class="app-header">
@@ -135,7 +135,7 @@
             <!-- The change log, beside the drawer's own title. Its own mark rather than a glyph,
                  because it is the one thing in here that is not a landing. -->
             <button type="button" class="changelog-button" id="changelogButton" aria-expanded="false" aria-controls="changelogMenu" aria-label="What's new">
-              <img class="changelog-icon" src="/assets/kitty.png?v=128" alt="" width="128" height="128" loading="lazy" />
+              <img class="changelog-icon" src="/assets/kitty.png?v=129" alt="" width="128" height="128" loading="lazy" />
               <span class="changelog-bang" id="changelogBang" aria-hidden="true" hidden>!</span>
             </button>
             <button type="button" class="landing-menu-close" id="landingMenuClose">Done</button>
@@ -323,7 +323,7 @@
       <p id="ridePickerNote"></p><label for="rideSearch">Vessel name or hull number</label><input id="rideSearch" type="search" autocomplete="off" placeholder="Find your boat…" />
       <div id="rideChoices" class="ride-choices"></div>
     </dialog>
-    <script src="/assets/mobile-runtime.js?v=128"></script>
-    <script type="module" src="/assets/app-shell.js?v=128"></script>
+    <script src="/assets/mobile-runtime.js?v=129"></script>
+    <script type="module" src="/assets/app-shell.js?v=129"></script>
   </body>
 </html>
