@@ -107,9 +107,6 @@ import androidx.compose.ui.unit.dp
 import nyc.juliet.ferrykitty.contract.FerryAction
 import nyc.juliet.ferrykitty.contract.FerrySheet
 import nyc.juliet.ferrykitty.contract.FerryUiState
-import nyc.juliet.ferrykitty.core.DepartureGroup
-import nyc.juliet.ferrykitty.core.DeparturePauses
-import nyc.juliet.ferrykitty.core.ScheduledDeparture
 import nyc.juliet.ferrykitty.core.ScheduleEngine
 import nyc.juliet.ferrykitty.ui.FerryUi
 import nyc.juliet.ferrykitty.ui.components.MessageCard
@@ -493,48 +490,25 @@ private fun LazyListScope.boardItems(state: FerryUiState, ui: FerryUi, context: 
 		return
 	}
 	if (state.preferences.sortByRoute) {
-		items(BoardFormat.rows(groups, columns), key = { line -> "group|" + line.first().id }) { line -> GroupLine(line, columns, context, ui) }
+		items(BoardFormat.rows(groups, columns), key = { line -> "group|" + line.first().id }) { line ->
+			Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+				for (group in line) RouteGroupCard(group, context, ui, Modifier.weight(1f).fillMaxHeight())
+				repeat(columns - line.size) { Spacer(Modifier.weight(1f)) }
+			}
+		}
 	} else {
-		items(BoardFormat.rows(rows, columns), key = { line -> "row|" + line.first().id }) { line -> DepartureLine(line, columns, context, ui) }
+		items(BoardFormat.rows(rows, columns), key = { line -> "row|" + line.first().id }) { line ->
+			Column {
+				Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+					for (row in line) DepartureRow(row, context, showRoute = true, onOpen = { ui.send(FerryAction.OpenTrip(it)) },
+						modifier = Modifier.weight(1f).fillMaxHeight())
+					repeat(columns - line.size) { Spacer(Modifier.weight(1f)) }
+				}
+				HorizontalDivider(Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = ferryColors.line)
+			}
+		}
 	}
 	item(key = "bottom") { Spacer(Modifier.size(16.dp)) }
-}
-
-/** One line of the by-time board: a sailing, or two side by side on a wide board. [pausesOf] lets tests supply pauses. */
-@Composable
-internal fun DepartureLine(
-	line: List<ScheduledDeparture>,
-	columns: Int,
-	context: BoardContext,
-	ui: FerryUi,
-	pausesOf: ((ScheduledDeparture) -> DeparturePauses?)? = null,
-) {
-	Column {
-		Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-			for (row in line) {
-				val open = { it: ScheduledDeparture -> ui.send(FerryAction.OpenTrip(it)) }
-				if (pausesOf == null) DepartureRow(row, context, showRoute = true, onOpen = open, modifier = Modifier.weight(1f).fillMaxHeight())
-				else DepartureRow(row, context, showRoute = true, onOpen = open, modifier = Modifier.weight(1f).fillMaxHeight(), pauses = pausesOf(row))
-			}
-			repeat(columns - line.size) { Spacer(Modifier.weight(1f)) }
-		}
-		HorizontalDivider(Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp, color = ferryColors.line)
-	}
-}
-
-/** One line of the by-route board: a route's group, or two side by side on a wide board. */
-@Composable
-internal fun GroupLine(
-	line: List<DepartureGroup>,
-	columns: Int,
-	context: BoardContext,
-	ui: FerryUi,
-	pausesOf: ((ScheduledDeparture) -> DeparturePauses?)? = null,
-) {
-	Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-		for (group in line) RouteGroupCard(group, context, ui, Modifier.weight(1f).fillMaxHeight(), pausesOf)
-		repeat(columns - line.size) { Spacer(Modifier.weight(1f)) }
-	}
 }
 
 @Composable

@@ -75,22 +75,7 @@ class BoardFormatTest {
 		assertEquals(BoardFormat.Status("NO PICKUP", BoardFormat.Tone.WARNING), BoardFormat.status(row(departure { copy(outOfService = true) })))
 		assertEquals(BoardFormat.Status("+3m", BoardFormat.Tone.WARNING), BoardFormat.status(row(delay = 150.0, hasLiveTiming = true)))
 		assertEquals(BoardFormat.Status("ON TIME", BoardFormat.Tone.POSITIVE), BoardFormat.status(row(delay = 59.0, hasLiveTiming = true)))
-		assertEquals(BoardFormat.Status("SCHED", BoardFormat.Tone.NEUTRAL, scheduled = true), BoardFormat.status(row(delay = 300.0, hasLiveTiming = false)))
-	}
-
-	@Test fun onlyAPlainTimetableDepartureIsMarkedScheduled() {
-		// Offline, stale and browsed-date boards all have no live timing, so every ordinary sailing shows the clock.
-		assertTrue("Network offline or stale", BoardFormat.status(row(live = true, hasLiveTiming = false)).scheduled)
-		assertTrue("Browsed date", BoardFormat.status(row(live = false, delta = 0.0, hasLiveTiming = false)).scheduled)
-		assertTrue("Scheduled departures keep the SCHED meaning", BoardFormat.status(row(hasLiveTiming = false)).text == "SCHED")
-		// Live timing, delays and service statuses outrank the clock and keep their own text.
-		assertFalse(BoardFormat.status(row(hasLiveTiming = true)).scheduled)
-		assertFalse(BoardFormat.status(row(delay = 300.0, hasLiveTiming = true)).scheduled)
-		assertFalse("Boarding is a countdown, never a status", BoardFormat.status(row(delta = 30.0, hasLiveTiming = true)).scheduled)
-		assertFalse(BoardFormat.status(row(departure { copy(arrival = true) }, hasLiveTiming = false)).scheduled)
-		assertFalse(BoardFormat.status(row(departure { copy(crewShuttle = true) }, hasLiveTiming = false)).scheduled)
-		assertFalse(BoardFormat.status(row(departure { copy(outOfService = true) }, hasLiveTiming = false)).scheduled)
-		assertEquals("Boarding countdown is unchanged beside the clock", "Boarding", BoardFormat.countdown(30.0, live = true, dueLabel = "Boarding"))
+		assertEquals(BoardFormat.Status("SCHED", BoardFormat.Tone.NEUTRAL), BoardFormat.status(row(delay = 300.0, hasLiveTiming = false)))
 	}
 
 	@Test fun finalNeedsAPassengerShiftEnd() {
@@ -129,43 +114,19 @@ class BoardFormatTest {
 		assertEquals("Staten Island Ferry", BoardFormat.otherOperator("sif:1", "Staten Island Ferry"))
 	}
 
-	private fun texts(details: List<BoardFormat.Detail>) = details.map { it.text }
-
 	@Test fun detailsListEveryPublishedFact() {
 		val pauses = DeparturePauses(dwellSeconds = 240.0, layover = LayoverTiming(scheduledSeconds = 600.0, estimatedSeconds = 720.0))
 		val shuttle = departure { copy(crewShuttle = true, secondsEnd = 34200.0, viaTerminals = listOf(ViaTerminal("WFC"), ViaTerminal("P11"))) }
 		assertEquals(listOf("Crew shuttle until 09:30", "VIA WFC · VIA P11"),
-			texts(BoardFormat.details(row(shuttle), pauses = null, twelveHour = false, otherOperator = null)))
+			BoardFormat.details(row(shuttle), pauses = null, twelveHour = false, otherOperator = null))
 		val home = departure { copy(approximate = true, fromHomePort = true, via = listOf("Pier 11", "DUMBO")) }
 		assertEquals(listOf("via Pier 11, DUMBO", "Dwell 4m", "Layover 12m est", "Approx. · first pickup at destination"),
-			texts(BoardFormat.details(row(home), pauses = pauses, twelveHour = false, otherOperator = null)))
-		assertEquals("A zero dwell says nothing", listOf("Layover 10m"),
-			texts(BoardFormat.details(row(), DeparturePauses(dwellSeconds = 0.0, layover = LayoverTiming(600.0)), twelveHour = false, otherOperator = null)))
+			BoardFormat.details(row(home), pauses = pauses, twelveHour = false, otherOperator = null))
+		assertEquals("A zero dwell says nothing", listOf("Layover 10m sched"),
+			BoardFormat.details(row(), DeparturePauses(dwellSeconds = 0.0, layover = LayoverTiming(600.0)), twelveHour = false, otherOperator = null))
 		assertEquals("Movements say what they are, not who runs them", listOf("Out of service"),
-			texts(BoardFormat.details(row(departure { copy(outOfService = true) }), null, false, "Seastreak")))
-		assertEquals(listOf("Seastreak"), texts(BoardFormat.details(row(), null, false, "Seastreak")))
-	}
-
-	@Test fun scheduledLayoverDropsTheWordAndEarnsTheClock() {
-		val scheduled = BoardFormat.details(row(), DeparturePauses(layover = LayoverTiming(300.0)), twelveHour = false, otherOperator = null)
-		assertEquals(listOf(BoardFormat.Detail("Layover 5m", scheduledClock = true)), scheduled)
-		val estimated = BoardFormat.details(row(), DeparturePauses(layover = LayoverTiming(300.0, estimatedSeconds = 420.0)), twelveHour = false, otherOperator = null)
-		assertEquals("An estimate stays distinguishable: its own word, no clock", listOf(BoardFormat.Detail("Layover 7m est")), estimated)
-		val others = BoardFormat.details(row(departure { copy(via = listOf("Pier 11")) }), DeparturePauses(dwellSeconds = 120.0, layover = LayoverTiming(300.0)), false, null)
-		assertEquals("Only the layover carries the clock", listOf(false, false, true), others.map { it.scheduledClock })
-		assertTrue("A layover can be hidden entirely", BoardFormat.details(row(), DeparturePauses(), false, null).isEmpty())
-	}
-
-	@Test fun spokenRowKeepsTheFullScheduledAndEstimatedWording() {
-		val scheduled = BoardFormat.spoken(row(hasLiveTiming = false), DeparturePauses(layover = LayoverTiming(300.0)), false, true, "ER", null)
-		assertTrue(scheduled, scheduled.contains(", scheduled,") || scheduled.contains(", scheduled"))
-		assertTrue(scheduled, scheduled.endsWith("layover 5 minutes scheduled"))
-		val estimated = BoardFormat.spoken(row(hasLiveTiming = true), DeparturePauses(layover = LayoverTiming(300.0, 420.0)), false, true, "ER", null)
-		assertTrue(estimated, estimated.endsWith("layover 7 minutes estimated"))
-		assertTrue(estimated, estimated.contains("on time"))
-		assertFalse("The icon is never read as a word", scheduled.contains("clock", ignoreCase = true))
-		val delayed = BoardFormat.spoken(row(delay = 300.0, hasLiveTiming = true), null, false, true, "ER", null)
-		assertTrue(delayed, delayed.contains("+5m") && !delayed.contains("scheduled"))
+			BoardFormat.details(row(departure { copy(outOfService = true) }), null, false, "Seastreak"))
+		assertEquals(listOf("Seastreak"), BoardFormat.details(row(), null, false, "Seastreak"))
 	}
 
 	@Test fun spokenRowReadsAsOneSentence() {

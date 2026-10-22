@@ -28,8 +28,7 @@ enum AppConfiguration {
                 defaults.removePersistentDomain(forName: "nyc.juliet.ferryboard.ui-tests")
                 try? FileManager.default.removeItem(at: testRoot)
             }
-            let transport = PreviewTransport(offline: ProcessInfo.processInfo.environment["FERRY_OFFLINE"] == "1",
-                                        fixture: ProcessInfo.processInfo.environment["FERRY_FIXTURE"])
+            let transport = PreviewTransport(offline: ProcessInfo.processInfo.environment["FERRY_OFFLINE"] == "1")
             let repository = FerryRepository(transport: transport, cache: SnapshotCache(directory: testRoot), namespace: "fixtures")
             return FerryStore(repository: repository, defaults: defaults, fixedNow: ServiceClock.instant("2026-09-04T12:50:00Z"))
         }
@@ -150,17 +149,14 @@ struct FerryRootView: View {
 #if DEBUG
 struct PreviewTransport: FerryTransport {
     let offline: Bool
-    /// "compact" swaps in a Pier 11 board with long names, layovers and mixed live and scheduled rows.
-    var fixture: String?
     func data(for endpoint: FerryEndpoint) async throws -> Data {
         if offline { throw URLError(.notConnectedToInternet) }
-        var name: String
+        let name: String
         switch endpoint.path {
         case "api/display-data": name = "schedule-" + (endpoint.parameters["landingId"] ?? "16")
         case "api/ride": name = "ride-" + (endpoint.parameters["vesselId"] ?? "opportunity")
         default: name = endpoint.path.replacingOccurrences(of: "api/", with: "")
         }
-        if let fixture, ["schedule-16", "realtime"].contains(name) { name = fixture + "-" + name }
         guard let url = Bundle.main.url(forResource: name, withExtension: "json") else { throw FerryError.http(404) }
         return try Data(contentsOf: url)
     }

@@ -494,14 +494,6 @@ function groupContext(group, isOtherOperator) {
   return isOtherOperator ? "" : directionLabel(group.directionId);
 }
 
-// The mark for "this is the timetable, not a live estimate". It stands where the word SCHEDULED used
-// to, and after a layover read from the timetable, so a phone spends its width on the destination.
-// Decorative by construction: whatever carries it keeps the full sentence as its accessible name,
-// and it draws in currentColor so every theme recolours it without a rule of its own.
-function scheduledClock() {
-  return `<svg class="scheduled-clock" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 4.6V8l2.4 1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
 // Status badges for one sailing. Shared so the timeline rows and the route cards can never
 // disagree about whether a boat is late, on time, or the last of the day.
 function departureStatus(item) {
@@ -530,7 +522,7 @@ function departureStatus(item) {
     ? `<span class="arrival-badge" aria-label="Arriving here, ending its run">ARRIVAL</span><span class="drop-off-only-badge" aria-label="Drop off only: this boat cannot be boarded">DROP OFF ONLY</span>`
     : "";
   const scheduledLabel = !noPickup && !item.arrival && !isLast && !delayLabel && !onTimeLabel
-    ? `<span class="scheduled-badge" role="img" aria-label="Status: Scheduled">${scheduledClock()}</span>`
+    ? `<span class="scheduled-badge" aria-label="Status: Scheduled">SCHEDULED</span>`
     : "";
   const noPickupLabel = noPickup
     ? `<span class="no-pickup-badge" aria-label="Not in service: no passengers">NO PICKUP</span>`
@@ -1056,7 +1048,7 @@ function departureLayoverLabel(item) {
   const dwellText = dwellMinutes == null ? "" : `Dwell ${dwellMinutes}m`;
   const dwellAria = dwellMinutes == null ? "" : `Estimated dwell ${dwellMinutes} minutes`;
   const dwellOnly = dwellText
-    ? `<small class="departure-layover" role="img" aria-label="${dwellAria}">${dwellText}</small>` : "";
+    ? `<small class="departure-layover" aria-label="${dwellAria}">${dwellText}</small>` : "";
   const turn = schedule?.turnaround;
   if (!turn || data?.meta?.showLayoverTimes === false) return dwellOnly;
   const live = item.live !== false && !realtime.stale && (!item.scheduleOnly || item.liveTripId);
@@ -1075,8 +1067,7 @@ function departureLayoverLabel(item) {
     : turn.scheduledLayoverSeconds;
   if (seconds == null || !Number.isFinite(Number(seconds))) return dwellOnly;
   const minutes = layoverMinutes(seconds);
-  // Each fact can move to its own line in a narrow column; the clock stays attached to its layover.
-  return `${dwellOnly}<small class="departure-layover departure-layover-${hasLiveTiming ? "estimated" : "scheduled"}" role="img" aria-label="${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">Layover ${minutes}m${hasLiveTiming ? "" : scheduledClock()}</small>`;
+  return `<small class="departure-layover" aria-label="${dwellAria ? `${dwellAria}, ` : ""}${hasLiveTiming ? "Estimated" : "Scheduled"} layover ${minutes} minutes">${dwellText ? `${dwellText} ` : ""}Layover ${minutes}m</small>`;
 }
 
 function tripStopName(stopId) {

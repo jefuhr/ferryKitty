@@ -1,4 +1,4 @@
 {
   "comment": "The cache-busting version stamped onto every board and map asset. Bump it whenever a shipped file changes and run `npm run stamp` — scripts/stamp-assets.js rewrites the 30-odd references, and a contract test fails if any of them drift apart. Never edit `?v=` by hand.",
-  "version": 129
+  "version": 128
 }
