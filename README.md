@@ -85,7 +85,9 @@ shuttle relieves that working. Four conflicting returns use the published trip's
 with their original notes retained in `schedules/sukkot-2026-crew.json`. Two return notes remain
 withheld there until dispatch confirms them. Two corrected pickups use the
 published trip times at `Board!K2` and `Board!C26` with the original note times retained in the
-crew data. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator feed version.
+crew data. `npm run check:nyc-feed` and the daily GitHub workflow flag a new operator feed version,
+and fail once no reviewed map covers today. A failed workflow run uploads the fetched ZIP and a
+regenerated post-Sukkot map as the `nyc-ferry-feed-candidate` artifact to start the review from.
 The production host can run the same check daily with the units in `deploy/systemd/`; their
 failures appear in `journalctl -u nyc-ferry-feed-check.service`. GitHub scheduled workflows run
 only after this workflow reaches the repository's default branch. Shift-end notes that conflict
