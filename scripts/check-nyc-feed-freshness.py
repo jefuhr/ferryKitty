@@ -71,6 +71,8 @@ def main(argv=None):
     parser.add_argument('--archive-dir', type=Path,
                         help='save the fetched ZIP here as nycferry-<feed_version>.zip')
     args = parser.parse_args(argv)
+    # Keep the diagnostics above the stderr verdict in CI logs.
+    sys.stdout.reconfigure(line_buffering=True)
 
     request = urllib.request.Request(URL, headers={'User-Agent': 'Ferry-Kitty/1.0'})
     with urllib.request.urlopen(request, timeout=20) as response:
