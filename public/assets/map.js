@@ -899,12 +899,17 @@ function toDrawing(clientX, clientY) {
 
 function zoomBy(factor, clientX, clientY, { animate = false } = {}) {
   if (!view || !base) return;
+  // Clamp the size before calculating the anchor offset. Clamping only in setView
+  // lets repeated zooms at the limit keep moving the camera without changing scale.
+  const width = Math.min(base.width, Math.max(base.width / MAX_ZOOM, view.width * factor));
+  if (width === view.width) return;
+  factor = width / view.width;
   const anchor = clientX == null ? null : toDrawing(clientX, clientY);
   const centre = anchor || { x: view.x + view.width / 2, y: view.y + view.height / 2 };
   const next = {
     x: centre.x - (centre.x - view.x) * factor,
     y: centre.y - (centre.y - view.y) * factor,
-    width: view.width * factor
+    width
   };
   if (animate && hasRaf) animateTo(next, 280);
   else setView(next);
@@ -1055,7 +1060,7 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 }
 
 chart.addEventListener("wheel", (event) => {
-  if (!view || !(event.ctrlKey || event.metaKey)) return;
+  if (!view || !Number.isFinite(event.deltaY) || event.deltaY === 0) return;
   event.preventDefault();
   if (wheelTimer !== null) clearTimeout(wheelTimer);
   wheelTimer = setTimeout(() => {
@@ -1063,7 +1068,11 @@ chart.addEventListener("wheel", (event) => {
     forceStreetLayout = true;
     scheduleView();
   }, LABEL_INTERVAL);
-  zoomBy(event.deltaY > 0 ? 1.15 : 1 / 1.15, event.clientX, event.clientY);
+  // Wheel mice can report lines/pages; trackpads report small pixel deltas.
+  // Bound individual jumps while preserving the gentler trackpad movement.
+  const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.height : 1;
+  const delta = Math.max(-240, Math.min(240, event.deltaY * unit));
+  zoomBy(Math.exp(delta * 0.002), event.clientX, event.clientY);
 }, { passive: false });
 
 chart.addEventListener("keydown", (event) => {
