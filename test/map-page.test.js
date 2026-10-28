@@ -121,6 +121,8 @@ async function page({ boats = [BOAT], available = true, stale = false, query = "
     DOMPoint: class { constructor(x, y) { this.x = x; this.y = y; } matrixTransform() { return this; } },
     // Held rather than run, so a test can take the next poll when it wants one.
     setInterval: (handler) => { poll = handler; return 0; },
+    setTimeout: () => 1,
+    clearTimeout() {},
     async fetch(url) {
       asked.push(String(url));
       const body = String(url).startsWith("/api/map") ? harbor : { available, stale, fetchedAt: "2026-09-01T21:00:12Z", boats: live.boats };
@@ -475,6 +477,40 @@ test("a boat is pointed by where it has been, once it has been anywhere", async 
 });
 
 // ---------------------------------------------------------------- zoom
+
+test("ordinary scrolling zooms, respects delta size, and ignores horizontal scrolling", async () => {
+  const view = await page();
+  const fitted = view.view();
+  let prevented = false;
+  const wheel = (deltaY, extra = {}) => view.fire("chart", "wheel", {
+    deltaY, deltaMode: 0, clientX: fitted[2] / 2, clientY: fitted[3] / 2,
+    preventDefault() { prevented = true; }, ...extra
+  });
+  wheel(0, { deltaX: 80 });
+  assert.deepEqual(view.view(), fitted, "horizontal-only scrolling cannot zoom");
+  wheel(-1);
+  const small = view.view()[2];
+  assert.ok(prevented, "map scrolling prevents page scrolling");
+  assert.ok(small < fitted[2], "no modifier key is needed");
+  wheel(-100);
+  assert.ok(small - view.view()[2] > fitted[2] - small, "trackpad deltas control zoom speed");
+});
+
+test("zooming beyond either limit leaves the entire camera still", async () => {
+  const view = await page();
+  for (let press = 0; press < 40; press++) view.fire("zoomIn", "click");
+  const closest = view.view();
+  for (let press = 0; press < 5; press++) view.fire("zoomIn", "click");
+  assert.deepEqual(view.view(), closest, "zoom buttons cannot pan at maximum zoom");
+  view.fire("chart", "wheel", { deltaY: -120, ctrlKey: true,
+    clientX: closest[0] + closest[2] * .8, clientY: closest[1] + closest[3] * .2,
+    preventDefault() {} });
+  assert.deepEqual(view.view(), closest, "off-centre scrolling cannot pan at maximum zoom");
+  for (let press = 0; press < 40; press++) view.fire("zoomOut", "click");
+  const farthest = view.view();
+  view.fire("zoomOut", "click");
+  assert.deepEqual(view.view(), farthest);
+});
 
 test("zoom stays inside the harbor, and dock names wait until there is room for them", async () => {
   const view = await page();
