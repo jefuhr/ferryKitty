@@ -62,13 +62,13 @@ The September 28–October 2 timetable remains in `schedules/sukkot-2026.json`. 
 GTFS version `20260928` gives its departures real trip ids, archived in
 `schedules/fall-2026-sources/nycferry-20260928.zip`. The supplied assignment board is retained
 as operational notes without crew names. Ordinary October service uses the separately reviewed
-`20261007` feed. Rebuild each mapping from its own archive:
+`20261028` feed. Rebuild each mapping from its own archive:
 
 ```sh
 python3 scripts/import-sukkot-board.py /path/to/sukkot.xlsx
 python3 scripts/import-sukkot-live.py schedules/fall-2026-sources/nycferry-20260928.zip
 python3 scripts/import-sukkot-crew.py
-python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20261007.zip
+python3 scripts/import-post-sukkot-live.py schedules/fall-2026-sources/nycferry-20261028.zip
 npm run build
 npm run stamp:bump
 ```
