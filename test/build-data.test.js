@@ -4,7 +4,10 @@ import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
+import { buildDisplayData as buildCurrentDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
+
+import { summerRoot } from "./fixtures/summer-root.js";
+const buildDisplayData = (options = {}) => buildCurrentDisplayData({ root: summerRoot, ...options });
 
 test("every configured landing builds departures", async () => {
   for (let landingNumber = 2; landingNumber <= 26; landingNumber += 1) {
@@ -42,7 +45,7 @@ test("busesEnabled false drops the NY Waterway shuttles at Pier 79", async () =>
 });
 
 test("config/display.json declares busesEnabled as a boolean", async () => {
-  const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
+  const display = JSON.parse(await readFile(path.join(summerRoot, "config/display.json"), "utf8"));
   assert.equal(typeof display.busesEnabled, "boolean");
 });
 
@@ -59,7 +62,7 @@ test("routes retain their official abbreviations and colors", async () => {
 
 test("display data includes the configured slideshow interval and all directions", async () => {
   const data = await buildDisplayData({ landingNumber: 16 });
-  const display = JSON.parse(await readFile(new URL("../config/display.json", import.meta.url), "utf8"));
+  const display = JSON.parse(await readFile(path.join(summerRoot, "config/display.json"), "utf8"));
   assert.equal(data.meta.slideSeconds, display.slideSeconds);
   assert.equal(data.meta.departureWindowMinutes, display.departureWindowMinutes);
   assert.equal(data.meta.departuresShown, display.departuresShown);
@@ -282,7 +285,7 @@ test("every bundled feed is still in service, so no operator is silently empty",
   // that pulls one in. A failure here means that feed needs regenerating or replacing.
   const today = new Date().toISOString().slice(0, 10);
   for (const landingNumber of [8, 16, 25]) {
-    const data = await buildDisplayData({ landingNumber });
+    const data = await buildCurrentDisplayData({ landingNumber });
     const latestEnd = new Map();
     const covered = new Set();
     for (const calendar of data.calendars) {
@@ -366,8 +369,8 @@ test("crew boat assignments are attached to NYC Ferry departures", async () => {
 
 test("boat assignments join GTFS trip_short_name to the schedule workbook", async () => {
   const [assignmentsRaw, tripsRaw] = await Promise.all([
-    readFile(new URL("../content/boat-assignments.json", import.meta.url), "utf8"),
-    readFile(new URL("../gtfs/trips.txt", import.meta.url), "utf8")
+    readFile(path.join(summerRoot, "content/boat-assignments.json"), "utf8"),
+    readFile(path.join(summerRoot, "gtfs/trips.txt"), "utf8")
   ]);
   const { assignments } = JSON.parse(assignmentsRaw);
   assert.ok(Object.keys(assignments).length > 300);
@@ -443,7 +446,7 @@ test("the IKEA weekend ferry sails from Pier 11 and Midtown", async () => {
 });
 
 test("the IKEA ferry only runs at weekends, and only where it docks", async () => {
-  const calendar = await readFile(new URL("../gtfs/ikea/calendar.txt", import.meta.url), "utf8");
+  const calendar = await readFile(path.join(summerRoot, "gtfs/ikea/calendar.txt"), "utf8");
   const [, row] = calendar.trim().split("\n");
   const [, sunday, monday, tuesday, wednesday, thursday, friday, saturday] = row.split(",");
   assert.deepEqual([monday, tuesday, wednesday, thursday, friday], ["0", "0", "0", "0", "0"]);
@@ -526,7 +529,7 @@ test("only the opted-in feed shows its no-pickup sailings; everyone else's stay 
   assert.equal(shown.length, 2, "the Trust's two Red Hook run-overs are shown, flagged");
 
   // Every landing at once: no partner other than the Trust may contribute a no-pickup row.
-  const landings = JSON.parse(await readFile(new URL("../config/landings.json", import.meta.url), "utf8"));
+  const landings = JSON.parse(await readFile(path.join(summerRoot, "config/landings.json"), "utf8"));
   let seastreakRows = 0;
   for (const [id, landing] of Object.entries(landings)) {
     if (landing.unused) continue;
@@ -544,8 +547,8 @@ test("only the opted-in feed shows its no-pickup sailings; everyone else's stay 
 
 test("the Governors Island ferry runs weekends and holidays, in season, where it docks", async () => {
   const [calendar, dates] = await Promise.all([
-    readFile(new URL("../gtfs/gi/calendar.txt", import.meta.url), "utf8"),
-    readFile(new URL("../gtfs/gi/calendar_dates.txt", import.meta.url), "utf8")
+    readFile(path.join(summerRoot, "gtfs/gi/calendar.txt"), "utf8"),
+    readFile(path.join(summerRoot, "gtfs/gi/calendar_dates.txt"), "utf8")
   ]);
   const [, row] = calendar.trim().split("\n");
   const [, sunday, monday, tuesday, wednesday, thursday, friday, saturday, startDate, endDate] = row.split(",");
@@ -649,7 +652,7 @@ test("published crew shifts replace the gap guesswork", async () => {
 });
 
 test("a crew handover ties the boat up unless a shuttle brings the relief out to it", async () => {
-  const shifts = JSON.parse(await readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8")).shifts;
+  const shifts = JSON.parse(await readFile(path.join(summerRoot, "content/boat-shifts.json"), "utf8")).shifts;
   const minutes = (value) => Number(value.split(":")[0]) * 60 + Number(value.split(":")[1]);
   const handovers = [], breaks = [];
   for (const boats of Object.values(shifts)) {
@@ -672,7 +675,7 @@ test("a crew handover ties the boat up unless a shuttle brings the relief out to
   // carried out by shuttle steps onto the boat already alongside and it sails on. Everywhere else a
   // handover is a boat swap: the vessel that finishes runs to Pier C and another comes out of it to
   // pick the working up, which is why both halves are on the board.
-  const crew = JSON.parse(await readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8"));
+  const crew = JSON.parse(await readFile(path.join(summerRoot, "config/crew-shuttles.json"), "utf8"));
   const shuttled = new Set(crew.shuttles.weekday.flatMap((entry) => entry.boats));
   const data = await buildDisplayData({ landingNumber: 16 });
   const tieUps = data.departures.filter((item) => item.outOfService && item.serviceId === "1")
@@ -842,7 +845,7 @@ test("Pier C shows every boat leaving the home port to start a shift", async () 
 test("only a crew shuttle keeps a shift start off the Pier C board", async () => {
   const [pierC, crew] = await Promise.all([
     buildDisplayData({ landingNumber: 27 }),
-    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+    readFile(path.join(summerRoot, "config/crew-shuttles.json"), "utf8").then(JSON.parse)
   ]);
   const starts = pierC.departures.filter((item) => !item.crewShuttle);
   const departuresOf = (boat, serviceId) => starts.filter((item) =>
@@ -883,7 +886,7 @@ test("only a crew shuttle keeps a shift start off the Pier C board", async () =>
 test("the Rockaway Rocket leaves Pier C like every other weekend boat", async () => {
   const [pierC, shiftFile] = await Promise.all([
     buildDisplayData({ landingNumber: 27 }),
-    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse)
+    readFile(path.join(summerRoot, "content/boat-shifts.json"), "utf8").then(JSON.parse)
   ]);
 
   const rocket = shiftFile.shifts.weekend.RR1;
@@ -912,8 +915,8 @@ test("the Rockaway Rocket leaves Pier C like every other weekend boat", async ()
 test("every weekend shift start reaches Pier C unless a shuttle covers it", async () => {
   const [pierC, shiftFile, crew] = await Promise.all([
     buildDisplayData({ landingNumber: 27 }),
-    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
-    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+    readFile(path.join(summerRoot, "content/boat-shifts.json"), "utf8").then(JSON.parse),
+    readFile(path.join(summerRoot, "config/crew-shuttles.json"), "utf8").then(JSON.parse)
   ]);
   const shifts = shiftFile.shifts.weekend;
   const shuttled = new Set(crew.shuttles.weekend.flatMap((entry) => entry.boats));
@@ -949,7 +952,7 @@ test("every weekend shift start reaches Pier C unless a shuttle covers it", asyn
 // place and time together discarded both shifts whole, and with them a start time the feed agreed
 // with to the second, so their afternoon Pier C departures went missing from the board.
 test("a shift note that names the wrong end still yields its Pier C departure", async () => {
-  const shifts = await readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse);
+  const shifts = await readFile(path.join(summerRoot, "content/boat-shifts.json"), "utf8").then(JSON.parse);
 
   const er1 = shifts.shifts.weekday.ER1.find((item) => item.startTime === "15:46");
   assert.ok(er1, "ER1 works a weekday afternoon shift out of Pier 11");
@@ -979,7 +982,7 @@ test("a shift note that names the wrong end still yields its Pier C departure", 
 test("Pier C shows every crew shuttle sailing out to collect a crew", async () => {
   const [pierC, config] = await Promise.all([
     buildDisplayData({ landingNumber: 27 }),
-    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse)
+    readFile(path.join(summerRoot, "config/crew-shuttles.json"), "utf8").then(JSON.parse)
   ]);
   const shuttles = pierC.departures.filter((item) => item.crewShuttle);
   const configured = [...config.shuttles.weekday, ...config.shuttles.weekend];
@@ -1135,8 +1138,8 @@ test("a crew changeover covered by a shuttle is not a drop off", async () => {
 // shuttle is configured for that boat.
 test("drop offs and Pier C first departures agree about every weekday changeover", async () => {
   const [shiftFile, crewFile, pierC] = await Promise.all([
-    readFile(new URL("../content/boat-shifts.json", import.meta.url), "utf8").then(JSON.parse),
-    readFile(new URL("../config/crew-shuttles.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(path.join(summerRoot, "content/boat-shifts.json"), "utf8").then(JSON.parse),
+    readFile(path.join(summerRoot, "config/crew-shuttles.json"), "utf8").then(JSON.parse),
     buildDisplayData({ landingNumber: 27 })
   ]);
   const shuttled = new Set(crewFile.shuttles.weekday.flatMap((entry) => entry.boats));
@@ -1222,8 +1225,8 @@ test("drop offs and Pier C first departures agree about every weekday changeover
 // on it and want to leave — appeared nowhere on the board.
 test("every stop in the Trust's feed is attached to a landing", async () => {
   const [landings, stopsRaw] = await Promise.all([
-    readFile(new URL("../config/landings.json", import.meta.url), "utf8").then(JSON.parse),
-    readFile(new URL("../gtfs/gi/stops.txt", import.meta.url), "utf8")
+    readFile(path.join(summerRoot, "config/landings.json"), "utf8").then(JSON.parse),
+    readFile(path.join(summerRoot, "gtfs/gi/stops.txt"), "utf8")
   ]);
   const feedStops = parseCsv(stopsRaw).map((stop) => stop.stop_id);
   assert.deepEqual(feedStops.slice().sort(), ["bmb", "govisland", "pier6", "redhook", "soissons"]);
@@ -1386,7 +1389,7 @@ test("St. George shows the Staten Island Ferry, and never a boat sailing to itse
   // minutes later — the Whitehall crossing with the wrong stop id on the far end. They sit on the
   // dormant "threeboat" service, so nothing renders them today, but the feed is a drop-in download
   // and the guard has to hold whatever a fresh one turns on.
-  const raw = await readFile(new URL("../gtfs/siferry/stop_times.txt", import.meta.url), "utf8");
+  const raw = await readFile(path.join(summerRoot, "gtfs/siferry/stop_times.txt"), "utf8");
   const byTrip = new Map();
   for (const row of parseCsv(raw)) byTrip.set(row.trip_id, [...(byTrip.get(row.trip_id) || []), row]);
   const degenerate = [...byTrip.values()].filter((times) => new Set(times.map((item) => item.stop_id)).size === 1);
@@ -1426,7 +1429,7 @@ test("the Statue of Liberty loops name the island they are bound for, not where 
 
   // NPS spells Liberty State Park correctly on sixteen calls and "Libery State Park" on one. The
   // correction is a spelling fix to a destination label and nothing else.
-  const raw = await readFile(new URL("../gtfs/statue/stop_times.txt", import.meta.url), "utf8");
+  const raw = await readFile(path.join(summerRoot, "gtfs/statue/stop_times.txt"), "utf8");
   assert.ok(parseCsv(raw).some((row) => row.stop_headsign === "Libery State Park"),
     "the upstream misspelling this correction exists for is still in the bundled feed");
   for (const data of [liberty, ellis]) {

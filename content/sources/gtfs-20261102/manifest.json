@@ -1,0 +1,25 @@
+{
+  "checked_on": "2026-11-02",
+  "sources": [
+    {
+      "file": "nycferry.zip",
+      "url": "https://nycferry.connexionz.net/rtt/public/utility/gtfs.aspx",
+      "sha256": "91713d54f1faab5a49d6a37ab4b631288547446227214857ccb783484349ce3a"
+    },
+    {
+      "file": "waterway-trillium.zip",
+      "url": "https://data.trilliumtransit.com/gtfs/nywaterway-nj-us/nywaterway-nj-us.zip",
+      "sha256": "7f95f02b61dc0c5c08450b5a9787c32131c05316c85a83491070f5b3524ae874"
+    },
+    {
+      "file": "waterway-connexionz.zip",
+      "url": "https://nywaterway.connexionz.net/rtt/public/resource/gtfs.zip",
+      "sha256": "64be5074aa53c808da0f6dd973d192502735a8e742a66ca45e88f694ce51c805"
+    }
+  ],
+  "historical_test_fixture_revision": "2988a3c2d50dd3433c3da1889e62d5359b1da5c7",
+  "notes": [
+    "NY Waterway composite preserves Trillium terminal IDs and imports only Connexionz Belford route 60.",
+    "Raw ZIPs retain original bytes; generated CSV uses GTFS CRLF line endings."
+  ]
+}

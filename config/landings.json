@@ -9,7 +9,7 @@
   "8": { "name": "East 34th Street", "displayName": "East 34th Street", "stopIds": ["17"], "seastreakStopIds": ["168"], "nyuStopIds": ["13138"] },
   "9": { "name": "East 90th St", "displayName": "East 90th St / Gracie Mansion", "stopIds": ["113"] },
   "10": { "name": "Ferry Point Park", "displayName": "Ferry Point Park / Throggs Neck", "stopIds": ["141"] },
-  "11": { "name": "Yankee Pier", "displayName": "Governors Island / Yankee Pier", "stopIds": ["111"], "giStopIds": ["govisland"] },
+  "11": { "name": "Yankee Pier", "displayName": "Governors Island / Yankee Pier", "stopIds": [], "latitude": 40.686640, "longitude": -74.016482, "giStopIds": ["govisland"] },
   "12": { "name": "Greenpoint", "displayName": "Greenpoint / India St", "stopIds": ["18"] },
   "13": { "name": "Hunters Point South", "displayName": "Hunters Point South / LIC", "stopIds": ["4"] },
   "14": { "name": "Long Island City", "displayName": "Long Island City / Gantry Plaza", "stopIds": ["90"] },

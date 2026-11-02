@@ -31,7 +31,7 @@ Fort Lee/Cliffside Park Town,815,Fort Lee/Cliffside Park Town,,,3,,dbebf8,,,,
 76080,815,,Hoboken / 14th St - Pier 11 / Wall St,,3,https://www.nywaterway.com/Hoboken14-Pier11.aspx#weekday,fee828,000000,1,1,27
 10217,815,,Paulus Hook - Brookfield Place,,4,https://www.nywaterway.com/PaulusHook-WTCRoute.aspx#weekday,2164AF,000000,1,1,25
 10230,815,,Hoboken / 14th St - Midtown / W 39th St,,4,https://www.nywaterway.com/Hoboken14thRoute.aspx#weekday,E60024,000000,1,1,35
-77357,815,,Newburgh - Beacon - Winter Bus,,3,http://www.nywaterway.com/NewburghToBeaconRoute.aspx,eb7f28,000000,1,1,0
 77359,815,W44,W44/59th St,,3,,6a1266,,1,1,0
 59th St,815,59th St,,,3,,671f69,,,,
 Greenwich,815,Greenwich,,,3,,7ac142,,,,
+belford:60,815,60,Belford,,4,https://nywaterway.connexionz.net/RTT/Public/Schedule.aspx?RouteNo=60,00C0FF,FFFFFF,,,

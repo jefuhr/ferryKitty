@@ -1,221 +1,12 @@
 route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id
 "ER",1,305,"East 34th Street",1101,1,11,141
 "ER",1,306,"East 34th Street",1301,1,13,141
-"ER",1,307,"East 34th Street (E R A)",1501,1,15,133
-"ER",1,308,"East 34th Street (E R B)",1601,1,16,134
-"ER",1,309,"East 34th Street (E R A)",1103,1,11,133
-"ER",1,310,"East 34th Street (E R B)",1202,1,12,134
-"ER",1,311,"East 34th Street (E R A)",1303,1,13,133
-"ER",1,312,"East 34th Street (E R B)",1402,1,14,134
-"ER",1,313,"East 34th Street (E R A)",1503,1,15,133
-"ER",1,314,"East 34th Street (E R B)",1603,1,16,134
-"ER",1,315,"East 34th Street (E R A)",1105,1,11,133
-"ER",1,316,"East 34th Street (E R B)",1204,1,12,134
-"ER",1,317,"East 34th Street (E R A)",1305,1,13,133
-"ER",1,318,"East 34th Street (E R B)",1404,1,14,134
-"ER",1,319,"East 34th Street (E R A)",1505,1,15,133
-"ER",1,320,"East 34th Street (E R B)",1605,1,16,134
-"ER",1,321,"East 34th Street (E R A)",1107,1,11,133
-"ER",1,322,"East 34th Street (E R B)",1206,1,12,134
-"ER",1,323,"East 34th Street (E R A)",1307,1,13,133
-"ER",1,324,"East 34th Street (E R B)",1406,1,14,134
-"ER",1,325,"East 34th Street",1607,1,16,9
-"ER",1,326,"East 34th Street",1208,1,12,9
-"ER",1,327,"East 34th Street",1309,1,13,9
-"ER",1,328,"East 34th Street",1609,1,16,9
-"ER",1,329,"East 34th Street",1210,1,12,9
-"ER",1,330,"East 34th Street",1311,1,13,9
-"ER",1,331,"East 34th Street",1611,1,16,9
-"ER",1,332,"East 34th Street",1212,1,12,9
-"ER",1,333,"East 34th Street",1313,1,13,9
-"ER",1,334,"East 34th Street (E R B)",1109,1,11,134
-"ER",1,335,"East 34th Street (E R A)",1613,1,16,133
-"ER",1,336,"East 34th Street (E R B)",1407,1,14,134
-"ER",1,337,"East 34th Street (E R A)",1507,1,15,133
-"ER",1,338,"East 34th Street (E R B)",1214,1,12,134
-"ER",1,339,"East 34th Street (E R A)",1315,1,13,133
-"ER",1,340,"East 34th Street (E R B)",1111,1,11,134
-"ER",1,341,"East 34th Street (E R A)",1615,1,16,133
-"ER",1,342,"East 34th Street (E R B)",1409,1,14,134
-"ER",1,343,"East 34th Street (E R A)",1509,1,15,133
-"ER",1,344,"East 34th Street (E R B)",1216,1,12,134
-"ER",1,345,"East 34th Street (E R A)",1317,1,13,133
-"ER",1,346,"East 34th Street (E R B)",1113,1,11,134
-"ER",1,347,"East 34th Street (E R A)",1617,1,16,133
-"ER",1,348,"East 34th Street (E R B)",1411,1,14,134
-"ER",1,349,"East 34th Street",1511,1,15,9
-"ER",1,350,"East 34th Street",1218,1,12,9
-"ER",1,351,"East 34th Street",1619,1,16,9
-"ER",1,352,"East 34th Street",1513,1,15,9
-"ER",1,353,"Wall St./Pier 11 (E R A)",1102,0,11,69
-"ER",1,354,"Wall St/Pier 11 (E R B)",1201,0,12,135
-"ER",1,355,"Wall St./Pier 11 (E R A)",1302,0,13,69
-"ER",1,356,"Wall St/Pier 11 (E R B)",1401,0,14,135
-"ER",1,357,"Wall St./Pier 11 (E R A)",1502,0,15,69
-"ER",1,358,"Wall St/Pier 11 (E R B)",1602,0,16,135
-"ER",1,359,"Wall St./Pier 11 (E R A)",1104,0,11,69
-"ER",1,360,"Wall St/Pier 11 (E R B)",1203,0,12,135
-"ER",1,361,"Wall St./Pier 11 (E R A)",1304,0,13,69
-"ER",1,362,"Wall St/Pier 11 (E R B)",1403,0,14,135
-"ER",1,363,"Wall St./Pier 11 (E R A)",1504,0,15,69
-"ER",1,364,"Wall St/Pier 11 (E R B)",1604,0,16,135
-"ER",1,365,"Wall St./Pier 11 (E R A)",1106,0,11,69
-"ER",1,366,"Wall St/Pier 11 (E R B)",1205,0,12,135
-"ER",1,367,"Wall St./Pier 11 (E R A)",1306,0,13,69
-"ER",1,368,"Wall St/Pier 11 (E R B)",1405,0,14,135
-"ER",1,369,"Wall St./Pier 11 (E R A)",1506,0,15,69
-"ER",1,370,"Wall St/Pier 11 (E R B)",1606,0,16,135
-"ER",1,371,"Wall St./Pier 11 (E R A)",1108,0,11,69
-"ER",1,397,"Wall St/Pier 11 (E R B)",1207,0,12,135
-"ER",1,398,"Wall St./Pier 11",1308,0,13,12
-"ER",1,400,"Wall St./Pier 11",1608,0,16,12
-"ER",1,401,"Wall St./Pier 11",1209,0,12,12
-"ER",1,402,"Wall St./Pier 11",1310,0,13,12
-"ER",1,403,"Wall St./Pier 11",1610,0,16,12
-"ER",1,404,"Wall St./Pier 11",1211,0,12,12
-"ER",1,405,"Wall St./Pier 11",1312,0,13,12
-"ER",1,406,"Wall St./Pier 11",1612,0,16,12
-"ER",1,407,"Wall St./Pier 11",1213,0,12,12
-"ER",1,408,"Wall St./Pier 11 (E R A)",1314,0,13,69
-"ER",1,409,"Wall St/Pier 11 (E R B)",1110,0,11,135
-"ER",1,410,"Wall St./Pier 11 (E R A)",1614,0,16,69
-"ER",1,411,"Wall St/Pier 11 (E R B)",1408,0,14,135
-"ER",1,413,"Wall St./Pier 11 (E R A)",1508,0,15,69
-"ER",1,414,"Wall St/Pier 11 (E R B)",1215,0,12,135
-"ER",1,415,"Wall St./Pier 11 (E R A)",1316,0,13,69
-"ER",1,416,"Wall St/Pier 11 (E R B)",1112,0,11,135
-"ER",1,417,"Wall St./Pier 11 (E R A)",1616,0,16,69
-"ER",1,418,"Wall St/Pier 11 (E R B)",1410,0,14,135
-"ER",1,419,"Wall St./Pier 11 (E R A)",1510,0,15,69
-"ER",1,420,"Wall St/Pier 11 (E R B)",1217,0,12,135
-"ER",1,421,"Wall St./Pier 11 (E R A)",1318,0,13,69
-"ER",1,422,"Wall St/Pier 11 (E R B)",1114,0,11,135
-"ER",1,423,"Wall St./Pier 11 (E R A)",1618,0,16,69
-"ER",1,424,"Wall St./Pier 11",1412,0,14,12
-"ER",1,425,"Wall St./Pier 11",1512,0,15,12
-"ER",1,426,"Wall St./Pier 11",1219,0,12,12
-"ER",2,437,"East 34th Street (E R A)",1301,1,13,133
-"ER",2,448,"East 34th Street (E R B)",1102,1,11,134
-"ER",2,449,"East 34th Street (E R A)",1202,1,12,133
-"ER",2,450,"East 34th Street (E R A)",1303,1,13,133
-"ER",2,451,"East 34th Street (E R B)",1501,1,15,134
-"ER",2,452,"East 34th Street (E R A)",1104,1,11,133
-"ER",2,453,"East 34th Street (E R B)",1601,1,16,134
-"ER",2,454,"East 34th Street (E R A)",1701,1,17,133
-"ER",2,455,"East 34th Street (E R B)",1204,1,12,134
-"ER",2,456,"East 34th Street (E R A)",1402,1,14,133
-"ER",2,457,"East 34th Street (E R B)",1305,1,13,134
-"ER",2,458,"East 34th Street (E R A)",1503,1,15,133
-"ER",2,459,"East 34th Street (E R B)",1106,1,11,134
-"ER",2,460,"East 34th Street (E R A)",1603,1,16,133
-"ER",2,461,"East 34th Street (E R B)",1703,1,17,134
-"ER",2,462,"East 34th Street (E R A)",1206,1,12,133
-"ER",2,463,"East 34th Street (E R B)",1404,1,14,134
-"ER",2,464,"East 34th Street (E R A)",1307,1,13,133
-"ER",2,465,"East 34th Street (E R B)",1505,1,15,134
-"ER",2,466,"East 34th Street (E R A)",1108,1,11,133
-"ER",2,467,"East 34th Street (E R B)",1605,1,16,134
-"ER",2,468,"East 34th Street (E R A)",1705,1,17,133
-"ER",2,469,"East 34th Street (E R B)",1208,1,12,134
-"ER",2,470,"East 34th Street (E R A)",1406,1,14,133
-"ER",2,471,"East 34th Street (E R B)",1309,1,13,134
-"ER",2,472,"East 34th Street (E R A)",1507,1,15,133
-"ER",2,473,"East 34th Street (E R B)",1110,1,11,134
-"ER",2,474,"East 34th Street (E R A)",1607,1,16,133
-"ER",2,475,"East 34th Street (E R B)",1707,1,17,134
-"ER",2,476,"East 34th Street (E R A)",1210,1,12,133
-"ER",2,477,"East 34th Street (E R B)",1408,1,14,134
-"ER",2,478,"East 34th Street (E R A)",1311,1,13,133
-"ER",2,479,"East 34th Street (E R B)",1509,1,15,134
-"ER",2,480,"East 34th Street (E R A)",1112,1,11,133
-"ER",2,481,"East 34th Street (E R B)",1609,1,16,134
-"ER",2,482,"East 34th Street (E R A)",1709,1,17,133
-"ER",2,483,"East 34th Street (E R B)",1212,1,12,134
-"ER",2,484,"East 34th Street (E R A)",1410,1,14,133
-"ER",2,485,"East 34th Street (E R B)",1313,1,13,134
-"ER",2,486,"East 34th Street (E R A)",1511,1,15,133
-"ER",2,487,"East 34th Street (E R B)",1114,1,11,134
-"ER",2,488,"East 34th Street (E R A)",1611,1,16,133
-"ER",2,489,"East 34th Street (E R B)",1711,1,17,134
-"ER",2,490,"East 34th Street (E R A)",1214,1,12,133
-"ER",2,491,"East 34th Street (E R B)",1412,1,14,134
-"ER",2,492,"East 34th Street (E R A)",1315,1,13,133
-"ER",2,493,"East 34th Street (E R B)",1513,1,15,134
-"ER",2,494,"East 34th Street (E R A)",1116,1,11,133
-"ER",2,495,"East 34th Street (E R B)",1613,1,16,134
-"ER",2,496,"East 34th Street (E R A)",1713,1,17,133
-"ER",2,497,"East 34th Street (E R B)",1216,1,12,134
-"ER",2,498,"East 34th Street (E R A)",1317,1,13,133
-"ER",2,499,"Wall St/Pier 11 (E R B)",1101,0,11,135
-"ER",2,500,"Wall St./Pier 11 (E R A)",1201,0,12,69
-"ER",2,501,"Wall St/Pier 11 (E R B)",1302,0,13,135
-"ER",2,502,"Wall St./Pier 11 (E R A)",1103,0,11,69
-"ER",2,503,"Wall St/Pier 11 (E R B)",1203,0,12,135
-"ER",2,504,"Wall St./Pier 11 (E R A)",1401,0,14,69
-"ER",2,505,"Wall St/Pier 11 (E R B)",1304,0,13,135
-"ER",2,506,"Wall St./Pier 11 (E R A)",1502,0,15,69
-"ER",2,507,"Wall St/Pier 11 (E R B)",1105,0,11,135
-"ER",2,508,"Wall St./Pier 11 (E R A)",1602,0,16,69
-"ER",2,509,"Wall St/Pier 11 (E R B)",1702,0,17,135
-"ER",2,510,"Wall St./Pier 11 (E R A)",1205,0,12,69
-"ER",2,511,"Wall St/Pier 11 (E R B)",1403,0,14,135
-"ER",2,512,"Wall St./Pier 11 (E R A)",1306,0,13,69
-"ER",2,513,"Wall St/Pier 11 (E R B)",1504,0,15,135
-"ER",2,514,"Wall St./Pier 11 (E R A)",1107,0,11,69
-"ER",2,515,"Wall St/Pier 11 (E R B)",1604,0,16,135
-"ER",2,516,"Wall St./Pier 11 (E R A)",1704,0,17,69
-"ER",2,517,"Wall St/Pier 11 (E R B)",1207,0,12,135
-"ER",2,518,"Wall St./Pier 11 (E R A)",1405,0,14,69
-"ER",2,519,"Wall St/Pier 11 (E R B)",1308,0,13,135
-"ER",2,520,"Wall St./Pier 11 (E R A)",1506,0,15,69
-"ER",2,521,"Wall St/Pier 11 (E R B)",1109,0,11,135
-"ER",2,522,"Wall St./Pier 11 (E R A)",1606,0,16,69
-"ER",2,523,"Wall St/Pier 11 (E R B)",1706,0,17,135
-"ER",2,524,"Wall St./Pier 11 (E R A)",1209,0,12,69
-"ER",2,525,"Wall St/Pier 11 (E R B)",1407,0,14,135
-"ER",2,526,"Wall St./Pier 11 (E R A)",1310,0,13,69
-"ER",2,527,"Wall St/Pier 11 (E R B)",1508,0,15,135
-"ER",2,528,"Wall St./Pier 11 (E R A)",1111,0,11,69
-"ER",2,529,"Wall St/Pier 11 (E R B)",1608,0,16,135
-"ER",2,530,"Wall St./Pier 11 (E R A)",1708,0,17,69
-"ER",2,531,"Wall St/Pier 11 (E R B)",1211,0,12,135
-"ER",2,532,"Wall St./Pier 11 (E R A)",1409,0,14,69
-"ER",2,533,"Wall St/Pier 11 (E R B)",1312,0,13,135
-"ER",2,534,"Wall St./Pier 11 (E R A)",1510,0,15,69
-"ER",2,538,"Wall St/Pier 11 (E R B)",1113,0,11,135
-"ER",2,542,"Wall St./Pier 11 (E R A)",1610,0,16,69
-"ER",2,543,"Wall St/Pier 11 (E R B)",1710,0,17,135
-"ER",2,544,"Wall St./Pier 11 (E R A)",1213,0,12,69
-"ER",2,545,"Wall St/Pier 11 (E R B)",1411,0,14,135
-"ER",2,546,"Wall St./Pier 11 (E R A)",1314,0,13,69
-"ER",2,547,"Wall St/Pier 11 (E R B)",1512,0,15,135
-"ER",2,548,"Wall St./Pier 11 (E R A)",1115,0,11,69
-"ER",2,549,"Wall St/Pier 11 (E R B)",1612,0,16,135
-"ER",2,550,"Wall St./Pier 11 (E R A)",1712,0,17,69
-"ER",2,551,"Wall St/Pier 11 (E R B)",1215,0,12,135
-"ER",2,552,"Wall St./Pier 11 (E R A)",1413,0,14,69
-"ER",2,553,"Wall St/Pier 11 (E R B)",1316,0,13,135
-"ER",2,554,"Wall St./Pier 11 (E R A)",1117,0,11,69
-"ER",2,555,"Wall St/Pier 11 (E R B)",1217,0,12,135
 "RS",1,556,"Ferry Point Park",2401,1,24,145
 "RS",1,557,"Ferry Point Park",2501,1,25,145
 "RS",1,558,"Ferry Point Park",2601,1,26,145
 "RS",1,559,"Ferry Point Park",2102,1,21,145
 "RS",1,560,"Ferry Point Park",2202,1,22,145
 "RS",1,561,"Ferry Point Park",2302,1,23,145
-"RS",1,562,"Ferry Point Park",2403,1,24,145
-"RS",1,563,"Ferry Point Park",2603,1,26,145
-"RS",1,564,"Ferry Point Park",2104,1,21,145
-"RS",1,565,"Ferry Point Park",2304,1,23,145
-"RS",1,566,"Ferry Point Park",2405,1,24,145
-"RS",1,567,"Ferry Point Park",2605,1,26,145
-"RS",1,568,"Ferry Point Park",2204,1,22,145
-"RS",1,569,"Ferry Point Park",2106,1,21,145
-"RS",1,570,"Ferry Point Park",2306,1,23,145
-"RS",1,571,"Ferry Point Park",2504,1,25,145
-"RS",1,572,"Ferry Point Park",2407,1,24,145
-"RS",1,573,"Wall St./Pier 11",2607,1,26,147
-"RS",1,574,"Wall St./Pier 11",2206,1,22,147
 "RS",1,575,"Rockaway",2101,0,21,144
 "RS",1,600,"Rockaway",2201,0,22,144
 "RS",1,602,"Rockaway",2301,0,23,144
@@ -225,68 +16,6 @@ route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,
 "RS",1,616,"Rockaway",2103,0,21,144
 "RS",1,617,"Rockaway",2203,0,22,144
 "RS",1,618,"Rockaway",2303,0,23,144
-"RS",1,619,"Rockaway",2404,0,24,144
-"RS",1,620,"Rockaway",2604,0,26,144
-"RS",1,621,"Rockaway",2105,0,21,144
-"RS",1,623,"Rockaway",2305,0,23,144
-"RS",1,625,"Rockaway",2503,0,25,144
-"RS",1,627,"Rockaway",2406,0,24,144
-"RS",1,629,"Rockaway",2606,0,26,144
-"RS",1,635,"Rockaway",2205,0,22,144
-"RS",1,637,"Rockaway",2107,0,21,144
-"RS",1,638,"Wall St./Pier 11",2307,0,23,149
-"RS",1,639,"Wall St./Pier 11",2505,0,25,149
-"RS",2,640,"Ferry Point Park",2401,1,24,148
-"RS",2,641,"Wall St./Pier 11",2802,1,28,147
-"RS",2,650,"Ferry Point Park",2501,1,25,145
-"RS",2,651,"Wall St./Pier 11",2902,1,29,147
-"RS",2,652,"Ferry Point Park",2601,1,26,145
-"RS",2,654,"Wall St./Pier 11",2702,1,27,147
-"RS",2,656,"Ferry Point Park",2102,1,21,145
-"RS",2,664,"Wall St./Pier 11",2804,1,28,147
-"RS",2,666,"Ferry Point Park",2202,1,22,145
-"RS",2,668,"Wall St./Pier 11",2904,1,29,147
-"RS",2,670,"Ferry Point Park",2302,1,23,145
-"RS",2,682,"Wall St./Pier 11",2704,1,27,147
-"RS",2,684,"Ferry Point Park",2403,1,24,145
-"RS",2,685,"Wall St./Pier 11",2806,1,28,147
-"RS",2,686,"Ferry Point Park",2503,1,25,145
-"RS",2,688,"Ferry Point Park",2603,1,26,145
-"RS",2,692,"Ferry Point Park",2104,1,21,145
-"RS",2,694,"Wall St./Pier 11",2808,1,28,147
-"RS",2,696,"Ferry Point Park",2204,1,22,145
-"RS",2,700,"Ferry Point Park",2304,1,23,145
-"RS",2,704,"Ferry Point Park",2405,1,24,145
-"RS",2,705,"Ferry Point Park",2505,1,25,145
-"RS",2,707,"Ferry Point Park",2605,1,26,145
-"RS",2,708,"Wall St./Pier 11",2106,1,21,147
-"RS",2,709,"Wall St./Pier 11",2206,1,22,147
-"RS",2,710,"Rockaway",2101,0,21,144
-"RS",2,711,"Rockaway",2801,0,28,146
-"RS",2,712,"Rockaway",2201,0,22,144
-"RS",2,713,"Rockaway",2901,0,29,146
-"RS",2,714,"Rockaway",2301,0,23,144
-"RS",2,715,"Rockaway",2701,0,27,146
-"RS",2,716,"Rockaway",2402,0,24,144
-"RS",2,717,"Rockaway",2803,0,28,146
-"RS",2,718,"Rockaway",2502,0,25,144
-"RS",2,720,"Rockaway",2903,0,29,146
-"RS",2,724,"Rockaway",2602,0,26,144
-"RS",2,725,"Rockaway",2703,0,27,146
-"RS",2,726,"Rockaway",2103,0,21,144
-"RS",2,727,"Rockaway",2805,0,28,146
-"RS",2,728,"Rockaway",2203,0,22,144
-"RS",2,729,"Rockaway",2905,0,29,146
-"RS",2,730,"Rockaway",2303,0,23,144
-"RS",2,731,"Rockaway",2705,0,27,146
-"RS",2,732,"Rockaway",2404,0,24,144
-"RS",2,734,"Rockaway",2807,0,28,146
-"RS",2,740,"Rockaway",2504,0,25,144
-"RS",2,742,"Rockaway",2604,0,26,144
-"RS",2,744,"Rockaway",2105,0,21,144
-"RS",2,745,"Rockaway",2205,0,22,144
-"RS",2,746,"Rockaway",2305,0,23,144
-"RS",2,747,"Wall St./Pier 11",2406,0,24,149
 "SG",1,748,"Wall St./Pier 11",8301,0,83,150
 "SG",1,750,"Wall St./Pier 11",8401,0,84,138
 "SG",1,751,"Wall St./Pier 11",8102,0,81,138
@@ -300,15 +29,6 @@ route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,
 "SG",1,759,"Wall St./Pier 11",8206,0,82,138
 "SG",1,762,"Wall St./Pier 11",8407,0,84,138
 "SG",1,763,"Wall St./Pier 11",8108,0,81,138
-"SG",1,775,"Wall St./Pier 11",8208,0,82,138
-"SG",1,856,"Wall St./Pier 11",8409,0,84,138
-"SG",1,857,"Wall St./Pier 11",8305,0,83,138
-"SG",1,858,"Wall St./Pier 11",8110,0,81,138
-"SG",1,859,"Wall St./Pier 11",8210,0,82,138
-"SG",1,860,"Wall St./Pier 11",8411,0,84,138
-"SG",1,861,"Wall St./Pier 11",8307,0,83,138
-"SG",1,862,"Wall St./Pier 11",8112,0,81,138
-"SG",1,863,"Wall St./Pier 11",8212,0,82,138
 "SG",1,919,"Midtown West/W 39th St-Pier 79",8101,1,81,16
 "SG",1,920,"Midtown West/W 39th St-Pier 79",8201,1,82,139
 "SG",1,921,"Midtown West/W 39th St-Pier 79",8302,1,83,139
@@ -324,69 +44,12 @@ route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,
 "SG",1,931,"Midtown West/W 39th St-Pier 79",8207,1,82,139
 "SG",1,934,"Midtown West/W 39th St-Pier 79",8408,1,84,139
 "SG",1,935,"Midtown West/W 39th St-Pier 79",8109,1,81,139
-"SG",1,936,"Midtown West/W 39th St-Pier 79",8209,1,82,139
-"SG",1,937,"Midtown West/W 39th St-Pier 79",8410,1,84,139
-"SG",1,938,"Midtown West/W 39th St-Pier 79",8306,1,83,139
-"SG",1,939,"Midtown West/W 39th St-Pier 79",8111,1,81,139
-"SG",1,940,"Midtown West/W 39th St-Pier 79",8211,1,82,139
-"SG",1,941,"Midtown West/W 39th St-Pier 79",8412,1,84,139
-"SG",1,942,"Midtown West/W 39th St-Pier 79",8308,1,83,139
-"SG",2,943,"Wall St./Pier 11",8201,0,82,138
-"SG",2,947,"Wall St./Pier 11",8301,0,83,138
-"SG",2,948,"Wall St./Pier 11",8102,0,81,138
-"SG",2,949,"Wall St./Pier 11",8401,0,84,138
-"SG",2,950,"Wall St./Pier 11",8203,0,82,138
-"SG",2,951,"Wall St./Pier 11",8303,0,83,138
-"SG",2,952,"Wall St./Pier 11",8104,0,81,138
-"SG",2,953,"Wall St./Pier 11",8403,0,84,138
-"SG",2,954,"Wall St./Pier 11",8205,0,82,138
-"SG",2,955,"Wall St./Pier 11",8305,0,83,138
-"SG",2,956,"Wall St./Pier 11",8106,0,81,138
-"SG",2,957,"Wall St./Pier 11",8405,0,84,138
-"SG",2,958,"Wall St./Pier 11",8207,0,82,138
-"SG",2,959,"Wall St./Pier 11",8307,0,83,138
-"SG",2,960,"Wall St./Pier 11",8108,0,81,138
-"SG",2,961,"Wall St./Pier 11",8407,0,84,138
-"SG",2,962,"Wall St./Pier 11",8209,0,82,138
-"SG",2,963,"Wall St./Pier 11",8309,0,83,138
-"SG",2,964,"Wall St./Pier 11",8110,0,81,138
-"SG",2,965,"Midtown West/W 39th St-Pier 79",8101,1,81,139
-"SG",2,966,"Midtown West/W 39th St-Pier 79",8202,1,82,139
-"SG",2,967,"Midtown West/W 39th St-Pier 79",8302,1,83,139
-"SG",2,968,"Midtown West/W 39th St-Pier 79",8103,1,81,139
-"SG",2,969,"Midtown West/W 39th St-Pier 79",8402,1,84,139
-"SG",2,970,"Midtown West/W 39th St-Pier 79",8204,1,82,139
-"SG",2,971,"Midtown West/W 39th St-Pier 79",8304,1,83,139
-"SG",2,972,"Midtown West/W 39th St-Pier 79",8105,1,81,139
-"SG",2,973,"Midtown West/W 39th St-Pier 79",8404,1,84,139
-"SG",2,974,"Midtown West/W 39th St-Pier 79",8206,1,82,139
-"SG",2,975,"Midtown West/W 39th St-Pier 79",8306,1,83,139
-"SG",2,976,"Midtown West/W 39th St-Pier 79",8107,1,81,139
-"SG",2,977,"Midtown West/W 39th St-Pier 79",8406,1,84,139
-"SG",2,982,"Midtown West/W 39th St-Pier 79",8208,1,82,139
-"SG",2,983,"Midtown West/W 39th St-Pier 79",8308,1,83,139
-"SG",2,984,"Midtown West/W 39th St-Pier 79",8109,1,81,139
-"SG",2,985,"Midtown West/W 39th St-Pier 79",8408,1,84,139
-"SG",2,986,"Midtown West/W 39th St-Pier 79",8210,1,82,139
 "AS",1,987,"East 90th St",4301,1,43,107
 "AS",1,988,"East 90th St",4102,1,41,107
 "AS",1,989,"East 90th St",4202,1,42,107
 "AS",1,990,"East 90th St",4303,1,43,107
 "AS",1,991,"East 90th St",4104,1,41,107
 "AS",1,992,"East 90th St",4204,1,42,107
-"AS",1,995,"East 90th St",4305,1,43,107
-"AS",1,996,"East 90th St",4206,1,42,107
-"AS",1,997,"East 90th St",4307,1,43,107
-"AS",1,998,"East 90th St",4208,1,42,107
-"AS",1,999,"East 90th St",4309,1,43,107
-"AS",1,1000,"East 90th St",4210,1,42,107
-"AS",1,1001,"East 90th St",4311,1,43,107
-"AS",1,1002,"East 90th St",4106,1,41,107
-"AS",1,1003,"East 90th St",4212,1,42,107
-"AS",1,1004,"East 90th St",4313,1,43,107
-"AS",1,1005,"East 90th St",4108,1,41,107
-"AS",1,1006,"East 90th St",4214,1,42,107
-"AS",1,1007,"East 90th St",4315,1,43,107
 "AS",1,1008,"Wall St./Pier 11",4101,0,41,108
 "AS",1,1009,"Wall St./Pier 11",4201,0,42,108
 "AS",1,1010,"Wall St./Pier 11",4302,0,43,108
@@ -395,330 +58,406 @@ route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,
 "AS",1,1013,"Wall St./Pier 11",4304,0,43,108
 "AS",1,1014,"Wall St./Pier 11",4105,0,41,108
 "AS",1,1015,"Wall St./Pier 11",4205,0,42,108
-"AS",1,1016,"Wall St./Pier 11",4306,0,43,108
-"AS",1,1017,"Wall St./Pier 11",4207,0,42,108
-"AS",1,1018,"Wall St./Pier 11",4308,0,43,108
-"AS",1,1019,"Wall St./Pier 11",4209,0,42,108
-"AS",1,1020,"Wall St./Pier 11",4310,0,43,108
-"AS",1,1021,"Wall St./Pier 11",4211,0,42,108
-"AS",1,1022,"Wall St./Pier 11",4312,0,43,108
-"AS",1,1023,"Wall St./Pier 11",4107,0,41,108
-"AS",1,1024,"Wall St./Pier 11",4213,0,42,108
-"AS",1,1025,"Wall St./Pier 11",4314,0,43,108
-"AS",1,1026,"Wall St./Pier 11",4109,0,41,108
-"AS",1,1027,"Wall St./Pier 11",4215,0,42,108
-"AS",2,1028,"East 90th St",4203,1,42,107
-"AS",2,1029,"East 90th St",4301,1,43,107
-"AS",2,1030,"East 90th St",4104,1,41,107
-"AS",2,1031,"East 90th St",4205,1,42,107
-"AS",2,1032,"East 90th St",4303,1,43,107
-"AS",2,1131,"East 90th St",4106,1,41,107
-"AS",2,1132,"East 90th St",4207,1,42,107
-"AS",2,1133,"East 90th St",4305,1,43,107
-"AS",2,1134,"East 90th St",4108,1,41,107
-"AS",2,1135,"East 90th St",4209,1,42,107
-"AS",2,1136,"East 90th St",4307,1,43,107
-"AS",2,1137,"East 90th St",4110,1,41,107
-"AS",2,1138,"East 90th St",4211,1,42,107
-"AS",2,1139,"East 90th St",4309,1,43,107
-"AS",2,1140,"East 90th St",4112,1,41,107
-"AS",2,1141,"Wall St./Pier 11",4204,0,42,108
-"AS",2,1142,"Wall St./Pier 11",4302,0,43,108
-"AS",2,1143,"Wall St./Pier 11",4105,0,41,108
-"AS",2,1144,"Wall St./Pier 11",4206,0,42,108
-"AS",2,1145,"Wall St./Pier 11",4304,0,43,108
-"AS",2,1146,"Wall St./Pier 11",4107,0,41,108
-"AS",2,1147,"Wall St./Pier 11",4208,0,42,108
-"AS",2,1148,"Wall St./Pier 11",4306,0,43,108
-"AS",2,1149,"Wall St./Pier 11",4109,0,41,108
-"AS",2,1150,"Wall St./Pier 11",4210,0,42,108
-"AS",2,1151,"Wall St./Pier 11",4308,0,43,108
-"AS",2,1152,"Wall St./Pier 11",4111,0,41,108
-"AS",2,1153,"Wall St./Pier 11",4212,0,42,108
-"AS",2,1154,"Wall St./Pier 11",4310,0,43,108
-"SB",1,1155,"Governors Island",3201,0,32,137
-"SB",1,1156,"Governors Island",3102,0,31,137
-"SB",1,1157,"Governors Island",3203,0,32,137
-"SB",1,1158,"Governors Island",3104,0,31,137
-"SB",1,1159,"Governors Island",3205,0,32,137
-"SB",1,1160,"Governors Island",3106,0,31,137
-"SB",1,1161,"Governors Island",3207,0,32,137
-"SB",1,1162,"Governors Island",3108,0,31,137
-"SB",1,1163,"Governors Island",3209,0,32,137
-"SB",1,1164,"Governors Island",3110,0,31,137
-"SB",1,1165,"Governors Island",3211,0,32,137
-"SB",1,1166,"Governors Island",3112,0,31,137
-"SB",1,1167,"Governors Island",3213,0,32,137
-"SB",1,1168,"Governors Island",3114,0,31,137
-"SB",1,1169,"Red Hook/Atlantic Basin",3215,0,32,142
-"SB",1,1170,"Red Hook/Atlantic Basin",3116,0,31,142
-"SB",1,1171,"Red Hook/Atlantic Basin",3217,0,32,142
-"SB",1,1172,"Red Hook/Atlantic Basin",3118,0,31,142
-"SB",1,1173,"Red Hook/Atlantic Basin",3219,0,32,142
-"SB",1,1174,"East 34th Street",3101,1,31,143
-"SB",1,1175,"East 34th Street",3202,1,32,136
-"SB",1,1176,"East 34th Street",3103,1,31,136
-"SB",1,1177,"East 34th Street",3204,1,32,136
-"SB",1,1178,"East 34th Street",3105,1,31,136
-"SB",1,1179,"East 34th Street",3206,1,32,136
-"SB",1,1180,"East 34th Street",3107,1,31,136
-"SB",1,1181,"East 34th Street",3208,1,32,136
-"SB",1,1182,"East 34th Street",3109,1,31,136
-"SB",1,1183,"East 34th Street",3210,1,32,136
-"SB",1,1184,"East 34th Street",3111,1,31,136
-"SB",1,1185,"East 34th Street",3212,1,32,136
-"SB",1,1186,"East 34th Street",3113,1,31,136
-"SB",1,1187,"East 34th Street",3214,1,32,136
-"SB",1,1188,"East 34th Street",3115,1,31,136
-"SB",1,1189,"East 34th Street",3216,1,32,143
-"SB",1,1190,"East 34th Street",3117,1,31,143
-"SB",1,1191,"East 34th Street",3218,1,32,143
-"SB",1,1192,"East 34th Street",3119,1,31,143
-"SB",2,1193,"Bay Ridge",3201,0,32,156
-"SB",2,1194,"Bay Ridge",3102,0,31,156
-"SB",2,1195,"Bay Ridge",3203,0,32,156
-"SB",2,1196,"Bay Ridge",3401,0,34,156
-"SB",2,1197,"Bay Ridge",3104,0,31,156
-"SB",2,1198,"Bay Ridge",3302,0,33,156
-"SB",2,1199,"Bay Ridge",3205,0,32,156
-"SB",2,1200,"Bay Ridge",3403,0,34,156
-"SB",2,1201,"Bay Ridge",3106,0,31,156
-"SB",2,1202,"Bay Ridge",3304,0,33,156
-"SB",2,1203,"Bay Ridge",3207,0,32,156
-"SB",2,1204,"Bay Ridge",3405,0,34,156
-"SB",2,1205,"Bay Ridge",3108,0,31,156
-"SB",2,1206,"Bay Ridge",3306,0,33,156
-"SB",2,1207,"Bay Ridge",3209,0,32,156
-"SB",2,1208,"Bay Ridge",3407,0,34,156
-"SB",2,1209,"Bay Ridge",3110,0,31,156
-"SB",2,1210,"Bay Ridge",3308,0,33,156
-"SB",2,1211,"Bay Ridge",3211,0,32,156
-"SB",2,1212,"Bay Ridge",3409,0,34,156
-"SB",2,1213,"Bay Ridge",3112,0,31,156
-"SB",2,1214,"East 34th Street",3101,1,31,157
-"SB",2,1215,"East 34th Street",3202,1,32,157
-"SB",2,1216,"East 34th Street",3103,1,31,157
-"SB",2,1217,"East 34th Street",3301,1,33,157
-"SB",2,1218,"East 34th Street",3204,1,32,157
-"SB",2,1219,"East 34th Street",3402,1,34,157
-"SB",2,1220,"East 34th Street",3105,1,31,157
-"SB",2,1221,"East 34th Street",3303,1,33,157
-"SB",2,1222,"East 34th Street",3206,1,32,157
-"SB",2,1223,"East 34th Street",3404,1,34,157
-"SB",2,1224,"East 34th Street",3107,1,31,157
-"SB",2,1225,"East 34th Street",3305,1,33,157
-"SB",2,1226,"East 34th Street",3208,1,32,157
-"SB",2,1227,"East 34th Street",3406,1,34,157
-"SB",2,1228,"East 34th Street",3109,1,31,157
-"SB",2,1229,"East 34th Street",3307,1,33,157
-"SB",2,1230,"East 34th Street",3210,1,32,157
-"SB",2,1231,"East 34th Street",3408,1,34,157
-"SB",2,1232,"East 34th Street",3111,1,31,157
-"SB",2,1233,"East 34th Street",3212,1,32,157
 "RES",1,1234,"Rockaway",10101,0,101,44
 "RES",1,1235,"Rockaway",10201,0,102,44
 "RES",1,1236,"Rockaway",10103,0,101,44
 "RES",1,1237,"Rockaway",10203,0,102,44
 "RES",1,1238,"Rockaway",10105,0,101,44
 "RES",1,1239,"Rockaway",10205,0,102,44
-"RES",1,1240,"Rockaway",10107,0,101,44
-"RES",1,1241,"Rockaway",10109,0,101,44
-"RES",1,1242,"Rockaway",10207,0,102,44
-"RES",1,1243,"Rockaway",10111,0,101,44
-"RES",1,1244,"Rockaway",10209,0,102,44
 "RES",1,1245,"Rockaway",10113,0,101,44
-"RES",1,1246,"Rockaway",10211,0,102,44
 "RES",1,1247,"Rockaway East",10102,1,101,132
 "RES",1,1248,"Rockaway East",10202,1,102,132
 "RES",1,1249,"Rockaway East",10104,1,101,132
 "RES",1,1250,"Rockaway East",10204,1,102,132
 "RES",1,1251,"Rockaway East",10106,1,101,132
 "RES",1,1252,"Rockaway East",10206,1,102,132
-"RES",1,1253,"Rockaway East",10108,1,101,132
-"RES",1,1254,"Rockaway East",10110,1,101,132
-"RES",1,1255,"Rockaway East",10208,1,102,132
-"RES",1,1256,"Rockaway East",10112,1,101,132
-"RES",1,1257,"Rockaway East",10210,1,102,132
 "RES",1,1258,"Rockaway East",10114,1,101,132
-"RES",1,1259,"Rockaway East",10212,1,102,132
 "RWS",1,1260,"Rockaway",20101,0,201,27
 "RWS",1,1305,"Rockaway",20103,0,201,27
 "RWS",1,1357,"Rockaway",20105,0,201,27
 "RWS",1,1358,"Rockaway",20107,0,201,27
 "RWS",1,1359,"Rockaway",20109,0,201,27
 "RWS",1,1360,"Rockaway",20111,0,201,27
-"RWS",1,1361,"Rockaway",20113,0,201,27
-"RWS",1,1362,"Rockaway",20115,0,201,27
-"RWS",1,1363,"Rockaway",20117,0,201,27
-"RWS",1,1364,"Rockaway",20119,0,201,27
-"RWS",1,1365,"Rockaway",20121,0,201,27
 "RWS",1,1366,"Rockaway",20123,0,201,27
-"RWS",1,1367,"Rockaway",20125,0,201,27
 "RWS",1,1368,"Rockaway West",20102,1,201,35
 "RWS",1,1369,"Rockaway West",20104,1,201,35
 "RWS",1,1370,"Rockaway West",20106,1,201,35
 "RWS",1,1371,"Rockaway West",20108,1,201,35
 "RWS",1,1372,"Rockaway West",20110,1,201,35
 "RWS",1,1373,"Rockaway West",20112,1,201,35
-"RWS",1,1374,"Rockaway West",20114,1,201,35
-"RWS",1,1375,"Rockaway West",20116,1,201,35
-"RWS",1,1376,"Rockaway West",20118,1,201,35
-"RWS",1,1378,"Rockaway West",20120,1,201,35
-"RWS",1,1379,"Rockaway West",20122,1,201,35
 "RWS",1,1380,"Rockaway West",20124,1,201,35
-"RWS",1,1381,"Rockaway West",20126,1,201,35
-"RES",2,1382,"Rockaway",10101,0,101,44
-"RES",2,1383,"Rockaway",10201,0,102,44
-"RES",2,1384,"Rockaway",10105,0,101,44
-"RES",2,1385,"Rockaway",10203,0,102,44
-"RES",2,1386,"Rockaway",10107,0,101,44
-"RES",2,1387,"Rockaway",10205,0,102,44
-"RES",2,1388,"Rockaway",10109,0,101,44
-"RES",2,1389,"Rockaway",10207,0,102,44
-"RES",2,1390,"Rockaway",10111,0,101,44
-"RES",2,1391,"Rockaway",10209,0,102,44
-"RES",2,1392,"Rockaway",10113,0,101,44
-"RES",2,1393,"Rockaway",10211,0,102,44
-"RES",2,1394,"Rockaway",10115,0,101,44
-"RES",2,1395,"Rockaway",10213,0,102,44
-"RES",2,1396,"Rockaway",10117,0,101,44
-"RES",2,1397,"Rockaway",10215,0,102,44
-"RES",2,1398,"Rockaway",10119,0,101,44
-"RES",2,1399,"Rockaway",10217,0,102,44
-"RES",2,1400,"Rockaway",10121,0,101,44
-"RES",2,1401,"Rockaway",10219,0,102,44
-"RES",2,1402,"Rockaway",10123,0,101,44
-"RES",2,1403,"Rockaway",10221,0,102,44
-"RES",2,1404,"Rockaway",10125,0,101,44
-"RES",2,1405,"Rockaway",10223,0,102,44
-"RES",2,1406,"Rockaway",10127,0,101,44
-"RES",2,1407,"Rockaway",10225,0,102,44
-"RES",2,1408,"Rockaway",10129,0,101,44
-"RES",2,1409,"Rockaway East",10102,1,101,132
-"RES",2,1410,"Rockaway East",10202,1,102,132
-"RES",2,1411,"Rockaway East",10106,1,101,132
-"RES",2,1412,"Rockaway East",10204,1,102,132
-"RES",2,1413,"Rockaway East",10108,1,101,132
-"RES",2,1439,"Rockaway East",10206,1,102,132
-"RES",2,1440,"Rockaway East",10110,1,101,132
-"RES",2,1441,"Rockaway East",10208,1,102,132
-"RES",2,1442,"Rockaway East",10112,1,101,132
-"RES",2,1443,"Rockaway East",10210,1,102,132
-"RES",2,1444,"Rockaway East",10114,1,101,132
-"RES",2,1445,"Rockaway East",10212,1,102,132
-"RES",2,1446,"Rockaway East",10116,1,101,132
-"RES",2,1447,"Rockaway East",10214,1,102,132
-"RES",2,1448,"Rockaway East",10118,1,101,132
-"RES",2,1449,"Rockaway East",10216,1,102,132
-"RES",2,1450,"Rockaway East",10120,1,101,132
-"RES",2,1451,"Rockaway East",10218,1,102,132
-"RES",2,1452,"Rockaway East",10122,1,101,132
-"RES",2,1453,"Rockaway East",10220,1,102,132
-"RES",2,1454,"Rockaway East",10124,1,101,132
-"RES",2,1455,"Rockaway East",10222,1,102,132
-"RES",2,1456,"Rockaway East",10126,1,101,132
-"RES",2,1457,"Rockaway East",10224,1,102,132
-"RES",2,1458,"Rockaway East",10128,1,101,132
-"RES",2,1459,"Rockaway East",10226,1,102,132
-"RES",2,1460,"Rockaway East",10130,1,101,132
-"RWS",2,1461,"Rockaway",20101,0,201,4
-"RWS",2,1462,"Rockaway",20103,0,201,4
-"RWS",2,1463,"Rockaway",20105,0,201,4
-"RWS",2,1464,"Rockaway",20107,0,201,4
-"RWS",2,1465,"Rockaway",20109,0,201,4
-"RWS",2,1466,"Rockaway",20111,0,201,4
-"RWS",2,1467,"Rockaway",20113,0,201,4
-"RWS",2,1468,"Rockaway",20115,0,201,4
-"RWS",2,1469,"Rockaway",20117,0,201,4
-"RWS",2,1470,"Rockaway",20119,0,201,4
-"RWS",2,1471,"Rockaway",20121,0,201,4
-"RWS",2,1472,"Rockaway",20123,0,201,4
-"RWS",2,1473,"Rockaway",20125,0,201,4
-"RWS",2,1474,"Rockaway",20127,0,201,4
-"RWS",2,1512,"Rockaway",20129,0,201,4
-"RWS",2,1513,"Rockaway",20131,0,201,4
-"RWS",2,1514,"Rockaway",20133,0,201,4
-"RWS",2,1515,"Rockaway",20135,0,201,4
-"RWS",2,1516,"Rockaway",20137,0,201,4
-"RWS",2,1517,"Rockaway",20139,0,201,4
-"RWS",2,1518,"Rockaway",20141,0,201,4
-"RWS",2,1519,"Rockaway",20143,0,201,4
-"RWS",2,1520,"Rockaway",20145,0,201,4
-"RWS",2,1521,"Rockaway",20147,0,201,4
-"RWS",2,1522,"Rockaway",20149,0,201,4
-"RWS",2,1523,"Rockaway",20151,0,201,4
-"RWS",2,1524,"Rockaway",20153,0,201,4
-"RWS",2,1525,"Rockaway West",20102,1,201,2
-"RWS",2,1526,"Rockaway West",20104,1,201,2
-"RWS",2,1527,"Rockaway West",20106,1,201,2
-"RWS",2,1528,"Rockaway West",20108,1,201,2
-"RWS",2,1529,"Rockaway West",20110,1,201,2
-"RWS",2,1530,"Rockaway West",20112,1,201,2
-"RWS",2,1531,"Rockaway West",20114,1,201,2
-"RWS",2,1532,"Rockaway West",20116,1,201,2
-"RWS",2,1533,"Rockaway West",20118,1,201,2
-"RWS",2,1534,"Rockaway West",20120,1,201,2
-"RWS",2,1535,"Rockaway West",20122,1,201,2
-"RWS",2,1536,"Rockaway West",20124,1,201,2
-"RWS",2,1537,"Rockaway West",20126,1,201,2
-"RWS",2,1538,"Rockaway West",20128,1,201,2
-"RWS",2,1539,"Rockaway West",20130,1,201,2
-"RWS",2,1540,"Rockaway West",20132,1,201,2
-"RWS",2,1541,"Rockaway West",20134,1,201,2
-"RWS",2,1542,"Rockaway West",20136,1,201,2
-"RWS",2,1543,"Rockaway West",20138,1,201,2
-"RWS",2,1544,"Rockaway West",20140,1,201,2
-"RWS",2,1545,"Rockaway West",20142,1,201,2
-"RWS",2,1546,"Rockaway West",20144,1,201,2
-"RWS",2,1547,"Rockaway West",20146,1,201,2
-"RWS",2,1548,"Rockaway West",20148,1,201,2
-"RWS",2,1549,"Rockaway West",20150,1,201,2
-"RWS",2,1550,"Rockaway West",20152,1,201,2
-"RWS",2,1551,"Rockaway West",20154,1,201,2
-"GI",2,1552,"Governors Island",7101,0,71,76
-"GI",2,1553,"Governors Island",7103,0,71,76
-"GI",2,1554,"Governors Island",7105,0,71,76
-"GI",2,1555,"Governors Island",7107,0,71,76
-"GI",2,1556,"Governors Island",7109,0,71,76
-"GI",2,1557,"Governors Island",7111,0,71,76
-"GI",2,1558,"Governors Island",7113,0,71,76
-"GI",2,1559,"Governors Island",7115,0,71,76
-"GI",2,1560,"Governors Island",7117,0,71,76
-"GI",2,1561,"Governors Island",7119,0,71,76
-"GI",2,1562,"Governors Island",7121,0,71,76
-"GI",2,1563,"Governors Island",7123,0,71,76
-"GI",2,1564,"Governors Island",7125,0,71,76
-"GI",2,1565,"Governors Island",7127,0,71,76
-"GI",2,1566,"Wall St./Pier 11",7102,1,71,75
-"GI",2,1567,"Wall St./Pier 11",7104,1,71,75
-"GI",2,1568,"Wall St./Pier 11",7106,1,71,75
-"GI",2,1569,"Wall St./Pier 11",7108,1,71,75
-"GI",2,1570,"Wall St./Pier 11",7110,1,71,75
-"GI",2,1571,"Wall St./Pier 11",7112,1,71,75
-"GI",2,1572,"Wall St./Pier 11",7114,1,71,75
-"GI",2,1573,"Wall St./Pier 11",7116,1,71,75
-"AS",2,1576,"East 90th St",4201,1,42,107
-"AS",2,1577,"East 90th St",4102,1,41,107
-"AS",2,1593,"Wall St./Pier 11",4101,0,41,108
-"AS",2,1594,"Wall St./Pier 11",4202,0,42,108
-"AS",2,1595,"Wall St./Pier 11",4103,0,41,108
-"GI",2,1644,"Wall St./Pier 11",7118,1,71,75
-"GI",2,1700,"Wall St./Pier 11",7120,1,71,75
-"GI",2,1721,"Wall St./Pier 11",7122,1,71,75
-"GI",2,1795,"Wall St./Pier 11",7124,1,71,75
-"GI",2,1796,"Wall St./Pier 11",7126,1,71,75
-"GI",2,1797,"Wall St./Pier 11",7128,1,71,75
-"GI",2,1798,"Wall St./Pier 11",7130,1,71,75
-"GI",2,1799,"Wall St./Pier 11",7132,1,71,75
-"RS",2,1800,"Wall St./Pier 11",2906,1,29,147
-"RS",2,1801,"Wall St./Pier 11",2706,1,27,147
-"RS",2,1802,"Wall St./Pier 11",2908,1,29,147
-"RS",2,1803,"Wall St./Pier 11",2708,1,27,147
-"RS",2,1804,"Rockaway",2907,0,29,146
-"RS",2,1805,"Rockaway",2707,0,27,146
-"RR",2,1806,"Rockaway",9101,0,91,131
-"RR",2,1807,"Rockaway",9103,0,91,131
-"RR",2,1808,"Rockaway",9105,0,91,131
-"RR",2,1809,"Long Island City",9102,1,91,130
-"RR",2,1810,"Long Island City",9104,1,91,130
-"RR",2,1811,"Long Island City",9106,1,91,130
+"ER",1,1478,"East 34th Street (E R A)",1501,1,15,133
+"ER",1,1479,"East 34th Street (E R B)",1601,1,16,134
+"ER",1,1480,"East 34th Street (E R A)",1103,1,11,133
+"ER",1,1481,"East 34th Street (E R B)",1202,1,12,134
+"ER",1,1482,"East 34th Street (E R A)",1303,1,13,133
+"ER",1,1483,"East 34th Street (E R B)",1402,1,14,134
+"ER",1,1484,"East 34th Street (E R A)",1503,1,15,133
+"ER",1,1485,"East 34th Street (E R B)",1603,1,16,134
+"ER",1,1486,"East 34th Street (E R A)",1105,1,11,133
+"ER",1,1487,"East 34th Street (E R B)",1204,1,12,134
+"ER",1,1488,"East 34th Street (E R A)",1305,1,13,133
+"ER",1,1489,"East 34th Street (E R B)",1404,1,14,134
+"ER",1,1490,"East 34th Street (E R A)",1505,1,15,133
+"ER",1,1491,"East 34th Street (E R B)",1605,1,16,134
+"ER",1,1492,"East 34th Street (E R A)",1107,1,11,133
+"ER",1,1493,"East 34th Street (E R B)",1206,1,12,134
+"ER",1,1494,"East 34th Street (E R A)",1307,1,13,133
+"ER",1,1495,"East 34th Street (E R B)",1406,1,14,134
+"ER",1,1646,"Wall St./Pier 11 (E R A)",1102,0,11,69
+"ER",1,1647,"Wall St/Pier 11 (E R B)",1201,0,12,135
+"ER",1,1648,"Wall St./Pier 11 (E R A)",1302,0,13,69
+"ER",1,1649,"Wall St/Pier 11 (E R B)",1401,0,14,135
+"ER",1,1650,"Wall St./Pier 11 (E R A)",1502,0,15,69
+"ER",1,1651,"Wall St/Pier 11 (E R B)",1602,0,16,135
+"ER",1,1652,"Wall St./Pier 11 (E R A)",1104,0,11,69
+"ER",1,1653,"Wall St/Pier 11 (E R B)",1203,0,12,135
+"ER",1,1654,"Wall St./Pier 11 (E R A)",1304,0,13,69
+"ER",1,1655,"Wall St/Pier 11 (E R B)",1403,0,14,135
+"ER",1,1656,"Wall St./Pier 11 (E R A)",1504,0,15,69
+"ER",1,1657,"Wall St/Pier 11 (E R B)",1604,0,16,135
+"ER",1,1658,"Wall St./Pier 11 (E R A)",1106,0,11,69
+"ER",1,1659,"Wall St/Pier 11 (E R B)",1205,0,12,135
+"ER",1,1660,"Wall St./Pier 11 (E R A)",1306,0,13,69
+"ER",1,1661,"Wall St/Pier 11 (E R B)",1405,0,14,135
+"ER",1,1662,"Wall St./Pier 11 (E R A)",1506,0,15,69
+"ER",1,1663,"Wall St/Pier 11 (E R B)",1606,0,16,135
+"ER",1,1664,"Wall St./Pier 11 (E R A)",1108,0,11,69
+"ER",1,1665,"Wall St/Pier 11 (E R B)",1207,0,12,135
+"SG",2,1863,"Wall St./Pier 11",8201,0,82,138
+"SG",2,1864,"Wall St./Pier 11",8301,0,83,138
+"SG",2,1868,"Wall St./Pier 11",8303,0,83,138
+"SG",2,1882,"Midtown West/W 39th St-Pier 79",8101,1,81,139
+"SG",2,1883,"Midtown West/W 39th St-Pier 79",8202,1,82,139
+"SG",2,1884,"Midtown West/W 39th St-Pier 79",8302,1,83,139
+"SG",2,1888,"Midtown West/W 39th St-Pier 79",8304,1,83,139
+"AS",1,1900,"East 90th St",4305,1,43,107
+"AS",1,1901,"East 90th St",4206,1,42,107
+"AS",1,1902,"East 90th St",4307,1,43,107
+"AS",1,1903,"East 90th St",4208,1,42,107
+"AS",1,1904,"East 90th St",4309,1,43,107
+"AS",1,1905,"East 90th St",4210,1,42,107
+"AS",1,1906,"East 90th St",4311,1,43,107
+"AS",1,1907,"East 90th St",4106,1,41,107
+"AS",1,1908,"East 90th St",4212,1,42,107
+"AS",1,1909,"East 90th St",4313,1,43,107
+"AS",1,1910,"East 90th St",4108,1,41,107
+"AS",1,1911,"East 90th St",4214,1,42,107
+"AS",1,1912,"East 90th St",4315,1,43,107
+"AS",1,1913,"Wall St./Pier 11",4306,0,43,108
+"AS",1,1914,"Wall St./Pier 11",4207,0,42,108
+"AS",1,1915,"Wall St./Pier 11",4308,0,43,108
+"AS",1,1916,"Wall St./Pier 11",4209,0,42,108
+"AS",1,1917,"Wall St./Pier 11",4310,0,43,108
+"AS",1,1918,"Wall St./Pier 11",4211,0,42,108
+"AS",1,1919,"Wall St./Pier 11",4312,0,43,108
+"AS",1,1920,"Wall St./Pier 11",4107,0,41,108
+"AS",1,1921,"Wall St./Pier 11",4213,0,42,108
+"AS",1,1922,"Wall St./Pier 11",4314,0,43,108
+"AS",1,1923,"Wall St./Pier 11",4109,0,41,108
+"AS",1,1924,"Wall St./Pier 11",4215,0,42,108
+"RES",1,2045,"Rockaway",10107,0,101,44
+"RES",1,2049,"Rockaway",10211,0,102,44
+"RES",1,2050,"Rockaway East",10108,1,101,132
+"RES",1,2054,"Rockaway East",10212,1,102,132
+"RWS",1,2055,"Rockaway",20113,0,201,27
+"RWS",1,2059,"Rockaway",20125,0,201,27
+"RWS",1,2060,"Rockaway West",20114,1,201,35
+"RWS",1,2064,"Rockaway West",20126,1,201,35
+"ER",1,2180,"East 34th Street",1607,1,16,9
+"ER",1,2181,"East 34th Street",1208,1,12,9
+"ER",1,2182,"East 34th Street",1309,1,13,9
+"ER",1,2183,"East 34th Street",1609,1,16,9
+"ER",1,2184,"East 34th Street",1210,1,12,9
+"ER",1,2185,"East 34th Street",1311,1,13,9
+"ER",1,2186,"East 34th Street",1611,1,16,9
+"ER",1,2187,"East 34th Street",1212,1,12,9
+"ER",1,2188,"East 34th Street",1313,1,13,9
+"ER",1,2189,"East 34th Street (E R B)",1109,1,11,134
+"ER",1,2190,"East 34th Street (E R A)",1613,1,16,133
+"ER",1,2191,"East 34th Street (E R B)",1407,1,14,134
+"ER",1,2192,"East 34th Street (E R A)",1507,1,15,133
+"ER",1,2193,"East 34th Street (E R B)",1214,1,12,134
+"ER",1,2194,"East 34th Street (E R A)",1315,1,13,133
+"ER",1,2195,"East 34th Street (E R B)",1111,1,11,134
+"ER",1,2196,"East 34th Street (E R A)",1615,1,16,133
+"ER",1,2197,"East 34th Street (E R B)",1409,1,14,134
+"ER",1,2198,"East 34th Street (E R A)",1509,1,15,133
+"ER",1,2199,"East 34th Street (E R B)",1216,1,12,134
+"ER",1,2200,"East 34th Street (E R A)",1317,1,13,133
+"ER",1,2201,"East 34th Street (E R B)",1113,1,11,134
+"ER",1,2202,"East 34th Street (E R A)",1617,1,16,133
+"ER",1,2203,"East 34th Street (E R B)",1411,1,14,134
+"ER",1,2204,"East 34th Street (E R A)",1511,1,15,133
+"ER",1,2205,"East 34th Street (E R B)",1218,1,12,134
+"ER",1,2206,"East 34th Street (E R A)",1319,1,13,133
+"ER",1,2207,"East 34th Street (E R B)",1115,1,11,134
+"ER",1,2208,"East 34th Street",1619,1,16,9
+"ER",1,2209,"East 34th Street",1220,1,12,9
+"ER",1,2210,"East 34th Street",1321,1,13,9
+"ER",1,2211,"Wall St./Pier 11",1308,0,13,12
+"ER",1,2212,"Wall St./Pier 11",1608,0,16,12
+"ER",1,2213,"Wall St./Pier 11",1209,0,12,12
+"ER",1,2214,"Wall St./Pier 11",1310,0,13,12
+"ER",1,2215,"Wall St./Pier 11",1610,0,16,12
+"ER",1,2216,"Wall St./Pier 11",1211,0,12,12
+"ER",1,2217,"Wall St./Pier 11",1312,0,13,12
+"ER",1,2219,"Wall St./Pier 11",1612,0,16,12
+"ER",1,2220,"Wall St./Pier 11",1213,0,12,12
+"ER",1,2221,"Wall St./Pier 11 (E R A)",1314,0,13,69
+"ER",1,2222,"Wall St/Pier 11 (E R B)",1110,0,11,135
+"ER",1,2225,"Wall St./Pier 11 (E R A)",1614,0,16,69
+"ER",1,2226,"Wall St/Pier 11 (E R B)",1408,0,14,135
+"ER",1,2227,"Wall St./Pier 11 (E R A)",1508,0,15,69
+"ER",1,2228,"Wall St/Pier 11 (E R B)",1215,0,12,135
+"ER",1,2231,"Wall St./Pier 11 (E R A)",1316,0,13,69
+"ER",1,2232,"Wall St/Pier 11 (E R B)",1112,0,11,135
+"ER",1,2233,"Wall St./Pier 11 (E R A)",1616,0,16,69
+"ER",1,2234,"Wall St/Pier 11 (E R B)",1410,0,14,135
+"ER",1,2237,"Wall St./Pier 11 (E R A)",1510,0,15,69
+"ER",1,2238,"Wall St/Pier 11 (E R B)",1217,0,12,135
+"ER",1,2239,"Wall St./Pier 11 (E R A)",1318,0,13,69
+"ER",1,2240,"Wall St/Pier 11 (E R B)",1114,0,11,135
+"ER",1,2242,"Wall St./Pier 11 (E R A)",1618,0,16,69
+"ER",1,2243,"Wall St/Pier 11 (E R B)",1412,0,14,135
+"ER",1,2244,"Wall St./Pier 11 (E R A)",1512,0,15,69
+"ER",1,2245,"Wall St/Pier 11 (E R B)",1219,0,12,135
+"ER",1,2246,"Wall St./Pier 11",1320,0,13,12
+"ER",1,2247,"Wall St./Pier 11",1620,0,16,12
+"ER",2,2248,"East 34th Street",1201,1,12,9
+"ER",2,2249,"East 34th Street",1102,1,11,9
+"ER",2,2250,"East 34th Street",1203,1,12,9
+"ER",2,2251,"East 34th Street",1104,1,11,9
+"ER",2,2252,"East 34th Street",1205,1,12,9
+"ER",2,2253,"East 34th Street",1106,1,11,9
+"ER",2,2254,"East 34th Street",1207,1,12,9
+"ER",2,2255,"East 34th Street",1108,1,11,9
+"ER",2,2256,"East 34th Street",1209,1,12,9
+"ER",2,2257,"East 34th Street",1110,1,11,9
+"ER",2,2258,"East 34th Street",1211,1,12,9
+"ER",2,2259,"East 34th Street",1112,1,11,9
+"ER",2,2260,"Wall St./Pier 11",1101,0,11,12
+"ER",2,2261,"Wall St./Pier 11",1202,0,12,12
+"ER",2,2262,"Wall St./Pier 11",1103,0,11,12
+"ER",2,2263,"Wall St./Pier 11",1204,0,12,12
+"ER",2,2264,"Wall St./Pier 11",1105,0,11,12
+"ER",2,2265,"Wall St./Pier 11",1206,0,12,12
+"ER",2,2266,"Wall St./Pier 11",1107,0,11,12
+"ER",2,2267,"Wall St./Pier 11",1208,0,12,12
+"ER",2,2268,"Wall St./Pier 11",1109,0,11,12
+"ER",2,2269,"Wall St./Pier 11",1210,0,12,12
+"ER",2,2270,"Wall St./Pier 11",1111,0,11,12
+"ER",2,2271,"Wall St./Pier 11",1212,0,12,12
+"RS",1,2272,"Ferry Point Park",2403,1,24,145
+"RS",1,2273,"Ferry Point Park",2603,1,26,145
+"RS",1,2274,"Ferry Point Park",2104,1,21,145
+"RS",1,2275,"Ferry Point Park",2304,1,23,145
+"RS",1,2276,"Ferry Point Park",2405,1,24,145
+"RS",1,2277,"Ferry Point Park",2605,1,26,145
+"RS",1,2278,"Ferry Point Park",2204,1,22,145
+"RS",1,2279,"Ferry Point Park",2106,1,21,145
+"RS",1,2280,"Ferry Point Park",2306,1,23,145
+"RS",1,2281,"Ferry Point Park",2504,1,25,145
+"RS",1,2282,"Ferry Point Park",2407,1,24,145
+"RS",1,2283,"Wall St./Pier 11",2607,1,26,147
+"RS",1,2284,"Wall St./Pier 11",2206,1,22,147
+"RS",1,2285,"Rockaway",2404,0,24,144
+"RS",1,2286,"Rockaway",2604,0,26,144
+"RS",1,2287,"Rockaway",2105,0,21,144
+"RS",1,2288,"Rockaway",2305,0,23,144
+"RS",1,2289,"Rockaway",2503,0,25,144
+"RS",1,2290,"Rockaway",2406,0,24,144
+"RS",1,2291,"Rockaway",2606,0,26,144
+"RS",1,2292,"Rockaway",2205,0,22,144
+"RS",1,2293,"Rockaway",2107,0,21,144
+"RS",1,2294,"Wall St./Pier 11",2307,0,23,149
+"RS",1,2295,"Wall St./Pier 11",2505,0,25,149
+"RS",2,2296,"Ferry Point Park",2301,1,23,145
+"RS",2,2297,"Ferry Point Park",2401,1,24,145
+"RS",2,2298,"Ferry Point Park",2102,1,21,145
+"RS",2,2299,"Ferry Point Park",2202,1,22,145
+"RS",2,2300,"Ferry Point Park",2303,1,23,145
+"RS",2,2301,"Ferry Point Park",2403,1,24,145
+"RS",2,2302,"Ferry Point Park",2104,1,21,145
+"RS",2,2303,"Ferry Point Park",2204,1,22,145
+"RS",2,2304,"Ferry Point Park",2305,1,23,145
+"RS",2,2305,"Ferry Point Park",2405,1,24,145
+"RS",2,2306,"Wall St./Pier 11",2106,1,21,147
+"RS",2,2307,"Rockaway",2101,0,21,144
+"RS",2,2308,"Rockaway",2201,0,22,144
+"RS",2,2309,"Rockaway",2302,0,23,144
+"RS",2,2310,"Rockaway",2402,0,24,144
+"RS",2,2311,"Rockaway",2103,0,21,144
+"RS",2,2312,"Rockaway",2203,0,22,144
+"RS",2,2313,"Rockaway",2304,0,23,144
+"RS",2,2314,"Rockaway",2404,0,24,144
+"RS",2,2315,"Rockaway",2105,0,21,144
+"RS",2,2316,"Rockaway",2205,0,22,144
+"RS",2,2317,"Wall St./Pier 11",2306,0,23,149
+"SG",1,2318,"Wall St./Pier 11",8208,0,82,138
+"SG",1,2319,"Wall St./Pier 11",8409,0,84,138
+"SG",1,2320,"Wall St./Pier 11",8110,0,81,138
+"SG",1,2321,"Wall St./Pier 11",8306,0,83,138
+"SG",1,2322,"Wall St./Pier 11",8210,0,82,138
+"SG",1,2323,"Wall St./Pier 11",8411,0,84,138
+"SG",1,2324,"Wall St./Pier 11",8112,0,81,138
+"SG",1,2325,"Wall St./Pier 11",8308,0,83,138
+"SG",1,2326,"Midtown West/W 39th St-Pier 79",8305,1,83,139
+"SG",1,2327,"Midtown West/W 39th St-Pier 79",8209,1,82,139
+"SG",1,2328,"Midtown West/W 39th St-Pier 79",8410,1,84,139
+"SG",1,2329,"Midtown West/W 39th St-Pier 79",8111,1,81,139
+"SG",1,2330,"Midtown West/W 39th St-Pier 79",8307,1,83,139
+"SG",1,2331,"Midtown West/W 39th St-Pier 79",8211,1,82,139
+"SG",1,2332,"Midtown West/W 39th St-Pier 79",8412,1,84,139
+"SG",2,2333,"Wall St./Pier 11",8102,0,81,138
+"SG",2,2334,"Wall St./Pier 11",8203,0,82,138
+"SG",2,2335,"Wall St./Pier 11",8104,0,81,138
+"SG",2,2336,"Wall St./Pier 11",8205,0,82,138
+"SG",2,2337,"Wall St./Pier 11",8305,0,83,138
+"SG",2,2338,"Wall St./Pier 11",8106,0,81,138
+"SG",2,2339,"Wall St./Pier 11",8207,0,82,138
+"SG",2,2340,"Wall St./Pier 11",8307,0,83,138
+"SG",2,2341,"Wall St./Pier 11",8108,0,81,138
+"SG",2,2342,"Wall St./Pier 11",8209,0,82,138
+"SG",2,2343,"Wall St./Pier 11",8309,0,83,138
+"SG",2,2344,"Midtown West/W 39th St-Pier 79",8103,1,81,139
+"SG",2,2345,"Midtown West/W 39th St-Pier 79",8204,1,82,139
+"SG",2,2346,"Midtown West/W 39th St-Pier 79",8105,1,81,139
+"SG",2,2347,"Midtown West/W 39th St-Pier 79",8206,1,82,139
+"SG",2,2348,"Midtown West/W 39th St-Pier 79",8306,1,83,139
+"SG",2,2349,"Midtown West/W 39th St-Pier 79",8107,1,81,139
+"SG",2,2350,"Midtown West/W 39th St-Pier 79",8208,1,82,139
+"SG",2,2351,"Midtown West/W 39th St-Pier 79",8308,1,83,139
+"SG",2,2352,"Midtown West/W 39th St-Pier 79",8109,1,81,139
+"SG",2,2353,"Midtown West/W 39th St-Pier 79",8210,1,82,139
+"AS",2,2354,"East 90th St",4201,1,42,107
+"AS",2,2355,"East 90th St",4102,1,41,107
+"AS",2,2385,"East 90th St",4203,1,42,107
+"AS",2,2386,"East 90th St",4104,1,41,107
+"AS",2,2387,"East 90th St",4205,1,42,107
+"AS",2,2388,"East 90th St",4106,1,41,107
+"AS",2,2389,"East 90th St",4207,1,42,107
+"AS",2,2390,"East 90th St",4108,1,41,107
+"AS",2,2391,"East 90th St",4209,1,42,107
+"AS",2,2392,"East 90th St",4110,1,41,107
+"AS",2,2393,"East 90th St",4211,1,42,107
+"AS",2,2394,"East 90th St",4112,1,41,107
+"AS",2,2395,"Wall St./Pier 11",4101,0,41,108
+"AS",2,2396,"Wall St./Pier 11",4202,0,42,108
+"AS",2,2397,"Wall St./Pier 11",4103,0,41,108
+"AS",2,2398,"Wall St./Pier 11",4204,0,42,108
+"AS",2,2399,"Wall St./Pier 11",4105,0,41,108
+"AS",2,2400,"Wall St./Pier 11",4206,0,42,108
+"AS",2,2401,"Wall St./Pier 11",4107,0,41,108
+"AS",2,2402,"Wall St./Pier 11",4208,0,42,108
+"AS",2,2403,"Wall St./Pier 11",4109,0,41,108
+"AS",2,2404,"Wall St./Pier 11",4210,0,42,108
+"AS",2,2405,"Wall St./Pier 11",4111,0,41,108
+"AS",2,2406,"Wall St./Pier 11",4212,0,42,108
+"SB",1,2407,"Governors Island",3201,0,32,154
+"SB",1,2408,"Governors Island",3102,0,31,154
+"SB",1,2409,"Governors Island",3203,0,32,154
+"SB",1,2410,"Governors Island",3104,0,31,154
+"SB",1,2411,"Governors Island",3205,0,32,154
+"SB",1,2412,"Governors Island",3106,0,31,154
+"SB",1,2413,"Governors Island",3207,0,32,154
+"SB",1,2414,"Governors Island",3108,0,31,154
+"SB",1,2559,"Governors Island",3209,0,32,154
+"SB",1,2650,"Governors Island",3110,0,31,154
+"SB",1,2652,"Governors Island",3211,0,32,154
+"SB",1,2656,"Governors Island",3112,0,31,154
+"SB",1,2658,"Governors Island",3213,0,32,154
+"SB",1,2685,"Red Hook/Atlantic Basin",3114,0,31,142
+"SB",1,2687,"Red Hook/Atlantic Basin",3215,0,32,142
+"SB",1,2908,"Red Hook/Atlantic Basin",3116,0,31,142
+"SB",1,2909,"Red Hook/Atlantic Basin",3217,0,32,142
+"SB",1,2927,"Red Hook/Atlantic Basin",3118,0,31,142
+"SB",1,2928,"Red Hook/Atlantic Basin",3219,0,32,142
+"SB",1,2929,"East 34th Street",3101,1,31,143
+"SB",1,2930,"East 34th Street",3202,1,32,155
+"SB",1,2931,"East 34th Street",3103,1,31,155
+"SB",1,2932,"East 34th Street",3204,1,32,155
+"SB",1,2933,"East 34th Street",3105,1,31,155
+"SB",1,2934,"East 34th Street",3206,1,32,155
+"SB",1,2935,"East 34th Street",3107,1,31,155
+"SB",1,2936,"East 34th Street",3208,1,32,155
+"SB",1,2937,"East 34th Street",3109,1,31,155
+"SB",1,2938,"East 34th Street",3210,1,32,155
+"SB",1,2939,"East 34th Street",3111,1,31,155
+"SB",1,2940,"East 34th Street",3212,1,32,155
+"SB",1,2941,"East 34th Street",3113,1,31,155
+"SB",1,2942,"East 34th Street",3214,1,32,155
+"SB",1,2943,"East 34th Street",3115,1,31,143
+"SB",1,2944,"East 34th Street",3216,1,32,143
+"SB",1,2945,"East 34th Street",3117,1,31,143
+"SB",1,2946,"East 34th Street",3218,1,32,143
+"SB",1,2947,"East 34th Street",3119,1,31,143
+"SB",2,2948,"Governors Island",3201,0,32,154
+"SB",2,2949,"Governors Island",3102,0,31,154
+"SB",2,2950,"Governors Island",3203,0,32,154
+"SB",2,2951,"Governors Island",3104,0,31,154
+"SB",2,2952,"Governors Island",3205,0,32,154
+"SB",2,2953,"Governors Island",3106,0,31,154
+"SB",2,2954,"Governors Island",3207,0,32,154
+"SB",2,2955,"Governors Island",3108,0,31,154
+"SB",2,2956,"Governors Island",3209,0,32,154
+"SB",2,2957,"Governors Island",3110,0,31,154
+"SB",2,2958,"Red Hook/Atlantic Basin",3211,0,32,142
+"SB",2,2959,"Red Hook/Atlantic Basin",3112,0,31,142
+"SB",2,2960,"Red Hook/Atlantic Basin",3213,0,32,142
+"SB",2,2961,"Red Hook/Atlantic Basin",3114,0,31,142
+"SB",2,2962,"Red Hook/Atlantic Basin",3215,0,32,142
+"SB",2,2963,"East 34th Street",3101,1,31,155
+"SB",2,2964,"East 34th Street",3202,1,32,155
+"SB",2,2965,"East 34th Street",3103,1,31,155
+"SB",2,2966,"East 34th Street",3204,1,32,155
+"SB",2,2967,"East 34th Street",3105,1,31,155
+"SB",2,2968,"East 34th Street",3206,1,32,155
+"SB",2,2969,"East 34th Street",3107,1,31,155
+"SB",2,2970,"East 34th Street",3208,1,32,155
+"SB",2,2971,"East 34th Street",3109,1,31,155
+"SB",2,2972,"East 34th Street",3210,1,32,155
+"SB",2,2973,"East 34th Street",3111,1,31,155
+"SB",2,2974,"East 34th Street",3212,1,32,143
+"SB",2,2975,"East 34th Street",3113,1,31,143
+"SB",2,2976,"East 34th Street",3214,1,32,143
+"SB",2,2977,"East 34th Street",3115,1,31,143
+"RES",1,2978,"Rockaway",10109,0,101,44
+"RES",1,2979,"Rockaway",10207,0,102,44
+"RES",1,2980,"Rockaway",10111,0,101,44
+"RES",1,2981,"Rockaway",10209,0,102,44
+"RES",1,2982,"Rockaway East",10110,1,101,132
+"RES",1,2983,"Rockaway East",10208,1,102,132
+"RES",1,2984,"Rockaway East",10112,1,101,132
+"RES",1,2985,"Rockaway East",10210,1,102,132
+"RWS",1,2986,"Rockaway",20115,0,201,27
+"RWS",1,2987,"Rockaway",20117,0,201,27
+"RWS",1,2988,"Rockaway",20119,0,201,27
+"RWS",1,2989,"Rockaway",20121,0,201,27
+"RWS",1,2990,"Rockaway West",20116,1,201,35
+"RWS",1,2991,"Rockaway West",20118,1,201,35
+"RWS",1,2992,"Rockaway West",20120,1,201,35
+"RWS",1,2993,"Rockaway West",20122,1,201,35
+"SB",3,2994,"Red Hook/Atlantic Basin",3302,0,33,126
+"SB",3,2995,"Red Hook/Atlantic Basin",3304,0,33,126
+"SB",3,2996,"Red Hook/Atlantic Basin",3306,0,33,126
+"SB",3,2997,"Red Hook/Atlantic Basin",3308,0,33,126
+"SB",3,2998,"Red Hook/Atlantic Basin",3310,0,33,126
+"SB",3,2999,"Red Hook/Atlantic Basin",3312,0,33,126
+"SB",3,3000,"Red Hook/Atlantic Basin",3314,0,33,126
+"SB",3,3001,"Red Hook/Atlantic Basin",3316,0,33,126
+"SB",3,3002,"Red Hook/Atlantic Basin",3318,0,33,126
+"SB",3,3003,"Red Hook/Atlantic Basin",3320,0,33,126
+"SB",3,3004,"Red Hook/Atlantic Basin",3322,0,33,126
+"SB",3,3005,"Wall St./Pier 11 Limited",3301,1,33,125
+"SB",3,3006,"Wall St./Pier 11 Limited",3303,1,33,125
+"SB",3,3007,"Wall St./Pier 11 Limited",3305,1,33,125
+"SB",3,3008,"Wall St./Pier 11 Limited",3307,1,33,125
+"SB",3,3009,"Wall St./Pier 11 Limited",3309,1,33,125
+"SB",3,3010,"Wall St./Pier 11 Limited",3311,1,33,125
+"SB",3,3011,"Wall St./Pier 11 Limited",3313,1,33,125
+"SB",3,3012,"Wall St./Pier 11 Limited",3315,1,33,125
+"SB",3,3013,"Wall St./Pier 11 Limited",3317,1,33,125
+"SB",3,3014,"Wall St./Pier 11 Limited",3319,1,33,125
+"SB",3,3015,"Wall St./Pier 11 Limited",3321,1,33,125
+"SB",3,3016,"Wall St./Pier 11 Limited",3323,1,33,125

@@ -26,6 +26,7 @@ stop_id,stop_code,stop_name,stop_lat,stop_lon,wheelchair_boarding
 58,"2319838","Rockaway Beach Boulevard & Beach 149th Street",40.569306,-73.864512,1
 61,"2319839","Beach Channel Dr/Beach 41st Street",40.595872,-73.772849,1
 62,"2319840","Beach Channel Dr/Beach 36th Street",40.596245,-73.769140,1
+65,"2319812","Governors Island",40.691412,-74.012327,2
 87,"2319811","Wall St/Pier 11",40.703161,-74.006144,1
 88,"2319813","Rockaway",40.584228,-73.831596,1
 89,"2319818","Astoria",40.771720,-73.935714,1
@@ -33,7 +34,6 @@ stop_id,stop_code,stop_name,stop_lat,stop_lon,wheelchair_boarding
 103,"2319863","Rockaway Beach Boulevard & Beach 67th Street",40.590691,-73.796310,1
 104,"2319864","Rockaway Beach Boulevard & Beach 96th Street",40.585406,-73.817963,1
 105,"2319865","Rockaway Beach Boulevard & Beach 77th Street",40.588359,-73.804725,1
-111,"2319870","Gov. Island/Yankee Pier",40.686640,-74.016482,1
 112,"2319871","Soundview",40.804202,-73.848703,1
 113,"2319872","East 90th St",40.777475,-73.942172,1
 114,"2319873","Stuyvesant Cove",40.731979,-73.972922,1
@@ -42,7 +42,7 @@ stop_id,stop_code,stop_name,stop_lat,stop_lon,wheelchair_boarding
 120,"2319875","Brooklyn Navy Yard",40.701792,-73.973576,1
 136,"2319890","Battery Park City/Vesey St.",40.715029,-74.017775,1
 137,"2319891","St. George",40.646072,-74.074231,1
-138,"2319892","Midtown West/W 39th St-Pier 79",40.760323,-74.004075,1
+138,"2319892","Midtown West 39th St-Pier 79",40.760323,-74.004075,1
 141,"2319894","Ferry Point Park",40.805455,-73.837305,1
 142,"2319895","Rockaway Beach Boulevard & Beach 102nd Street",40.583830,-73.823620,1
 145,"2319897","Rockaway Beach Boulevard & Beach 118th Street",40.579155,-73.839088,1
