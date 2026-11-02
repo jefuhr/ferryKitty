@@ -9,7 +9,7 @@
   "8": { "name": "East 34th Street", "displayName": "East 34th Street", "hub": true, "stopIds": ["17"], "seastreakStopIds": ["168"], "nyuStopIds": ["13138"] },
   "9": { "name": "East 90th St", "displayName": "East 90th St / Gracie Mansion", "stopIds": ["113"] },
   "10": { "name": "Ferry Point Park", "displayName": "Ferry Point Park / Throggs Neck", "stopIds": ["141"] },
-  "11": { "name": "Yankee Pier", "displayName": "Governors Island / Yankee Pier", "stopIds": ["111"], "giStopIds": ["govisland"] },
+  "11": { "name": "Yankee Pier", "governorsIsland": true, "displayName": "Governors Island / Yankee Pier", "stopIds": ["111"], "giStopIds": ["govisland"] },
   "12": { "name": "Greenpoint", "displayName": "Greenpoint / India St", "stopIds": ["18"] },
   "13": { "name": "Hunters Point South", "displayName": "Hunters Point South / LIC", "stopIds": ["4"] },
   "14": { "name": "Long Island City", "displayName": "Long Island City / Gantry Plaza", "stopIds": ["90"] },
@@ -29,5 +29,6 @@
   "28": { "name": "Whitehall", "displayName": "Battery / Whitehall", "stopIds": [], "latitude": 40.70136, "longitude": -74.012666, "siferryStopIds": ["whitehall"], "seastreakStopIds": ["170"], "giStopIds": ["bmb"], "statueStopIds": ["BP"] },
   "29": { "name": "Soissons Landing", "displayName": "Governors Island / Soissons Landing", "stopIds": [], "latitude": 40.6893, "longitude": -74.0169, "giStopIds": ["soissons"] },
   "30": { "name": "Liberty Island", "displayName": "Liberty Island / Statue of Liberty", "stopIds": [], "latitude": 40.689834, "longitude": -74.047706, "statueStopIds": ["LI"] },
-  "31": { "name": "Ellis Island", "displayName": "Ellis Island", "stopIds": [], "latitude": 40.698939, "longitude": -74.040506, "statueStopIds": ["EI"] }
+  "31": { "name": "Ellis Island", "displayName": "Ellis Island", "stopIds": [], "latitude": 40.698939, "longitude": -74.040506, "statueStopIds": ["EI"] },
+  "32": { "name": "Pier 101", "displayName": "Governors Island / Pier 101", "governorsIsland": true, "stopIds": ["65"] }
 }

@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - suite: Live times and connections
-            scripts: scripts/check-post-sukkot-browser.cjs
+            scripts: scripts/check-post-sukkot-browser.cjs scripts/check-pier-101-browser.cjs
             artifact: live-connections
           - suite: Riding mode
             scripts: scripts/check-riding-mode.cjs
