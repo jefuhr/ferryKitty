@@ -1,0 +1,25 @@
+Automated verification on November 2, 2026
+
+Before import: node --test test/gtfs-refresh.test.js
+2 tests failed: missing Belford Monday service and missing Belford Manhattan departures.
+
+After import: node --test test/gtfs-refresh.test.js
+4 tests passed: announced weekday changes, all three Manhattan boards, all configured
+landings including partner-only Yankee Pier, and feed reference integrity.
+
+npm test
+195 tests, 195 passed, 0 failed, 0 skipped.
+Historical schedule/crew behavior runs against the archived summer fixture.
+Current feed and landing integration checks run against the refreshed files.
+
+npm run build
+Built landing 26: Midtown West / Pier 79 (319 scheduled departures).
+
+git -c core.whitespace=cr-at-eol diff --check
+Passed. GTFS CSV files retain CRLF line endings.
+
+Known limits
+No manual browser or production verification. No deployment performed.
+The unrelated bundled Statue of Liberty feed is expired (2026-09-07).
+Summer crew workbook reconciliation remains pending user direction; its current
+labels must not be considered verified for the November feed.

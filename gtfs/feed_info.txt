@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-"Connexionz Ltd","https://www.connexionz.com",en,20260706,20271231,20260707
+"Connexionz Ltd","https://www.connexionz.com",en,20261102,20271231,20261102
