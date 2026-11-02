@@ -34,7 +34,7 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
       realtime = {available:true,stale:false,fetchedAt:now.toISOString(),
         updates:[{tripId:liveId,stopId:row.stopId,delaySeconds:120}],
         vehicles:[{tripId:liveId,boatName:'Verified vessel',boat:row.boatAssignment ? `${row.routeId}${row.boatAssignment}` : null}]};
-      const name = `post-sukkot-${date}-${tripId}-${width}`;
+      const name = `post-sukkot-${date}-${tripId.replaceAll(":", "-")}-${width}`;
       const context = await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
       await context.tracing.start({screenshots:true,snapshots:true});
       const page = await context.newPage(), errors=[];
