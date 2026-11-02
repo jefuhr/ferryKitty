@@ -104,13 +104,13 @@ print(json.dumps([m['stale_mappings']('20261007','2026-10-10'),m['stale_mappings
   assert.match(result[1][0],/fall-2026-post-sukkot-live/);
 });
 
-test('feed freshness fails once no reviewed map covers today instead of going quietly green', () => {
+test('feed freshness covers the reviewed November feed and rejects a stale version', () => {
   const result = JSON.parse(execFileSync('python3',['-c',`
 import json,runpy
 m=runpy.run_path('scripts/check-nyc-feed-freshness.py')
 print(json.dumps([m['covering_mappings']('2026-10-26'),m['covering_mappings']('2026-11-02'),m['stale_mappings']('20261025','2026-11-02')]))
 `],{cwd:new URL('../',import.meta.url),encoding:'utf8'}));
   assert.deepEqual(result[0],['schedules/fall-2026-post-sukkot-live.json']);
-  assert.deepEqual(result[1],[],'nothing reviewed covers November 2');
-  assert.deepEqual(result[2],[],'stale_mappings alone would report no problem');
+  assert.deepEqual(result[1],['schedules/november-2026-live.json']);
+  assert.deepEqual(result[2],['schedules/november-2026-live.json: reviewed 20261102']);
 });

@@ -22,7 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 URL = 'https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip'
 MAPS = ('schedules/sukkot-2026-live.json',
         'schedules/sukkot-2026-crew.json',
-        'schedules/fall-2026-post-sukkot-live.json')
+        'schedules/fall-2026-post-sukkot-live.json',
+        'schedules/november-2026-live.json')
 
 
 def coverage(reviewed):
@@ -35,9 +36,9 @@ def stale_mappings(version, date, root=ROOT):
     stale = []
     for name in MAPS:
         reviewed = json.loads((root / name).read_text())
-        end = coverage(reviewed)[1]
+        start, end = coverage(reviewed)
         # A finished holiday remains tied to its historical archive, not today's new feed.
-        if end and end < date:
+        if (end and end < date) or (start and start > date):
             continue
         if reviewed['feedVersion'] != version:
             stale.append(f"{name}: reviewed {reviewed['feedVersion']}")
@@ -105,7 +106,8 @@ def main(argv=None):
         failed = True
     if failed:
         return 1
-    print(f'NYC Ferry GTFS {version} matches all current trip and crew maps.')
+    print(f'NYC Ferry GTFS {version} matches the current reviewed schedule sources.')
+    print('November boat assignments and crew shifts remain unconfirmed.')
     return 0
 
 

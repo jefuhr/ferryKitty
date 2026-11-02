@@ -15,3 +15,14 @@ belford,wbf-weekend,wbf-we-am-02,Midtown / W 39th Street,0
 belford,wbf-weekend,wbf-we-am-03,Midtown / W 39th Street,0
 belford,wbf-weekend,wbf-we-pm-01,"Belford, NJ",1
 belford,wbf-weekend,wbf-we-pm-02,"Belford, NJ",1
+belford,wbf-nov-mon-thu,wbf-nov-am-01,Paulus Hook,0
+belford,wbf-nov-weekday,wbf-nov-am-02,Paulus Hook,0
+belford,wbf-nov-weekday,wbf-nov-am-03,Paulus Hook,0
+belford,wbf-nov-weekday,wbf-nov-am-04,Midtown / W 39th Street,0
+belford,wbf-nov-weekday,wbf-nov-am-05,Midtown / W 39th Street,0
+belford,wbf-nov-weekday,wbf-nov-am-06,Midtown / W 39th Street,0
+belford,wbf-nov-weekday,wbf-nov-pm-01,"Belford, NJ",1
+belford,wbf-nov-weekday,wbf-nov-pm-02,"Belford, NJ",1
+belford,wbf-nov-weekday,wbf-nov-pm-03,"Belford, NJ",1
+belford,wbf-nov-weekday,wbf-nov-pm-04,"Belford, NJ",1
+belford,wbf-nov-weekday,wbf-nov-pm-05,"Belford, NJ",1

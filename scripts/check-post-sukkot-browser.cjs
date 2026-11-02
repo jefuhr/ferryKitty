@@ -26,13 +26,14 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
   await fs.mkdir(ARTIFACTS,{recursive:true});
   try {
     for (const width of [390,1440]) for (const [date,tripId,liveId] of [
+      ...(() => { const data = boards.get(16), row = data.departures.find(r => r.tripId.startsWith('nyc:november:') && data.calendars.some(c => c.serviceId === r.serviceId && c.weekdays[1])); return [['2026-11-02',row.tripId,row.liveTripId]]; })(),
       ['2026-10-03','36','1698'], ['2026-10-17','820','2092'], ['2026-10-10','820','2065'], ['2026-10-24','820','2113']
     ]) {
       const row = boards.get(16).departures.find(row=>row.tripId===tripId);
-      now = new Date(`${date}T04:00:00Z`);
+      now = new Date(`${date}T${date >= "2026-11-01" ? "05" : "04"}:00:00Z`);
       realtime = {available:true,stale:false,fetchedAt:now.toISOString(),
         updates:[{tripId:liveId,stopId:row.stopId,delaySeconds:120}],
-        vehicles:[{tripId:liveId,boatName:'Verified vessel',boat:`${row.routeId}${row.boatAssignment}`}]};
+        vehicles:[{tripId:liveId,boatName:'Verified vessel',boat:row.boatAssignment ? `${row.routeId}${row.boatAssignment}` : null}]};
       const name = `post-sukkot-${date}-${tripId}-${width}`;
       const context = await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
       await context.tracing.start({screenshots:true,snapshots:true});

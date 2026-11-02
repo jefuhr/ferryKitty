@@ -1,5 +1,7 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-wbf-weekday,1,1,1,1,1,0,0,20260908,20271231
-wbf-tue-thu,0,1,1,1,0,0,0,20260908,20271231
-wbf-tue-fri,0,1,1,1,1,0,0,20260908,20271231
+wbf-weekday,1,1,1,1,1,0,0,20260908,20261101
+wbf-tue-thu,0,1,1,1,0,0,0,20260908,20261101
+wbf-tue-fri,0,1,1,1,1,0,0,20260908,20261101
+wbf-nov-weekday,1,1,1,1,1,0,0,20261102,20271231
+wbf-nov-mon-thu,1,1,1,1,0,0,0,20261102,20271231
 wbf-weekend,0,0,0,0,0,1,1,20260912,20271231

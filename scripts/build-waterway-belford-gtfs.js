@@ -1,3 +1,4 @@
+// November 2 advisory adds separately dated weekday trips below; September tables remain historical.
 // Builds gtfs/waterway-belford/ from NY Waterway's printed Belford timetable: the weekday sheet
 // effective 8 September 2026 and the weekend sheet effective 12 September 2026.
 //
@@ -66,7 +67,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/waterway-belford");
 
 export const SOURCE_URL = "https://www.nywaterway.com/BelfordRoute.aspx";
-export const SOURCE_CHECKED_ON = "2026-09-02";
+export const SOURCE_CHECKED_ON = "2026-11-02";
+export const NOVEMBER_SOURCE_URL = "https://www.nywaterway.com/UserFiles/Images/2026/Belford/BelfordSch_261102a.jpg";
 
 // Both dates are printed on the sheets themselves. The weekday one starts on a Tuesday because the
 // Monday is Labor Day.
@@ -216,6 +218,15 @@ async function main() {
   const weekendEvening = tripRows(WEEKEND_EVENING, { boardingSide: "ny", directionId: 1, idPrefix: "wbf-we-pm" });
   const trips = [...morning.trips, ...evening.trips, ...weekendMorning.trips, ...weekendEvening.trips];
   const stopTimes = [...morning.stopTimes, ...evening.stopTimes, ...weekendMorning.stopTimes, ...weekendEvening.stopTimes];
+  // November 2 advisory: retain September/October history and add separately scoped weekdays.
+  const novemberMorning = MORNING.map(row => ({ ...row, service: row.service === SERVICE_TUE_THU ? "wbf-nov-mon-thu" : "wbf-nov-weekday",
+    calls: row.calls[0][1] === "06:30" ? [["belford", "06:20"], ["pier11", "07:00"], ["brookfield", "07:10"], ["paulus", "07:15"]] : row.calls }));
+  const novemberEvening = EVENING.map(row => ({ ...row, service: "wbf-nov-weekday" }));
+  for (const [table, options] of [[novemberMorning, { boardingSide: "nj", directionId: 0, idPrefix: "wbf-nov-am" }],
+    [novemberEvening, { boardingSide: "ny", directionId: 1, idPrefix: "wbf-nov-pm" }]]) {
+    const added = tripRows(table, options);
+    trips.push(...added.trips); stopTimes.push(...added.stopTimes);
+  }
   assertFeedIsSane(trips, stopTimes);
 
   const files = {
@@ -232,9 +243,11 @@ async function main() {
         stop_lat: stop.lat, stop_lon: stop.lon, location_type: 0, wheelchair_boarding: 1
       }))),
     "calendar.txt": toCsv(["service_id", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "start_date", "end_date"],
-      [{ service_id: SERVICE_WEEKDAY, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
-       { service_id: SERVICE_TUE_THU, monday: 0, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
-       { service_id: SERVICE_TUE_FRI, monday: 0, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: SERVICE_END },
+      [{ service_id: SERVICE_WEEKDAY, monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: "20261101" },
+       { service_id: SERVICE_TUE_THU, monday: 0, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: "20261101" },
+       { service_id: SERVICE_TUE_FRI, monday: 0, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: SERVICE_START, end_date: "20261101" },
+       { service_id: "wbf-nov-weekday", monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 0, sunday: 0, start_date: "20261102", end_date: SERVICE_END },
+       { service_id: "wbf-nov-mon-thu", monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 0, saturday: 0, sunday: 0, start_date: "20261102", end_date: SERVICE_END },
        // The weekend sheet carries its own effective date, the Saturday after the weekday one.
        { service_id: SERVICE_WEEKEND, monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 1, sunday: 1, start_date: WEEKEND_SERVICE_START, end_date: SERVICE_END }]),
     // No exception dates: the sheets print no holiday variations. The file is still written because

@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-NY Waterway,https://www.nywaterway.com,en,20260908,20271231,transcribed-2026-09-02
+NY Waterway,https://www.nywaterway.com,en,20260908,20271231,transcribed-2026-11-02
