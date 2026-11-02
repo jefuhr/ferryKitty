@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { buildDisplayData } from '../lib/schedule-builder.js';
+import { landingChoices, stopIdsForLanding } from '../lib/landing-data.js';
+import { activeServices, createConnectionIndex, tripConnections } from '../lib/connections.js';
+import { loadHarborMap } from '../lib/fleet-map.js';
+const root = new URL('../', import.meta.url).pathname;
+const config = JSON.parse(await readFile(new URL('../config/landings.json', import.meta.url), 'utf8'));
+const now = new Date('2026-11-02T12:00:00-05:00');
+test('Pier 101 is a new landing with the published stop and coordinates', async () => {
+ assert.equal(config['32']?.displayName, 'Governors Island / Pier 101');
+ assert.deepEqual(config['32'].stopIds, ['65']);
+ assert.deepEqual(config['11'].stopIds, ['111']);
+ assert.deepEqual(config['29'].stopIds, []);
+ assert.ok(landingChoices(config).some(l => l.id === 32));
+ const data = await buildDisplayData({ landingNumber: 32 });
+ assert.equal(data.meta.landing.latitude, 40.691412);
+ assert.equal(data.meta.landing.longitude, -74.012327);
+ assert.ok(stopIdsForLanding(data).has('65'));
+ const active = activeServices(createConnectionIndex(new Map([[32, data]])), '2026-11-02');
+ const rows = data.departures.filter(r => active.has(r.serviceId));
+ assert.ok(rows.length > 0);
+ assert.ok(rows.every(r => r.operator === 'NYC Ferry' && r.routeId === 'SB' && r.stopId === '65'));
+ assert.equal(data.meta.gi.enabled, false, 'do not move the Trust timetable without its own source');
+});
+test('South Brooklyn trip details link Pier 101 and retain the Governors Island badge', async () => {
+ const data = await buildDisplayData({ landingNumber: 16 });
+ const row = data.departures.find(r => r.tripId.startsWith('nyc:november:') && data.tripSchedules[r.tripId].stops.some(s => s.stopId === '65'));
+ assert.ok(row?.servesGovernorsIsland);
+ const trip = tripConnections({index:createConnectionIndex(new Map([[16,data]])),tripId:row.tripId,now});
+ const stop = trip.stops.find(s => s.stopId === '65');
+ assert.equal(stop.landingId, 32);
+ assert.match(stop.name, /Pier 101/);
+});
+test('harbor map includes the separate Pier 101 marker and current trip stop position', async () => {
+ const data = await buildDisplayData({ landingNumber: 32 });
+ const harbor = await loadHarborMap({root,landings:[{id:32,...data.meta.landing}],byLanding:new Map([[32,data]])});
+ const pin = harbor.map.landings.find(l => l.id === 32);
+ assert.ok(pin);
+ assert.equal(pin.latitude, 40.69141);
+ const calls = [...harbor.serviceTrips.trips.values()].flat().flatMap(t => t.stops).filter(s => s.stopId === '65');
+ assert.ok(calls.length > 0);
+ assert.ok(calls.every(s => s.latitude === 40.691412 && s.longitude === -74.012327));
+});

@@ -54,6 +54,11 @@ The responsive staff layout is identical at the root and under the existing `/fe
 - `gtfs/`: bundled operator feeds; `content/` and `config/crew-shuttles.json`: fleet and operational data.
 - `state/`: runtime feed snapshots and aggregate statistics. Keep this directory persistent.
 
+Landing `32` is Governors Island / Pier 101, using NYC Ferry stop `65` and the
+coordinates in the November 2 operator feed. [NYC Ferry relocated service there](https://www.ferry.nyc/blog/governors-island-service/)
+on November 2, 2026. Yankee Pier (`11`) and Soissons Landing (`29`) retain their
+existing identities; the new landing does not inherit the Trust's Yankee Pier timetable.
+
 After updating feeds or configuration, run `npm run build` and restart the server. Maintain transcribed feeds and crew assignments using the procedures in [Schedule and operator maintenance](docs/data-maintenance.md). Geographic refresh procedures and attribution are in [Harbor map](docs/harbor-map.md).
 
 ### Sukkot live trip mapping
