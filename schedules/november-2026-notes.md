@@ -11,12 +11,19 @@ https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip
 The builder combines those tables with the archive-pinned fall schedule. November
 trip and service IDs use `nyc:november:` internally to avoid collisions; `liveTripId`
 retains the actual published ID for realtime and connections. Published stop times,
-service dates, restrictions, and exceptions are preserved. No summer/fall working
-number, crew shift, shuttle, or turnaround is assigned to a November trip.
+service dates, restrictions, and exceptions are preserved. Summer/fall working numbers and crew shifts are never used to label November trips.
+The separately reviewed `Board` source now supplies current weekday workings.
 
-Historical crew boundaries and historical trip mappings remain unchanged. Current
-crew shifts and boat assignments remain unconfirmed until a current workbook is
-reviewed. The freshness check includes the November schedule and still rejects a
+Historical crew boundaries and historical trip mappings remain unchanged. The user-selected `Board` sheet is recorded in `november-2026-board-source.json`,
+with the original workbook SHA-256 and operational comments only (no personnel names).
+`python3 scripts/import-november-crew.py` verifies exact stop/time events and consistent
+GTFS blocks, producing 259 trip assignments across 21 weekday workings. Of 84 noted
+boundaries, 78 match exactly; 6 remain explicitly rejected without nearest-time
+substitution. Unmatched returns and starts remain absent, and weekends/holidays do
+not inherit weekday crews. The user confirmed the two relief rows are crew shuttles: 12:45 for RS1 / RS4
+and 13:45 for RS3 / RS6. These appear as Board-listed crew-shuttle times in the
+current weekday Pier 11 and Pier C notes. Their departure/pickup reference remains
+unspecified, so no endpoint timestamps or travel windows are inferred. The freshness check includes the November schedule and still rejects a
 new unreviewed feed version or dates outside reviewed coverage.
 
 The separate Belford feed keeps the September weekday trips through November 1

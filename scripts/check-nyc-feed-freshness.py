@@ -23,7 +23,8 @@ URL = 'https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip'
 MAPS = ('schedules/sukkot-2026-live.json',
         'schedules/sukkot-2026-crew.json',
         'schedules/fall-2026-post-sukkot-live.json',
-        'schedules/november-2026-live.json')
+        'schedules/november-2026-live.json',
+        'schedules/november-2026-crew.json')
 
 
 def coverage(reviewed):
@@ -107,7 +108,9 @@ def main(argv=None):
     if failed:
         return 1
     print(f'NYC Ferry GTFS {version} matches the current reviewed schedule sources.')
-    print('November boat assignments and crew shifts remain unconfirmed.')
+    crew = json.loads((ROOT / 'schedules/november-2026-crew.json').read_text())
+    print(f"November Board: {crew['counts']['assignedTrips']} weekday trips assigned; "
+          f"{len(crew['rejected'])} boundaries unconfirmed. Relief rows are user-confirmed crew shuttles. Weekend crew unconfirmed.")
     return 0
 
 

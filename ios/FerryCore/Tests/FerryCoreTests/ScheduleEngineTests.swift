@@ -99,6 +99,15 @@ final class ScheduleEngineTests: XCTestCase {
         XCTAssertEqual(row.boatName, "Friday vessel")
     }
 
+    func testReviewedNovemberWeekdaysPreserveHistoricalAndWeekendBoundaries() throws {
+        var data = try fixture().schedule
+        data.meta.crewScheduleStatus = try JSONDecoder().decode(CrewStatus.self, from: Data(#"{"status":"unconfirmed","confirmedWeekdays":{"startDate":"2026-09-14","endDate":"2026-11-01"},"reviewedWeekdays":{"startDate":"2026-11-02","endDate":"2027-12-31","excludedDates":["2026-11-26"],"message":"6 boundaries unconfirmed"}}"#.utf8))
+        XCTAssertNil(ScheduleEngine.crewCoverage(data, date: "2026-10-26")?.message)
+        XCTAssertEqual(ScheduleEngine.crewCoverage(data, date: "2026-11-02")?.message, "6 boundaries unconfirmed")
+        XCTAssertNil(ScheduleEngine.crewCoverage(data, date: "2026-11-07"))
+        XCTAssertNil(ScheduleEngine.crewCoverage(data, date: "2026-11-26"))
+    }
+
     func testConfirmedHolidayOverridesOrdinaryWeekdayExclusion() throws {
         var data = try fixture().schedule
         data.meta.crewScheduleStatus = try JSONDecoder().decode(CrewStatus.self, from: Data(#"{"status":"unconfirmed","confirmedWeekdays":{"startDate":"2026-09-14","endDate":"2026-11-01","excludedDates":["2026-09-28","2026-09-29"]},"confirmedHolidays":{"dates":["2026-09-28"]}}"#.utf8))

@@ -1557,7 +1557,7 @@ test("crew confirmation follows the viewed date, including Pier C", async () => 
         assert.equal(rows.filter(r=>r.routeId==='SB'&&r.boatAssignment===3).length,date==='2026-09-20'?0:1);
       }
     }
-    for (const date of ["2026-09-13", "2026-11-02"]) {
+    for (const date of ["2026-09-13", "2026-11-07"]) {
       view.run(`viewDate = "${date}"; renderBoardNote()`);
       assert.equal(Boolean(view.run("confirmedCrewCoverage()")),false);
       const visible = view.run("routeDirectionGroups(new Date(),1000).flatMap(g=>g.departures)");

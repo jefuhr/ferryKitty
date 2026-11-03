@@ -8,7 +8,7 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
 (async () => {
   const { buildDisplayData } = await import('../lib/schedule-builder.js');
   const { createConnectionIndex, tripConnections } = await import('../lib/connections.js');
-  const boards = new Map(await Promise.all([16,26].map(async id => [id, await buildDisplayData({landingNumber:id})])));
+  const boards = new Map(await Promise.all([16,26,27].map(async id => [id, await buildDisplayData({landingNumber:id})])));
   const index = createConnectionIndex(boards);
   let now, realtime;
   const site = await serve({api:{
@@ -53,6 +53,10 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
         assert.match(text,/Verified vessel/);
         assert.match(text,/\+2 min/);
         assert.doesNotMatch(await page.locator('#boardNote').textContent(),/Sukkot|await dispatch/);
+        if (date === '2026-11-02') {
+          assert.match(await page.locator('#boardNote').textContent(),/6 boundaries/);
+          assert.match(await page.locator('#boardNote').textContent(),/Crew shuttles: 12:45/);
+        }
         await target.click();
         await page.locator('#tripMenu:not([hidden])').waitFor();
         await page.waitForFunction(()=>!document.querySelector('#tripStops').textContent.includes('Checking…'));
@@ -62,6 +66,12 @@ const { serve, ARTIFACTS } = require('./mobile-check-harness.cjs');
         await page.screenshot({path:path.join(ARTIFACTS,`${name}.png`),fullPage:true});
         assert.deepEqual(errors,[]);
         results.push({date,tripId,liveId,width,boat:'Verified vessel',delayMinutes:2,connections:true});
+        if (date === '2026-11-02') {
+          await page.goto(`${site.origin}/?landing=27`);
+          await page.locator('#departures [data-trip-id^="november:crew:"]').first().waitFor();
+          assert.match(await page.locator('#boardNote').textContent(),/6 boundaries/);
+          await page.screenshot({path:path.join(ARTIFACTS,`november-board-pierc-${width}.png`),fullPage:true});
+        }
       } finally {
         await context.tracing.stop({path:path.join(ARTIFACTS,`${name}.zip`)});
         await context.close();

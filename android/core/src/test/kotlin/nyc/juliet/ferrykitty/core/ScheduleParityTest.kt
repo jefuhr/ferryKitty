@@ -63,6 +63,14 @@ class ScheduleParityTest {
 		}
 	}
 
+	@Test fun reviewedNovemberWeekdaysDoNotConfirmWeekendsOrHolidays() {
+		val status = CrewStatus(reviewedWeekdays = CrewCoverage("2026-11-02", "2027-12-31", listOf("2026-11-26"), "6 boundaries unconfirmed"))
+		val data = scheduleFixture().let { it.copy(meta = it.meta.copy(crewScheduleStatus = status)) }
+		assertEquals("6 boundaries unconfirmed", ScheduleEngine.crewCoverage(data, "2026-11-02")?.message)
+		assertNull(ScheduleEngine.crewCoverage(data, "2026-11-07"))
+		assertNull(ScheduleEngine.crewCoverage(data, "2026-11-26"))
+	}
+
 	@Test fun exceptionsEstablishRangeAndAfterMidnightClocksWrapBothWays() {
 		assertEquals("2026-09-07".."2026-09-07", ScheduleEngine.range(scheduleFixture().copy(calendars = emptyList())))
 		assertNull(ScheduleEngine.range(scheduleFixture().copy(calendars = emptyList(), exceptions = emptyList())))
