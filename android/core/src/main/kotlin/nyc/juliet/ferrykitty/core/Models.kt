@@ -42,6 +42,7 @@ data class CrewCoverage(
 data class CrewStatus(
 	val status: String? = null,
 	val message: String? = null,
+	val reviewedWeekdays: CrewCoverage? = null,
 	val confirmedWeekdays: CrewCoverage? = null,
 	val confirmedWeekends: CrewCoverage? = null,
 	val confirmedHolidays: HolidayCrewCoverage? = null,

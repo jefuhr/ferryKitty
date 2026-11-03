@@ -97,10 +97,15 @@ export async function buildExport({ generatedAt = new Date().toISOString() } = {
       sources: [
         "config/landings.json", "config/display.json", "config/crew-shuttles.json",
         "content/boat-assignments.json", "content/boat-shifts.json", "content/vessels.json",
-        "scripts/out-of-service.js", "schedules/fall-2026-weekday-crew.json", "schedules/fall-2026-weekend-crew.json"
+        "scripts/out-of-service.js", "schedules/fall-2026-weekday-crew.json", "schedules/fall-2026-weekend-crew.json", "schedules/november-2026-crew.json"
       ]
     },
 
+    novemberWeekdayCrew: {
+      source: "schedules/november-2026-crew.json",
+      description: "User-selected Board notes matched to November weekday GTFS. Six boundaries remain unresolved; user-confirmed crew-shuttle times are preserved as listed without endpoint claims. Weekends are not inferred.",
+      data: await readJson("schedules/november-2026-crew.json")
+    },
     fallWeekdayCrew: {
       source: "schedules/fall-2026-weekday-crew.json",
       description: "Verified ordinary fall weekday crew operations; overrides historical crew data below. Sukkot remains unconfirmed.",

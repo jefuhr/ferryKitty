@@ -107,12 +107,12 @@ test('unmatched holiday rows cannot acquire live estimates, vessels or through-t
   assert.equal(tripConnections({index,tripId:row.tripId}),null);
 });
 
-test('crew operations remain absent before confirmation and after expiry', async () => {
+test('crew operations remain absent outside reviewed seasons and day types', async () => {
   for (const landingNumber of [8,16,17,18,22,27]) {
     const data = await buildDisplayData({landingNumber});
     assert.equal(data.meta.crewScheduleStatus.message,'Crew shifts / Pier C shuttles: UNCONFIRMED');
     const local = createConnectionIndex(new Map([[landingNumber,data]]));
-    for (const date of ['2026-09-13','2026-11-02']) {
+    for (const date of ['2026-09-13','2026-11-07']) {
       const active = activeServices(local,date);
       const departures = data.departures.filter(r => active.has(r.serviceId));
       assert.equal(departures.some(r => r.crewShuttle || r.tripId.startsWith('oos:') || r.fromHomePort),false,date);

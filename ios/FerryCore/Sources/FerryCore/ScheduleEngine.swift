@@ -132,6 +132,9 @@ public enum ScheduleEngine {
         }
         guard let instant = ServiceClock.date(date) else { return nil }
         let day = ServiceClock.calendar("UTC").component(.weekday, from: instant)
+        if day != 1 && day != 7, let reviewed = data.meta.crewScheduleStatus?.reviewedWeekdays,
+           date >= reviewed.startDate, date <= reviewed.endDate,
+           !(reviewed.excludedDates ?? []).contains(date) { return reviewed }
         let coverage = day == 1 || day == 7 ? data.meta.crewScheduleStatus?.confirmedWeekends : data.meta.crewScheduleStatus?.confirmedWeekdays
         guard let coverage, date >= coverage.startDate, date <= coverage.endDate,
               !(coverage.excludedDates ?? []).contains(date) else { return nil }
