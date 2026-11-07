@@ -87,7 +87,7 @@ final class ServiceDataParityTests: XCTestCase {
             throw XCTSkip("Generate actual-data parity fixtures with node scripts/build-ios-service-contract.mjs")
         }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL))
-        XCTAssertEqual(manifest.schedules.count, 30)
+        XCTAssertEqual(manifest.schedules.count, 31)
         XCTAssertEqual(manifest.holidayDates.count, 5)
         var caseCount = 0, departureCount = 0
         for filename in manifest.schedules {
@@ -111,7 +111,11 @@ final class ServiceDataParityTests: XCTestCase {
                         XCTAssertTrue(rows.contains { $0.departure.crewShuttle == true && $0.departure.crewBoats?.isEmpty == false })
                     } else if scenario.viewDate != nil {
                         XCTAssertTrue(rows.contains { $0.departure.fromHomePort == true && $0.departure.boatAssignment != nil })
-                        XCTAssertTrue(rows.contains { $0.departure.crewShuttle == true && $0.departure.crewBoats?.isEmpty == false })
+                        if scenario.date < "2026-11-02" {
+                            XCTAssertTrue(rows.contains { $0.departure.crewShuttle == true && $0.departure.crewBoats?.isEmpty == false })
+                        } else {
+                            XCTAssertFalse(rows.contains { $0.departure.crewShuttle == true }, "Current relief notes do not establish endpoint departure times")
+                        }
                         XCTAssertTrue(rows.filter { $0.departure.fromHomePort == true }.allSatisfy { $0.departure.approximate == true })
                     }
                 }

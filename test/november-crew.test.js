@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {buildDisplayData} from '../lib/schedule-builder.js';
 import {activeServices, timelineDepartures, confirmedCrewCoverage} from '../public/assets/schedule.js';
+const weekend=JSON.parse(await readFile(new URL('../schedules/winter-2026-weekend-crew.json',import.meta.url),'utf8'));
 const crew=JSON.parse(await readFile(new URL('../schedules/november-2026-crew.json',import.meta.url),'utf8'));
-test('Board weekdays assign current trips without borrowing weekend crews',async()=>{
+test('current weekday and weekend labels use their separately reviewed Board sources',async()=>{
  const data=await buildDisplayData({landingNumber:16});
  for(const date of ['2026-11-02','2026-11-07']){
   const active=activeServices(data,date);
   const rows=data.departures.filter(r=>r.tripId.startsWith('nyc:november:')&&active.has(r.serviceId)&&!r.outOfService);
   assert.ok(rows.length);
-  for(const row of rows) assert.equal(row.boatAssignment,crew.assignments[row.liveTripId]??null);
+  for(const row of rows) assert.equal(row.boatAssignment,(date==='2026-11-02'?crew:weekend).assignments[row.liveTripId]??null);
  }
 });
 test('only source-verified weekday shift returns appear after November 1',async()=>{
@@ -20,10 +21,10 @@ test('only source-verified weekday shift returns appear after November 1',async(
  assert.ok(!rows.some(r=>r.tripId.startsWith('november:crew:')&&r.departureTime==='21:39:00'));
 });
 
-test('reviewed November weekday coverage leaves holidays and weekends unconfirmed',async()=>{
+test('reviewed November crew coverage leaves weekday holidays unconfirmed',async()=>{
  const data=await buildDisplayData({landingNumber:27});
  assert.match(confirmedCrewCoverage(data,'2026-11-02').message,/6 boundaries/);
- for(const day of ['2026-11-07','2026-11-26','2026-11-27','2028-01-03'])assert.equal(confirmedCrewCoverage(data,day),null,day);
+ for(const day of ['2026-11-26','2026-11-27','2028-01-03'])assert.equal(confirmedCrewCoverage(data,day),null,day);
  const active=activeServices(data,'2026-11-02');
  const starts=data.departures.filter(r=>r.tripId.startsWith('november:crew:')&&r.fromHomePort&&active.has(r.serviceId));
  assert.ok(starts.length>20);

@@ -112,5 +112,5 @@ print(json.dumps([m['covering_mappings']('2026-10-26'),m['covering_mappings']('2
 `],{cwd:new URL('../',import.meta.url),encoding:'utf8'}));
   assert.deepEqual(result[0],['schedules/fall-2026-post-sukkot-live.json']);
   assert.deepEqual(result[1],['schedules/november-2026-live.json','schedules/november-2026-crew.json']);
-  assert.deepEqual(result[2],['schedules/november-2026-live.json: reviewed 20261102','schedules/november-2026-crew.json: reviewed 20261102']);
+  assert.deepEqual(result[2],['schedules/november-2026-live.json: reviewed 20261103','schedules/november-2026-crew.json: reviewed 20261103']);
 });

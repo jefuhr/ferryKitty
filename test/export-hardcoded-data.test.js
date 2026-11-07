@@ -103,7 +103,9 @@ test("nothing was lost or emptied on the way through JSON", async () => {
   const walk = (value, trail = "$") => {
     if (Array.isArray(value)) {
       // All crew boundaries can be resolved, leaving no rejected fields.
-      if (trail !== "$.fallWeekdayCrew.data.rejected") {
+      const intentionallyDisabled = ["$.winterWeekendCrew.data.optionalWorkings.er3Mid.dates",
+        "$.winterWeekendCrew.data.optionalWorkings.er3Mid.verifiedDates", "$.winterWeekendCrew.data.optionalWorkings.er3Mid.tripIds"];
+      if (trail !== "$.fallWeekdayCrew.data.rejected" && !intentionallyDisabled.includes(trail)) {
         assert.notEqual(value.length, 0, `${trail} is an empty array`);
       }
       return value.forEach((item, index) => walk(item, `${trail}[${index}]`));

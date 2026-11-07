@@ -118,6 +118,18 @@ final class ScheduleEngineTests: XCTestCase {
         XCTAssertNil(ScheduleEngine.crewCoverage(data, date: "2026-09-29"))
     }
 
+    func testReviewedWinterWeekendsKeepTheirOwnDatesAndWarnings() throws {
+        var data = try fixture().schedule
+        data.meta.crewScheduleStatus = try JSONDecoder().decode(CrewStatus.self, from: Data(#"{"status":"unconfirmed","reviewedWeekdays":{"startDate":"2026-11-02","endDate":"2027-12-31","message":"weekday review"},"reviewedWeekends":{"startDate":"2026-11-07","endDate":"2027-12-31","excludedDates":["2026-11-15"],"message":"weekend review"}}"#.utf8))
+        XCTAssertEqual(ScheduleEngine.crewCoverage(data, date: "2026-11-09")?.message, "weekday review")
+        for date in ["2026-11-07", "2026-11-08", "2026-11-14"] {
+            XCTAssertEqual(ScheduleEngine.crewCoverage(data, date: date)?.message, "weekend review", date)
+        }
+        for date in ["2026-10-31", "2026-11-15", "2028-01-01"] {
+            XCTAssertNil(ScheduleEngine.crewCoverage(data, date: date), date)
+        }
+    }
+
     func testCrewConfirmationHonorsSeasonAndExcludedDates() throws {
         var f = try fixture()
         f.schedule.meta.crewScheduleStatus = try JSONDecoder().decode(CrewStatus.self, from: Data(#"{"status":"unconfirmed","confirmedWeekdays":{"startDate":"2026-09-14","endDate":"2026-11-01","excludedDates":["2026-09-28"]},"confirmedWeekends":{"startDate":"2026-09-19","endDate":"2026-11-01","excludedDates":[]}}"#.utf8))
