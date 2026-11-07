@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 RID = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'
 
-def extract(filename, sheet_name, shuttle_end_row=6, include_summaries=False):
+def extract(filename, sheet_name, shuttle_end_row=6, include_summaries=False, operational_cells=()):
     with zipfile.ZipFile(filename) as archive:
         def xml(name):
             return ET.fromstring(archive.read(name))
@@ -45,6 +45,8 @@ def extract(filename, sheet_name, shuttle_end_row=6, include_summaries=False):
                                       'note': ''.join(t.text or '' for t in comment.findall('.//s:t', NS))})
         result = {'sheet': sheet_name, 'assignments': notes,
                 'shuttleCells': {f'{col}{row}': cells.get(f'{col}{row}') for row in range(3, shuttle_end_row + 1) for col in 'NOPQ'}}
+        if operational_cells:
+            result['operationalCells'] = {cell: cells.get(cell) for cell in operational_cells}
         if include_summaries:
             result['summaryCells'] = {f'{col}{row}': cells.get(f'{col}{row}') for row in range(8, 11) for col in 'NOPQRS' if cells.get(f'{col}{row}')}
         return result

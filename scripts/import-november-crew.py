@@ -16,12 +16,16 @@ def module(filename):
     return result
 
 
-def build(source, feed):
+def build(source, feed, kind="weekday", service_ids=None):
     if source['sheet'] != 'Board':
         raise ValueError('Only the user-selected Board sheet is authorized')
     parser = module('import-boat-shifts.py')
     tables = feed['tables']
-    services = {r['service_id'] for r in tables['calendar'] if r['monday']=='1' and r['saturday']==r['sunday']=='0'}
+    services = ({r['service_id'] for r in tables['calendar'] if r['monday']=='1' and r['saturday']==r['sunday']=='0'}
+                if kind == 'weekday' else {r['service_id'] for r in tables['calendar'] if r['saturday']=='1' or r['sunday']=='1'})
+    if service_ids is not None:
+        # Explicit optional services may be exception-only, with no recurring flags.
+        services = set(service_ids)
     trips = {r['trip_id']:r for r in tables['trips'] if r['service_id'] in services}
     sequences = collections.defaultdict(list)
     for call in tables['stop_times']:
@@ -37,7 +41,7 @@ def build(source, feed):
             raise ValueError('Unrecognized operational label: '+entry['cell'])
         route, number = parser.ROUTES[label[1]], int(label[2])
         boat = route + str(number)
-        record = {'boat':boat,'routeId':route,'number':number,'shift':'AM' if 'AM' in entry['label'] else 'PM',
+        record = {'boat':boat,'routeId':route,'number':number,'shift':'MID' if 'MID' in entry['label'].upper() else 'AM' if 'AM' in entry['label'] else 'PM',
                   'source':source['sheet']+'!'+entry['cell']}
         for kind, regex, field in [('start',parser.FIRST,'departure_time'),('end',parser.LAST,'arrival_time')]:
             match = regex.search(entry['note'])

@@ -9,15 +9,15 @@ import json
 from pathlib import Path
 import zipfile
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'schedules/fall-2026-sources/nycferry-20261102.zip'
+SOURCE = ROOT / 'schedules/fall-2026-sources/nycferry-20261103.zip'
 
 def main():
- assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == '91713d54f1faab5a49d6a37ab4b631288547446227214857ccb783484349ce3a'
+ assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == '14fd496026292af6095e774fdcc4f4fbeba81f5915652bbd5d04ddca1dd47e02'
  with zipfile.ZipFile(SOURCE) as archive:
   tables = {name[:-4]: list(csv.DictReader(io.StringIO(archive.read(name).decode('utf-8-sig'))))
             for name in ['feed_info.txt','routes.txt','stops.txt','trips.txt','stop_times.txt','calendar.txt','calendar_dates.txt']}
  info = tables['feed_info'][0]
- assert info['feed_version'] == '20261102'
+ assert info['feed_version'] == '20261103'
  assert info['feed_start_date'] == '20261102'
  ids = {t['trip_id'] for t in tables['trips']}
  assert len(ids) == len(tables['trips'])

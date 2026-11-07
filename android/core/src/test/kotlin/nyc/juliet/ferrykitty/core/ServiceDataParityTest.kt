@@ -69,7 +69,7 @@ class ServiceDataParityTest {
 		val directory = System.getenv("FERRY_SERVICE_CONTRACT")?.let { File(it) } ?: File(repoRoot, "ios/DerivedData/ServiceParity")
 		assumeTrue("Generate parity fixtures with node scripts/build-ios-service-contract.mjs <output>; set FERRY_SERVICE_CONTRACT", File(directory, "manifest.json").isFile)
 		val manifest: Manifest = decode(File(directory, "manifest.json").readText())
-		assertEquals(30, manifest.schedules.size)
+		assertEquals(31, manifest.schedules.size)
 		assertEquals(5, manifest.holidayDates.size)
 		var caseCount = 0
 		var departureCount = 0
@@ -85,7 +85,11 @@ class ServiceDataParityTest {
 				for (index in actual.indices) assertEquals("${case.name}, departure $index", case.expected[index], actual[index])
 				if (contract.schedule.meta.landingNumber == 27 && (case.date in manifest.holidayDates || case.viewDate != null)) {
 					assertTrue(case.name, rows.any { it.departure.fromHomePort == true && it.departure.boatAssignment != null })
-					assertTrue(case.name, rows.any { it.departure.crewShuttle == true && !it.departure.crewBoats.isNullOrEmpty() })
+					if (case.date < "2026-11-02") {
+						assertTrue(case.name, rows.any { it.departure.crewShuttle == true && !it.departure.crewBoats.isNullOrEmpty() })
+					} else {
+						assertFalse("Current relief notes do not establish endpoint departure times", rows.any { it.departure.crewShuttle == true })
+					}
 					if (case.date !in manifest.holidayDates) assertTrue(case.name, rows.filter { it.departure.fromHomePort == true }.all { it.departure.approximate == true })
 				}
 				caseCount++

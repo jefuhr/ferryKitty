@@ -81,6 +81,20 @@ class ScheduleParityTest {
 		assertEquals("2026-02-28", ServiceClock.addDays("2026-03-01", -1))
 	}
 
+	@Test fun reviewedWinterWeekendsKeepTheirOwnDatesAndWarnings() {
+		val status = CrewStatus(
+			reviewedWeekdays = CrewCoverage("2026-11-02", "2027-12-31", message = "weekday review"),
+			reviewedWeekends = CrewCoverage("2026-11-07", "2027-12-31", listOf("2026-11-15"), "weekend review"))
+		val data = scheduleFixture().let { it.copy(meta = it.meta.copy(crewScheduleStatus = status)) }
+		assertEquals("weekday review", ScheduleEngine.crewCoverage(data, "2026-11-09")?.message)
+		for (date in listOf("2026-11-07", "2026-11-08", "2026-11-14")) {
+			assertEquals(date, "weekend review", ScheduleEngine.crewCoverage(data, date)?.message)
+		}
+		for (date in listOf("2026-10-31", "2026-11-15", "2028-01-01")) {
+			assertNull(date, ScheduleEngine.crewCoverage(data, date))
+		}
+	}
+
 	@Test fun invalidSchemaIdentityTimezoneCalendarAndNumbersAreRejected() {
 		val data = scheduleFixture()
 		data.validate(16)

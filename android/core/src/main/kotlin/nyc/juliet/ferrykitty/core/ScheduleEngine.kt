@@ -83,7 +83,7 @@ object ScheduleEngine {
 		val status = data.meta.crewScheduleStatus ?: return null
 		status.confirmedHolidays?.let { if (date in it.dates) return CrewCoverage(date, date, message = it.message) }
 		val local = try { LocalDate.parse(date) } catch (_: Exception) { return null }
-		if (local.dayOfWeek.value !in 6..7) status.reviewedWeekdays?.let {
+		(if (local.dayOfWeek.value in 6..7) status.reviewedWeekends else status.reviewedWeekdays)?.let {
 			if (date >= it.startDate && date <= it.endDate && date !in it.excludedDates.orEmpty()) return it
 		}
 		val coverage = if (local.dayOfWeek.value in 6..7) status.confirmedWeekends else status.confirmedWeekdays
