@@ -113,7 +113,7 @@ print(json.dumps([m['covering_mappings']('2026-10-26'),m['covering_mappings']('2
 `],{cwd:new URL('../',import.meta.url),encoding:'utf8'}));
   assert.deepEqual(result[0],['schedules/fall-2026-post-sukkot-live.json']);
   assert.deepEqual(result[1],['schedules/november-2026-live.json','schedules/november-2026-crew.json']);
-  assert.deepEqual(result[2],['schedules/november-2026-live.json: reviewed 20261102','schedules/november-2026-crew.json: reviewed 20261102']);
+  assert.deepEqual(result[2],['schedules/november-2026-live.json: reviewed 20261103','schedules/november-2026-crew.json: reviewed 20261103']);
 });
 
 test('November importer takes an archived feed path and reproduces the reviewed map from the pinned zip', () => {
@@ -121,7 +121,7 @@ test('November importer takes an archived feed path and reproduces the reviewed 
   const map = 'schedules/november-2026-live.json';
   const before = readFileSync(new URL(map, root), 'utf8');
   try {
-    execFileSync('python3', ['-I', 'scripts/import-november-live.py', 'schedules/fall-2026-sources/nycferry-20261102.zip'], { cwd: root, encoding: 'utf8' });
+    execFileSync('python3', ['-I', 'scripts/import-november-live.py', 'schedules/fall-2026-sources/nycferry-20261103.zip'], { cwd: root, encoding: 'utf8' });
     assert.equal(readFileSync(new URL(map, root), 'utf8'), before);
     const workflow = readFileSync(new URL('.github/workflows/check-nyc-feed.yml', root), 'utf8');
     assert.match(workflow, /import-november-live\.py "schedules\/fall-2026-sources\//);

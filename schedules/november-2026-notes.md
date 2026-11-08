@@ -4,7 +4,7 @@ Production's curated fall calendar ended November 1. A refresh on the repository
 historical `main` signage branch did not update the webapp deployed from `mobile`.
 
 `python3 scripts/import-november-live.py` reads the unmodified operator ZIP at
-`fall-2026-sources/nycferry-20261102.zip`, verifies its SHA-256, and generates
+`fall-2026-sources/nycferry-20261103.zip`, verifies its SHA-256, and generates
 `november-2026-live.json`. Source URL:
 https://nycferry.connexionz.net/rtt/public/resource/gtfs.zip
 
@@ -12,7 +12,10 @@ The builder combines those tables with the archive-pinned fall schedule. Novembe
 trip and service IDs use `nyc:november:` internally to avoid collisions; `liveTripId`
 retains the actual published ID for realtime and connections. Published stop times,
 service dates, restrictions, and exceptions are preserved. Summer/fall working numbers and crew shifts are never used to label November trips.
-The separately reviewed `Board` source now supplies current weekday workings.
+The separately reviewed `Board` sources supply current weekday and winter weekend
+workings. See `winter-2026-weekend-notes.md` for optional workings and date controls.
+The November 3 feed changes destination wording only; its stop times and calendars
+match November 2. Weekday assignments, shift boundaries and rejections are preserved.
 
 Historical crew boundaries and historical trip mappings remain unchanged. The user-selected `Board` sheet is recorded in `november-2026-board-source.json`,
 with the original workbook SHA-256 and operational comments only (no personnel names).

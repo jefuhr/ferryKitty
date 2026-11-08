@@ -10,6 +10,7 @@ on:
       - 'scripts/check-nyc-feed-freshness.py'
       - 'scripts/import-november-live.py'
       - 'scripts/import-november-crew.py'
+      - 'scripts/import-winter-weekend-crew.py'
       - '.github/workflows/check-nyc-feed.yml'
 
 jobs:
@@ -28,9 +29,10 @@ jobs:
           cp "$zip" schedules/fall-2026-sources/
           python3 scripts/import-november-live.py "schedules/fall-2026-sources/$(basename "$zip")" 2>&1 | tee feed-candidate/import.txt
           python3 scripts/import-november-crew.py 2>&1 | tee -a feed-candidate/import.txt
-          cp schedules/november-2026-live.json schedules/november-2026-crew.json feed-candidate/
-          git diff --stat -- schedules/november-2026-live.json schedules/november-2026-crew.json | tee -a feed-candidate/import.txt
-          git diff -- schedules/november-2026-crew.json > feed-candidate/november-crew.diff || true
+          python3 scripts/import-winter-weekend-crew.py 2>&1 | tee -a feed-candidate/import.txt
+          cp schedules/november-2026-live.json schedules/november-2026-crew.json schedules/winter-2026-weekend-crew.json feed-candidate/
+          git diff --stat -- schedules/november-2026-live.json schedules/november-2026-crew.json schedules/winter-2026-weekend-crew.json | tee -a feed-candidate/import.txt
+          git diff -- schedules/november-2026-crew.json schedules/winter-2026-weekend-crew.json > feed-candidate/crew.diff || true
           git show HEAD:schedules/november-2026-live.json > feed-candidate/november-live-reviewed.json
           python3 -I scripts/compare-november-live.py feed-candidate/november-live-reviewed.json schedules/november-2026-live.json | tee -a feed-candidate/import.txt
       - name: Upload the fetched feed and draft map for review

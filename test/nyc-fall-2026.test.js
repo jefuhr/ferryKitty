@@ -112,7 +112,7 @@ test('crew operations remain absent outside reviewed seasons and day types', asy
     const data = await buildDisplayData({landingNumber});
     assert.equal(data.meta.crewScheduleStatus.message,'Crew shifts / Pier C shuttles: UNCONFIRMED');
     const local = createConnectionIndex(new Map([[landingNumber,data]]));
-    for (const date of ['2026-09-13','2026-11-07']) {
+    for (const date of ['2026-09-13','2028-01-01']) {
       const active = activeServices(local,date);
       const departures = data.departures.filter(r => active.has(r.serviceId));
       assert.equal(departures.some(r => r.crewShuttle || r.tripId.startsWith('oos:') || r.fromHomePort),false,date);

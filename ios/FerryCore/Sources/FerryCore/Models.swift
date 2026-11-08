@@ -33,6 +33,7 @@ public struct CrewCoverage: Codable, Sendable {
 public struct CrewStatus: Codable, Sendable {
     public var status: String?
     public var message: String?
+    public var reviewedWeekends: CrewCoverage?
     public var reviewedWeekdays: CrewCoverage?
     public var confirmedWeekdays: CrewCoverage?
     public var confirmedWeekends: CrewCoverage?

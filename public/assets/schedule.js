@@ -60,8 +60,8 @@ export function confirmedCrewCoverage(data, date) {
   const holiday = data?.meta?.crewScheduleStatus?.confirmedHolidays;
   if (holiday?.dates?.includes(date)) return holiday;
   const weekend = [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay());
-  const reviewed = data?.meta?.crewScheduleStatus?.reviewedWeekdays;
-  if (!weekend && reviewed && date >= reviewed.startDate && date <= reviewed.endDate &&
+  const reviewed = data?.meta?.crewScheduleStatus?.[weekend ? "reviewedWeekends" : "reviewedWeekdays"];
+  if (reviewed && date >= reviewed.startDate && date <= reviewed.endDate &&
     !(reviewed.excludedDates || []).includes(date)) return reviewed;
   const coverage = data?.meta?.crewScheduleStatus?.[weekend ? "confirmedWeekends" : "confirmedWeekdays"];
   return coverage && date >= coverage.startDate && date <= coverage.endDate &&

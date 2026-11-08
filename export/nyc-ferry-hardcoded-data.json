@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "NYC Ferry departure board — hardcoded NYC Ferry data",
-    "generatedAt": "2026-11-03T02:31:38.142Z",
+    "generatedAt": "2026-11-07T15:55:30.707Z",
     "generator": "scripts/export-hardcoded-data.js",
     "description": "Every piece of NYC Ferry data this repository carries that did not come from a published GTFS feed. Each section names the file it was read from; edit that file, not this one.",
     "scope": "NYC Ferry only. The partner operators sharing these docks have their own hand-maintained data in this repository — NY Waterway route corrections, transcribed timetables for the Governors Island, IKEA and Liberty Landing boats, and downloads for the Staten Island Ferry and the Statue of Liberty boats — and none of it is included here. Partner stop ids and partner on/off switches are stripped from the config below.",
@@ -16,8 +16,1126 @@
       "scripts/out-of-service.js",
       "schedules/fall-2026-weekday-crew.json",
       "schedules/fall-2026-weekend-crew.json",
-      "schedules/november-2026-crew.json"
+      "schedules/november-2026-crew.json",
+      "schedules/winter-2026-weekend-crew.json"
     ]
+  },
+  "winterWeekendCrew": {
+    "source": "schedules/winter-2026-weekend-crew.json",
+    "description": "Reviewed winter weekend Board; cruise service requires explicit dates and operator coverage. ER3 is disabled until separately reviewed.",
+    "data": {
+      "sheet": "Board",
+      "workbookSha256": "4b90f26505b56b660ed178028fef81901fe04c56be0afc41fbc6c3e433db1f94",
+      "feedVersion": "20261103",
+      "sourceSha256": "14fd496026292af6095e774fdcc4f4fbeba81f5915652bbd5d04ddca1dd47e02",
+      "startDate": "2026-11-07",
+      "endDate": "2027-12-31",
+      "serviceIds": [
+        "2"
+      ],
+      "assignments": {
+        "1863": 2,
+        "1864": 3,
+        "1868": 3,
+        "1882": 1,
+        "1883": 2,
+        "1884": 3,
+        "1888": 3,
+        "2248": 2,
+        "2249": 1,
+        "2250": 2,
+        "2251": 1,
+        "2252": 2,
+        "2253": 1,
+        "2254": 2,
+        "2255": 1,
+        "2256": 2,
+        "2257": 1,
+        "2258": 2,
+        "2259": 1,
+        "2260": 1,
+        "2261": 2,
+        "2262": 1,
+        "2263": 2,
+        "2264": 1,
+        "2265": 2,
+        "2266": 1,
+        "2267": 2,
+        "2268": 1,
+        "2269": 2,
+        "2270": 1,
+        "2271": 2,
+        "2296": 3,
+        "2297": 4,
+        "2298": 1,
+        "2299": 2,
+        "2300": 3,
+        "2301": 4,
+        "2302": 1,
+        "2303": 2,
+        "2304": 3,
+        "2305": 4,
+        "2306": 1,
+        "2307": 1,
+        "2308": 2,
+        "2309": 3,
+        "2310": 4,
+        "2311": 1,
+        "2312": 2,
+        "2313": 3,
+        "2314": 4,
+        "2315": 1,
+        "2316": 2,
+        "2317": 3,
+        "2333": 1,
+        "2334": 2,
+        "2335": 1,
+        "2336": 2,
+        "2337": 3,
+        "2338": 1,
+        "2339": 2,
+        "2340": 3,
+        "2341": 1,
+        "2342": 2,
+        "2343": 3,
+        "2344": 1,
+        "2345": 2,
+        "2346": 1,
+        "2347": 2,
+        "2348": 3,
+        "2349": 1,
+        "2350": 2,
+        "2351": 3,
+        "2352": 1,
+        "2353": 2,
+        "2354": 2,
+        "2355": 1,
+        "2385": 2,
+        "2386": 1,
+        "2387": 2,
+        "2388": 1,
+        "2389": 2,
+        "2390": 1,
+        "2391": 2,
+        "2392": 1,
+        "2393": 2,
+        "2394": 1,
+        "2395": 1,
+        "2396": 2,
+        "2397": 1,
+        "2398": 2,
+        "2399": 1,
+        "2400": 2,
+        "2401": 1,
+        "2402": 2,
+        "2403": 1,
+        "2404": 2,
+        "2405": 1,
+        "2406": 2,
+        "2948": 2,
+        "2949": 1,
+        "2950": 2,
+        "2951": 1,
+        "2952": 2,
+        "2953": 1,
+        "2954": 2,
+        "2955": 1,
+        "2956": 2,
+        "2957": 1,
+        "2958": 2,
+        "2959": 1,
+        "2960": 2,
+        "2961": 1,
+        "2962": 2,
+        "2963": 1,
+        "2964": 2,
+        "2965": 1,
+        "2966": 2,
+        "2967": 1,
+        "2968": 2,
+        "2969": 1,
+        "2970": 2,
+        "2971": 1,
+        "2972": 2,
+        "2973": 1,
+        "2974": 2,
+        "2975": 1,
+        "2976": 2,
+        "2977": 1,
+        "2994": 3,
+        "2995": 3,
+        "2996": 3,
+        "2997": 3,
+        "2998": 3,
+        "2999": 3,
+        "3000": 3,
+        "3001": 3,
+        "3002": 3,
+        "3003": 3,
+        "3004": 3,
+        "3005": 3,
+        "3006": 3,
+        "3007": 3,
+        "3008": 3,
+        "3009": 3,
+        "3010": 3,
+        "3011": 3,
+        "3012": 3,
+        "3013": 3,
+        "3014": 3,
+        "3015": 3,
+        "3016": 3
+      },
+      "shifts": [
+        {
+          "boat": "ER1",
+          "routeId": "ER",
+          "number": 1,
+          "shift": "PM",
+          "source": "Board!A26",
+          "start": {
+            "time": "15:11",
+            "stopId": "17",
+            "tripId": "2266",
+            "blockId": "11"
+          },
+          "end": {
+            "time": "21:07",
+            "stopId": "17",
+            "tripId": "2259",
+            "blockId": "11"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "ER2",
+          "routeId": "ER",
+          "number": 2,
+          "shift": "PM",
+          "source": "Board!B26",
+          "start": {
+            "time": "14:11",
+            "stopId": "17",
+            "tripId": "2265",
+            "blockId": "12"
+          },
+          "end": {
+            "time": "21:05",
+            "stopId": "87",
+            "tripId": "2271",
+            "blockId": "12"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG1",
+          "routeId": "SG",
+          "number": 1,
+          "shift": "PM",
+          "source": "Board!D26",
+          "start": {
+            "time": "14:29",
+            "stopId": "87",
+            "tripId": "2346",
+            "blockId": "81"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG2",
+          "routeId": "SG",
+          "number": 2,
+          "shift": "PM",
+          "source": "Board!E26",
+          "start": {
+            "time": "15:19",
+            "stopId": "87",
+            "tripId": "2347",
+            "blockId": "82"
+          },
+          "end": {
+            "time": "21:28",
+            "stopId": "138",
+            "tripId": "2353",
+            "blockId": "82"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG3",
+          "routeId": "SG",
+          "number": 3,
+          "shift": "PM",
+          "source": "Board!F26",
+          "start": {
+            "time": "16:09",
+            "stopId": "87",
+            "tripId": "2348",
+            "blockId": "83"
+          },
+          "end": {
+            "time": "21:03",
+            "stopId": "87",
+            "tripId": "2343",
+            "blockId": "83"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SB1",
+          "routeId": "SB",
+          "number": 1,
+          "shift": "PM",
+          "source": "Board!G26",
+          "start": {
+            "time": "15:29",
+            "stopId": "65",
+            "tripId": "2971",
+            "blockId": "31"
+          },
+          "end": {
+            "time": "20:30",
+            "stopId": "17",
+            "tripId": "2977",
+            "blockId": "31"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SB2",
+          "routeId": "SB",
+          "number": 2,
+          "shift": "PM",
+          "source": "Board!H26",
+          "start": {
+            "time": "14:42",
+            "stopId": "65",
+            "tripId": "2970",
+            "blockId": "32"
+          },
+          "end": {
+            "time": "20:22",
+            "stopId": "24",
+            "tripId": "2962",
+            "blockId": "32"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "ER1",
+          "routeId": "ER",
+          "number": 1,
+          "shift": "AM",
+          "source": "Board!A18",
+          "start": {
+            "time": "09:04",
+            "stopId": "17",
+            "tripId": "2260",
+            "blockId": "11"
+          },
+          "end": {
+            "time": "15:07",
+            "stopId": "17",
+            "tripId": "2253",
+            "blockId": "11"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "ER2",
+          "routeId": "ER",
+          "number": 2,
+          "shift": "AM",
+          "source": "Board!B18",
+          "start": {
+            "time": "08:55",
+            "stopId": "87",
+            "tripId": "2248",
+            "blockId": "12"
+          },
+          "end": {
+            "time": "14:07",
+            "stopId": "17",
+            "tripId": "2252",
+            "blockId": "12"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG1",
+          "routeId": "SG",
+          "number": 1,
+          "shift": "AM",
+          "source": "Board!D18",
+          "start": {
+            "time": "08:53",
+            "stopId": "87",
+            "tripId": "1882",
+            "blockId": "81"
+          },
+          "end": {
+            "time": "14:23",
+            "stopId": "87",
+            "tripId": "2335",
+            "blockId": "81"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG2",
+          "routeId": "SG",
+          "number": 2,
+          "shift": "AM",
+          "source": "Board!E18",
+          "start": {
+            "time": "09:04",
+            "stopId": "138",
+            "tripId": "1863",
+            "blockId": "82"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SG3",
+          "routeId": "SG",
+          "number": 3,
+          "shift": "AM",
+          "source": "Board!F18",
+          "start": {
+            "time": "09:54",
+            "stopId": "138",
+            "tripId": "1864",
+            "blockId": "83"
+          },
+          "end": {
+            "time": "16:03",
+            "stopId": "87",
+            "tripId": "2337",
+            "blockId": "83"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SB1",
+          "routeId": "SB",
+          "number": 1,
+          "shift": "AM",
+          "source": "Board!G18",
+          "start": {
+            "time": "09:13",
+            "stopId": "65",
+            "tripId": "2963",
+            "blockId": "31"
+          },
+          "end": {
+            "time": "15:24",
+            "stopId": "65",
+            "tripId": "2955",
+            "blockId": "31"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SB2",
+          "routeId": "SB",
+          "number": 2,
+          "shift": "AM",
+          "source": "Board!H18",
+          "start": {
+            "time": "09:13",
+            "stopId": "17",
+            "tripId": "2948",
+            "blockId": "32"
+          },
+          "end": {
+            "time": "14:37",
+            "stopId": "65",
+            "tripId": "2954",
+            "blockId": "32"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS1",
+          "routeId": "RS",
+          "number": 1,
+          "shift": "PM",
+          "source": "Board!A10",
+          "start": {
+            "time": "14:23",
+            "stopId": "87",
+            "tripId": "2311",
+            "blockId": "21"
+          },
+          "end": {
+            "time": "20:53",
+            "stopId": "87",
+            "tripId": "2306",
+            "blockId": "21"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS2",
+          "routeId": "RS",
+          "number": 2,
+          "shift": "PM",
+          "source": "Board!B10",
+          "start": {
+            "time": "15:29",
+            "stopId": "87",
+            "tripId": "2312",
+            "blockId": "22"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS3",
+          "routeId": "RS",
+          "number": 3,
+          "shift": "PM",
+          "source": "Board!C10",
+          "start": {
+            "time": "14:25",
+            "stopId": "87",
+            "tripId": "2300",
+            "blockId": "23"
+          },
+          "end": {
+            "time": "20:51",
+            "stopId": "87",
+            "tripId": "2317",
+            "blockId": "23"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS4",
+          "routeId": "RS",
+          "number": 4,
+          "shift": "PM",
+          "source": "Board!D10",
+          "start": {
+            "time": "15:31",
+            "stopId": "87",
+            "tripId": "2301",
+            "blockId": "24"
+          },
+          "end": {
+            "time": "20:52",
+            "stopId": "141",
+            "tripId": "2305",
+            "blockId": "24"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "AS1",
+          "routeId": "AS",
+          "number": 1,
+          "shift": "PM",
+          "source": "Board!E10",
+          "end": {
+            "time": "21:15",
+            "stopId": "113",
+            "tripId": "2394",
+            "blockId": "41"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "AS2",
+          "routeId": "AS",
+          "number": 2,
+          "shift": "PM",
+          "source": "Board!F10",
+          "start": {
+            "time": "15:08",
+            "stopId": "87",
+            "tripId": "2389",
+            "blockId": "42"
+          },
+          "end": {
+            "time": "21:08",
+            "stopId": "87",
+            "tripId": "2406",
+            "blockId": "42"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS1",
+          "routeId": "RS",
+          "number": 1,
+          "shift": "AM",
+          "source": "Board!A2",
+          "start": {
+            "time": "08:55",
+            "stopId": "141",
+            "tripId": "2307",
+            "blockId": "21"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS2",
+          "routeId": "RS",
+          "number": 2,
+          "shift": "AM",
+          "source": "Board!B2",
+          "start": {
+            "time": "10:01",
+            "stopId": "141",
+            "tripId": "2308",
+            "blockId": "22"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS3",
+          "routeId": "RS",
+          "number": 3,
+          "shift": "AM",
+          "source": "Board!C2",
+          "start": {
+            "time": "08:53",
+            "stopId": "88",
+            "tripId": "2296",
+            "blockId": "23"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "RS4",
+          "routeId": "RS",
+          "number": 4,
+          "shift": "AM",
+          "source": "Board!D2",
+          "start": {
+            "time": "09:59",
+            "stopId": "88",
+            "tripId": "2297",
+            "blockId": "24"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "AS1",
+          "routeId": "AS",
+          "number": 1,
+          "shift": "AM",
+          "source": "Board!E2",
+          "start": {
+            "time": "08:54",
+            "stopId": "113",
+            "tripId": "2395",
+            "blockId": "41"
+          },
+          "end": {
+            "time": "15:03",
+            "stopId": "113",
+            "tripId": "2388",
+            "blockId": "41"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "AS2",
+          "routeId": "AS",
+          "number": 2,
+          "shift": "AM",
+          "source": "Board!F2",
+          "start": {
+            "time": "08:56",
+            "stopId": "87",
+            "tripId": "2354",
+            "blockId": "42"
+          },
+          "end": {
+            "time": "14:56",
+            "stopId": "87",
+            "tripId": "2400",
+            "blockId": "42"
+          },
+          "serviceIds": [
+            "crew-winter-weekend"
+          ]
+        },
+        {
+          "boat": "SB3",
+          "routeId": "SB",
+          "number": 3,
+          "shift": "CRUISE",
+          "source": "Board!I18",
+          "serviceIds": [
+            "optional-sbkcruise"
+          ]
+        }
+      ],
+      "rejected": [
+        {
+          "source": "Board!D26",
+          "boat": "SG1",
+          "field": "end",
+          "time": "20:38",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!E18",
+          "boat": "SG2",
+          "field": "end",
+          "time": "13:10",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!B10",
+          "boat": "RS2",
+          "field": "end",
+          "time": "20:53",
+          "stopId": "88",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!E10",
+          "boat": "AS1",
+          "field": "start",
+          "time": "15:26",
+          "stopId": "113",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!A2",
+          "boat": "RS1",
+          "field": "end",
+          "time": "14:15",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!B2",
+          "boat": "RS2",
+          "field": "end",
+          "time": "15:21",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!C2",
+          "boat": "RS3",
+          "field": "end",
+          "time": "14:17",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!D2",
+          "boat": "RS4",
+          "field": "end",
+          "time": "15:23",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!I18",
+          "boat": "SB3",
+          "field": "start",
+          "time": "07:22",
+          "stopId": "24",
+          "reason": "expected one exact event, found 0"
+        },
+        {
+          "source": "Board!I18",
+          "boat": "SB3",
+          "field": "end",
+          "time": "12:32",
+          "stopId": "87",
+          "reason": "expected one exact event, found 0"
+        }
+      ],
+      "reliefBoats": [
+        "AS1",
+        "AS2",
+        "RS1",
+        "RS3",
+        "SG1"
+      ],
+      "crewShuttles": [
+        {
+          "time": "14:00",
+          "boats": [
+            "RS1",
+            "RS3",
+            "SG1"
+          ],
+          "source": "Board!J3:M3",
+          "kind": "crew-shuttle",
+          "timeReference": "board-listed"
+        },
+        {
+          "time": "14:40",
+          "boats": [
+            "AS2"
+          ],
+          "source": "Board!J4:M4",
+          "kind": "crew-shuttle",
+          "timeReference": "board-listed"
+        },
+        {
+          "time": "14:40",
+          "boats": [
+            "AS1"
+          ],
+          "source": "Board!J5:M5",
+          "kind": "crew-shuttle",
+          "timeReference": "board-listed"
+        }
+      ],
+      "shuttleStatus": "Board-listed crew relief times; endpoint timing unspecified",
+      "counts": {
+        "shifts": 27,
+        "exactBoundaries": 44,
+        "unconfirmedBoundaries": 10,
+        "assignedTrips": 151,
+        "workings": 14,
+        "regularWorkings": 13,
+        "optionalWorkings": 1
+      },
+      "kind": "weekend",
+      "optionalWorkings": {
+        "er3Mid": {
+          "enabled": false,
+          "dates": [],
+          "displayLabel": "ER3",
+          "sourceCell": "C18",
+          "reason": "User disabled; the note duplicates ER2 AM.",
+          "source": {
+            "cell": "C18",
+            "label": "ERF 3 Mid (T)",
+            "note": "ERF 3 MID\nFirst departure 08:55 at Pier 11\n\nLast drop 14:07 at 34th\n"
+          },
+          "verifiedDates": [],
+          "tripIds": [],
+          "status": "disabled"
+        },
+        "sbkCruise": {
+          "enabled": true,
+          "dates": [
+            "2026-11-07",
+            "2026-11-28",
+            "2026-12-19"
+          ],
+          "sourceCell": "I18",
+          "dateSource": "https://static.ferry.nyc/blog/winter-2026-2027/",
+          "source": {
+            "cell": "I18",
+            "label": "SBK Cruise Shuttle",
+            "note": "SBK 1AM\nFirst Shuttle  0722 RH\n\nLast drop 12:32 Pier 11"
+          },
+          "verifiedDates": [
+            "2026-11-07"
+          ],
+          "tripIds": [
+            "2994",
+            "2995",
+            "2996",
+            "2997",
+            "2998",
+            "2999",
+            "3000",
+            "3001",
+            "3002",
+            "3003",
+            "3004",
+            "3005",
+            "3006",
+            "3007",
+            "3008",
+            "3009",
+            "3010",
+            "3011",
+            "3012",
+            "3013",
+            "3014",
+            "3015",
+            "3016"
+          ],
+          "numberSource": "Published SB block 33 and 330x working numbers; Board crew boundaries remain separately checked",
+          "status": "date-scoped",
+          "crewBoundaryStatus": "unconfirmed",
+          "pendingDates": [
+            "2026-11-28",
+            "2026-12-19"
+          ]
+        }
+      },
+      "tripServiceOverrides": {
+        "2994": "optional-sbkcruise",
+        "2995": "optional-sbkcruise",
+        "2996": "optional-sbkcruise",
+        "2997": "optional-sbkcruise",
+        "2998": "optional-sbkcruise",
+        "2999": "optional-sbkcruise",
+        "3000": "optional-sbkcruise",
+        "3001": "optional-sbkcruise",
+        "3002": "optional-sbkcruise",
+        "3003": "optional-sbkcruise",
+        "3004": "optional-sbkcruise",
+        "3005": "optional-sbkcruise",
+        "3006": "optional-sbkcruise",
+        "3007": "optional-sbkcruise",
+        "3008": "optional-sbkcruise",
+        "3009": "optional-sbkcruise",
+        "3010": "optional-sbkcruise",
+        "3011": "optional-sbkcruise",
+        "3012": "optional-sbkcruise",
+        "3013": "optional-sbkcruise",
+        "3014": "optional-sbkcruise",
+        "3015": "optional-sbkcruise",
+        "3016": "optional-sbkcruise"
+      },
+      "operationServiceByTrip": {
+        "1863": "crew-winter-weekend",
+        "1864": "crew-winter-weekend",
+        "1868": "crew-winter-weekend",
+        "1882": "crew-winter-weekend",
+        "1883": "crew-winter-weekend",
+        "1884": "crew-winter-weekend",
+        "1888": "crew-winter-weekend",
+        "2248": "crew-winter-weekend",
+        "2249": "crew-winter-weekend",
+        "2250": "crew-winter-weekend",
+        "2251": "crew-winter-weekend",
+        "2252": "crew-winter-weekend",
+        "2253": "crew-winter-weekend",
+        "2254": "crew-winter-weekend",
+        "2255": "crew-winter-weekend",
+        "2256": "crew-winter-weekend",
+        "2257": "crew-winter-weekend",
+        "2258": "crew-winter-weekend",
+        "2259": "crew-winter-weekend",
+        "2260": "crew-winter-weekend",
+        "2261": "crew-winter-weekend",
+        "2262": "crew-winter-weekend",
+        "2263": "crew-winter-weekend",
+        "2264": "crew-winter-weekend",
+        "2265": "crew-winter-weekend",
+        "2266": "crew-winter-weekend",
+        "2267": "crew-winter-weekend",
+        "2268": "crew-winter-weekend",
+        "2269": "crew-winter-weekend",
+        "2270": "crew-winter-weekend",
+        "2271": "crew-winter-weekend",
+        "2296": "crew-winter-weekend",
+        "2297": "crew-winter-weekend",
+        "2298": "crew-winter-weekend",
+        "2299": "crew-winter-weekend",
+        "2300": "crew-winter-weekend",
+        "2301": "crew-winter-weekend",
+        "2302": "crew-winter-weekend",
+        "2303": "crew-winter-weekend",
+        "2304": "crew-winter-weekend",
+        "2305": "crew-winter-weekend",
+        "2306": "crew-winter-weekend",
+        "2307": "crew-winter-weekend",
+        "2308": "crew-winter-weekend",
+        "2309": "crew-winter-weekend",
+        "2310": "crew-winter-weekend",
+        "2311": "crew-winter-weekend",
+        "2312": "crew-winter-weekend",
+        "2313": "crew-winter-weekend",
+        "2314": "crew-winter-weekend",
+        "2315": "crew-winter-weekend",
+        "2316": "crew-winter-weekend",
+        "2317": "crew-winter-weekend",
+        "2333": "crew-winter-weekend",
+        "2334": "crew-winter-weekend",
+        "2335": "crew-winter-weekend",
+        "2336": "crew-winter-weekend",
+        "2337": "crew-winter-weekend",
+        "2338": "crew-winter-weekend",
+        "2339": "crew-winter-weekend",
+        "2340": "crew-winter-weekend",
+        "2341": "crew-winter-weekend",
+        "2342": "crew-winter-weekend",
+        "2343": "crew-winter-weekend",
+        "2344": "crew-winter-weekend",
+        "2345": "crew-winter-weekend",
+        "2346": "crew-winter-weekend",
+        "2347": "crew-winter-weekend",
+        "2348": "crew-winter-weekend",
+        "2349": "crew-winter-weekend",
+        "2350": "crew-winter-weekend",
+        "2351": "crew-winter-weekend",
+        "2352": "crew-winter-weekend",
+        "2353": "crew-winter-weekend",
+        "2354": "crew-winter-weekend",
+        "2355": "crew-winter-weekend",
+        "2385": "crew-winter-weekend",
+        "2386": "crew-winter-weekend",
+        "2387": "crew-winter-weekend",
+        "2388": "crew-winter-weekend",
+        "2389": "crew-winter-weekend",
+        "2390": "crew-winter-weekend",
+        "2391": "crew-winter-weekend",
+        "2392": "crew-winter-weekend",
+        "2393": "crew-winter-weekend",
+        "2394": "crew-winter-weekend",
+        "2395": "crew-winter-weekend",
+        "2396": "crew-winter-weekend",
+        "2397": "crew-winter-weekend",
+        "2398": "crew-winter-weekend",
+        "2399": "crew-winter-weekend",
+        "2400": "crew-winter-weekend",
+        "2401": "crew-winter-weekend",
+        "2402": "crew-winter-weekend",
+        "2403": "crew-winter-weekend",
+        "2404": "crew-winter-weekend",
+        "2405": "crew-winter-weekend",
+        "2406": "crew-winter-weekend",
+        "2948": "crew-winter-weekend",
+        "2949": "crew-winter-weekend",
+        "2950": "crew-winter-weekend",
+        "2951": "crew-winter-weekend",
+        "2952": "crew-winter-weekend",
+        "2953": "crew-winter-weekend",
+        "2954": "crew-winter-weekend",
+        "2955": "crew-winter-weekend",
+        "2956": "crew-winter-weekend",
+        "2957": "crew-winter-weekend",
+        "2958": "crew-winter-weekend",
+        "2959": "crew-winter-weekend",
+        "2960": "crew-winter-weekend",
+        "2961": "crew-winter-weekend",
+        "2962": "crew-winter-weekend",
+        "2963": "crew-winter-weekend",
+        "2964": "crew-winter-weekend",
+        "2965": "crew-winter-weekend",
+        "2966": "crew-winter-weekend",
+        "2967": "crew-winter-weekend",
+        "2968": "crew-winter-weekend",
+        "2969": "crew-winter-weekend",
+        "2970": "crew-winter-weekend",
+        "2971": "crew-winter-weekend",
+        "2972": "crew-winter-weekend",
+        "2973": "crew-winter-weekend",
+        "2974": "crew-winter-weekend",
+        "2975": "crew-winter-weekend",
+        "2976": "crew-winter-weekend",
+        "2977": "crew-winter-weekend",
+        "2994": "optional-sbkcruise",
+        "2995": "optional-sbkcruise",
+        "2996": "optional-sbkcruise",
+        "2997": "optional-sbkcruise",
+        "2998": "optional-sbkcruise",
+        "2999": "optional-sbkcruise",
+        "3000": "optional-sbkcruise",
+        "3001": "optional-sbkcruise",
+        "3002": "optional-sbkcruise",
+        "3003": "optional-sbkcruise",
+        "3004": "optional-sbkcruise",
+        "3005": "optional-sbkcruise",
+        "3006": "optional-sbkcruise",
+        "3007": "optional-sbkcruise",
+        "3008": "optional-sbkcruise",
+        "3009": "optional-sbkcruise",
+        "3010": "optional-sbkcruise",
+        "3011": "optional-sbkcruise",
+        "3012": "optional-sbkcruise",
+        "3013": "optional-sbkcruise",
+        "3014": "optional-sbkcruise",
+        "3015": "optional-sbkcruise",
+        "3016": "optional-sbkcruise"
+      },
+      "additionalCalendars": [
+        {
+          "service_id": "crew-winter-weekend",
+          "monday": "0",
+          "tuesday": "0",
+          "wednesday": "0",
+          "thursday": "0",
+          "friday": "0",
+          "saturday": "1",
+          "sunday": "1",
+          "start_date": "20261107",
+          "end_date": "20271231"
+        },
+        {
+          "service_id": "optional-sbkcruise",
+          "monday": "0",
+          "tuesday": "0",
+          "wednesday": "0",
+          "thursday": "0",
+          "friday": "0",
+          "saturday": "0",
+          "sunday": "0",
+          "start_date": "20261107",
+          "end_date": "20271231"
+        }
+      ],
+      "additionalExceptions": [
+        {
+          "service_id": "optional-sbkcruise",
+          "date": "20261107",
+          "exception_type": "1"
+        }
+      ],
+      "operationServiceIds": [
+        "crew-winter-weekend",
+        "optional-sbkcruise"
+      ]
+    }
   },
   "novemberWeekdayCrew": {
     "source": "schedules/november-2026-crew.json",
@@ -25,8 +1143,8 @@
     "data": {
       "sheet": "Board",
       "workbookSha256": "493ec93656719573518b883e8b0e730ff7f5a7fc8149442f7ad1ead367ac93a5",
-      "feedVersion": "20261102",
-      "sourceSha256": "91713d54f1faab5a49d6a37ab4b631288547446227214857ccb783484349ce3a",
+      "feedVersion": "20261103",
+      "sourceSha256": "14fd496026292af6095e774fdcc4f4fbeba81f5915652bbd5d04ddca1dd47e02",
       "startDate": "2026-11-02",
       "endDate": "2027-12-31",
       "serviceIds": [

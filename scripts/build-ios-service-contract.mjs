@@ -26,7 +26,8 @@ const fields = ["tripId", "routeId", "stopId", "serviceDate", "seconds", "delay"
   "boatName", "predictedBoatName", "endsShift", "endsDay", "fromHomePort", "outOfService", "crewShuttle", "arrival",
   "approximate", "scheduleOnly", "timetableOnly", "liveTripId", "predictTripId", "secondsEnd", "crewBoats"];
 const controls = new Set([8, 11, 13, 16, 17, 18, 26, 27]);
-const controlDates = ["2026-09-25", "2026-09-27", "2026-10-03", "2026-10-05", "2026-10-10", "2026-10-17", "2026-10-24"];
+const controlDates = ["2026-09-25", "2026-09-27", "2026-10-03", "2026-10-05", "2026-10-10", "2026-10-17", "2026-10-24",
+  "2026-11-02", "2026-11-07", "2026-11-08", "2026-11-14", "2026-11-28"];
 const manifest = { holidayDates: holiday.dates, sourceNote: holiday.note, schedules: [], cases: 0, departures: 0 };
 await mkdir(output, { recursive: true });
 for (const landingID of Object.keys(landings).map(Number).filter(id => !landings[id].unused).sort((a, b) => a - b)) {
@@ -80,7 +81,7 @@ for (const landingID of Object.keys(landings).map(Number).filter(id => !landings
     }
     for (const mode of ["live", "stale", "browse"]) {
       const feed = { ...realtime, stale: mode === "stale" };
-      const now = mode === "browse" ? "2026-09-24T04:00:00Z" : `${date}T04:00:00Z`;
+      const now = mode === "browse" ? "2026-09-24T04:00:00Z" : `${date}T${date >= "2026-11-01" ? "05" : "04"}:00:00Z`;
       const viewDate = mode === "browse" ? date : null;
       context.realtime = feed;
       const rows = timelineDepartures({ data: schedule, realtime: feed, viewDate, now: new Date(now) }).map(({ departure }) => departure);

@@ -24,7 +24,8 @@ MAPS = ('schedules/sukkot-2026-live.json',
         'schedules/sukkot-2026-crew.json',
         'schedules/fall-2026-post-sukkot-live.json',
         'schedules/november-2026-live.json',
-        'schedules/november-2026-crew.json')
+        'schedules/november-2026-crew.json',
+        'schedules/winter-2026-weekend-crew.json')
 
 
 def coverage(reviewed):
@@ -110,7 +111,10 @@ def main(argv=None):
     print(f'NYC Ferry GTFS {version} matches the current reviewed schedule sources.')
     crew = json.loads((ROOT / 'schedules/november-2026-crew.json').read_text())
     print(f"November Board: {crew['counts']['assignedTrips']} weekday trips assigned; "
-          f"{len(crew['rejected'])} boundaries unconfirmed. Relief rows are user-confirmed crew shuttles. Weekend crew unconfirmed.")
+          f"{len(crew['rejected'])} boundaries unconfirmed. Relief rows are user-confirmed crew shuttles. Weekday review preserved.")
+    weekend = json.loads((ROOT / 'schedules/winter-2026-weekend-crew.json').read_text())
+    print(f"Winter weekend Board: {weekend['counts']['regularWorkings']} regular workings; "
+          f"{len(weekend['rejected'])} boundaries unconfirmed. Optional workings require dated approval and published service.")
     return 0
 
 
