@@ -83,10 +83,18 @@ def build(source, feed):
             normalized['label'] = 'ERF 3 MID'
             service_ids = set().union(*(services_on(tables, dt.date.fromisoformat(date)) for date in dates))
         selected['assignments'] = [normalized]
-        matched = matcher.build(selected, feed, kind='weekend', service_ids=service_ids)
         if key == 'sbkCruise':
             published = {t['trip_id']:t for t in tables['trips'] if t['route_id']=='SB' and t['block_id']=='33'}
-            if not published or any(not re.fullmatch(r'33\d{2}', t['trip_short_name']) for t in published.values()):
+            if not published:
+                # The operator publishes each cruise day as its own short-lived service and drops
+                # it once the day has passed. With no block 33 in the feed there is nothing to
+                # verify, so every approved date waits for published service; none is invented.
+                optional.update(status='awaiting-published-service', crewBoundaryStatus='unconfirmed',
+                                pendingDates=dates)
+                continue
+        matched = matcher.build(selected, feed, kind='weekend', service_ids=service_ids)
+        if key == 'sbkCruise':
+            if any(not re.fullmatch(r'33\d{2}', t['trip_short_name']) for t in published.values()):
                 raise ValueError('Cruise working needs the distinct published 33 / 330x identity')
             if any(c['stop_id'] not in {'24','87'} for c in tables['stop_times'] if c['trip_id'] in published):
                 raise ValueError('Cruise block no longer matches the published Red Hook / Pier 11 shuttle')

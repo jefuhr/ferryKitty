@@ -89,6 +89,30 @@ class WinterWeekendImport(unittest.TestCase):
         self.assertNotIn('end',record)
         self.assertEqual(len(data['rejected']),10)
 
+    def test_dropped_cruise_day_waits_for_published_service_instead_of_failing(self):
+        # The 20261108 feed dropped the Nov 7 one-day cruise service (block 33) and kept the rest.
+        cruise={t['trip_id'] for t in self.feed['tables']['trips'] if t['service_id']=='3'}
+        self.assertEqual(len(cruise),23)
+        self.feed['tables']['trips']=[t for t in self.feed['tables']['trips'] if t['trip_id'] not in cruise]
+        self.feed['tables']['stop_times']=[c for c in self.feed['tables']['stop_times'] if c['trip_id'] not in cruise]
+        self.feed['tables']['calendar']=[r for r in self.feed['tables']['calendar'] if r['service_id']!='3']
+        data=module.build(self.source,self.feed)
+        optional=data['optionalWorkings']['sbkCruise']
+        self.assertEqual(optional['status'],'awaiting-published-service')
+        self.assertEqual(optional['verifiedDates'],[])
+        self.assertEqual(optional['pendingDates'],['2026-11-07','2026-11-28','2026-12-19'])
+        self.assertFalse(any(r['service_id']=='optional-sbkcruise' for r in data['additionalExceptions']))
+        self.assertFalse(set(data['assignments'])&cruise)
+        self.assertEqual(data['counts']['regularWorkings'],13)
+        self.assertEqual(data['counts']['optionalWorkings'],0)
+        self.assertEqual(data['counts']['assignedTrips'],128)
+
+    def test_malformed_published_cruise_block_still_fails(self):
+        for trip in self.feed['tables']['trips']:
+            if trip['route_id']=='SB' and trip['block_id']=='33':trip['trip_short_name']='9999'
+        with self.assertRaisesRegex(ValueError,'33 / 330x identity'):
+            module.build(self.source,self.feed)
+
     def test_weekend_crew_calendar_does_not_claim_holiday_weekdays(self):
         data=module.build(self.source,self.feed)
         self.assertFalse(any(r['service_id']=='crew-winter-weekend' and r['exception_type']=='1' for r in data['additionalExceptions']))
