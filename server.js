@@ -17,6 +17,9 @@ import { createServiceAlertService } from "./lib/service-alerts.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, "public");
+// Runtime state lives beside the code unless a caller says otherwise. A test that starts this
+// server points it at a temporary directory so a run never rewrites the working copy's snapshots.
+const STATE = process.env.STATE_DIR ? path.resolve(process.env.STATE_DIR) : path.join(ROOT, "state");
 const DATA = path.join(PUBLIC, "data/display-data.json");
 const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 8090);
@@ -59,25 +62,25 @@ const harborMapJson = precompressed(`${JSON.stringify(harbor.map)}\n`);
 console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
 
 const fleet = JSON.parse(await readFile(path.join(ROOT, "content/vessels.json"), "utf8")).vessels;
-const rideService = await createRideService({ fleet, byLanding: landingData.byLanding, historyPath: path.join(ROOT, "state/vessel-trip-history.json") });
+const rideService = await createRideService({ fleet, byLanding: landingData.byLanding, historyPath: path.join(STATE, "vessel-trip-history.json") });
 const vesselIdentity = item => resolveVessel({ id: item.vesselNumber || item.number, label: item.boatName || item.name }, fleet)?.id || null;
-const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(ROOT, "state/realtime.json"), onRefresh: rideService.observe });
+const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(STATE, "realtime.json"), onRefresh: rideService.observe });
 let ridePush = null, notificationFreshness = { stale: true };
 try {
-  ridePush = await createRidePush({ directory: path.join(ROOT, "state"), subject: process.env.WEB_PUSH_SUBJECT || "https://juliet.nyc/ferryTimesMobile/",
+  ridePush = await createRidePush({ directory: STATE, subject: process.env.WEB_PUSH_SUBJECT || "https://juliet.nyc/ferryTimesMobile/",
     refresh: async () => { const current = await realtimeService.getCurrent(); notificationFreshness = { stale: current.stale, positionsStale: current.vehiclesStale }; return current.available && !current.stale; },
     describe: (id, at) => rideService.describe(id, at, notificationFreshness) });
 } catch { console.error("Departure notifications unavailable: check the writable state directory and Web Push configuration."); }
-const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(ROOT, "state/nyu-realtime.json") });
-const serviceAlertService = createServiceAlertService({ cachePath: path.join(ROOT, "state/service-alerts.json") });
+const nyuRealtimeService = createNyuRealtimeService({ loadDisplay: async () => landingData.merged, cachePath: path.join(STATE, "nyu-realtime.json") });
+const serviceAlertService = createServiceAlertService({ cachePath: path.join(STATE, "service-alerts.json") });
 // Every stop on the board, indexed by the pier it belongs to, so the trip view can be told what
 // leaves from the far end of a sailing. Built once from the landings already in memory and holding
 // their departures by reference — see lib/connections.js.
 const connectionIndex = createConnectionIndex(landingData.byLanding);
-const statsStore = await openStatsStore({ databasePath: path.join(ROOT, "state/stats.db") });
+const statsStore = await openStatsStore({ databasePath: path.join(STATE, "stats.db") });
 // The totals that existed before the history did. Folded into the hour they were last written and
 // marked, so the lifetime numbers on the stats page survive the deploy that gave them a time axis.
-const imported = await statsStore.importLegacyCounters(path.join(ROOT, "state/counters.json"));
+const imported = await statsStore.importLegacyCounters(path.join(STATE, "counters.json"));
 if (imported.imported) console.log(`Imported the previous counters, dating from ${imported.since}.`);
 statsStore.markSince(new Date().toISOString());
 const pruned = statsStore.prune();

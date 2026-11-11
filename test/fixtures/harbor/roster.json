@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "operators": [
+    {
+      "id": "nycf",
+      "name": "NYC Ferry",
+      "feedPrefix": ""
+    },
+    {
+      "id": "tst",
+      "name": "Test Partner Line",
+      "feedPrefix": "tst:"
+    }
+  ],
+  "vessels": [
+    {
+      "id": "test-ferry-one",
+      "operatorId": "nycf",
+      "name": "Test Ferry One",
+      "number": "H-901",
+      "mmsi": "367000001",
+      "callSign": "WDX0001",
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "test-ferry-two",
+      "operatorId": "nycf",
+      "name": "Test Ferry Two",
+      "number": "H-902",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [
+        "TEST FERRY 2"
+      ],
+      "active": true
+    },
+    {
+      "id": "tst:partner-queen",
+      "operatorId": "tst",
+      "name": "Partner Queen",
+      "number": null,
+      "mmsi": "367000003",
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "test-ferry-retired",
+      "operatorId": "nycf",
+      "name": "Test Ferry Retired",
+      "number": "H-900",
+      "mmsi": "367000009",
+      "callSign": null,
+      "aisNames": [],
+      "active": false
+    }
+  ]
+}

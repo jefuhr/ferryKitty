@@ -1,0 +1,29 @@
+{
+  "comment": "Invented stops for harbor tests. Not real places.",
+  "stops": [
+    {
+      "stopId": "9001",
+      "name": "Test Cove",
+      "latitude": 40.5,
+      "longitude": -74
+    },
+    {
+      "stopId": "9002",
+      "name": "Test Point",
+      "latitude": 40.51,
+      "longitude": -73.99
+    },
+    {
+      "stopId": "9003",
+      "name": "Test Basin",
+      "latitude": 40.49,
+      "longitude": -74.01
+    },
+    {
+      "stopId": "tst:1",
+      "name": "Partner Terminal",
+      "latitude": 40.52,
+      "longitude": -73.98
+    }
+  ]
+}

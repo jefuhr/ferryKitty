@@ -1,0 +1,15 @@
+landing,slip,latitude,longitude
+Test Cove,Slip 1,40.500063,-74
+Test Cove,Slip 2,40.499937,-74
+Test Cove,Slip B1,40.5,-73.999527
+Test Point,North,40.51018,-73.99
+Test Point,South,40.50982,-73.99
+Test Basin,East,40.49,-74.009787
+Test Basin,West,40.49,-74.010213
+Test Basin,DOCK #1,40.49054,-74.01
+Pier C,Dry Dock,40.480719,-74.02
+Pier C,SLIP_25,40.48,-74.019645
+Pier C,Slip 27 Fuel Tanks,40.47973,-74.02
+Pier C,Slip 31 Annex,40.48,-74.020355
+Pier C,Slip 31 Annex,40.48,-74.020449
+Nowhere Landing,Slip 1,40.531788,-73.958166
