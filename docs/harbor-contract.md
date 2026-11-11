@@ -63,7 +63,7 @@ Names and call signs are trimmed, and AIS padding (`@` and trailing spaces) is r
 - `PositionReport` (Class A): `UserID`, `Latitude`, `Longitude`, `Sog`, `Cog`, `TrueHeading`, `NavigationalStatus`, `Timestamp` (second of the minute), `Valid`.
 - `StandardClassBPositionReport`, `ExtendedClassBPositionReport` (Class B): `UserID`, `Latitude`, `Longitude`, `Sog`, `Cog`, `TrueHeading`, `Valid`. The extended report also carries `Name`, `Type`, `Dimension` and so yields a fix; its static part may be ignored in v1.
 - `ShipStaticData`: `UserID`, `Name`, `CallSign`, `Type`, `ImoNumber`, `Dimension: { A, B, C, D }`, `Destination`.
-- `StaticDataReport`: `UserID`, `PartNumber`, `ReportA: { Valid, Name }`, `ReportB: { Valid, ShipType, CallSign, Dimension }`. Merge whichever part is valid into the cached static record.
+- `StaticDataReport`: `UserID`, `PartNumber` (a boolean: false is part A, true is part B), `ReportA: { Valid, Name }`, `ReportB: { Valid, ShipType, CallSign, Dimension }`. Merge whichever part is valid into the cached static record. A null in a newer record never erases a known value.
 - An error is `{ "error": "..." }` (also accept `Error`).
 
 `MetaData` is an untyped map. In practice it carries `MMSI`, `ShipName`, `latitude`, `longitude` and `time_utc` (for example `"2026-11-11 15:00:00.123456789 +0000 UTC"`), but that is from observation, not from a schema. Read the MMSI from the body's `UserID` first and `MetaData.MMSI` second. Read the time from `MetaData.time_utc` when it parses, and otherwise use the receive time. A body with `Valid === false` is dropped.
@@ -107,7 +107,7 @@ NYC Ferry entries are generated from `content/vessels.json` by `rosterFromFleet(
 `resolveIdentity({ mmsi, staticData }, roster)` returns `{ vesselId, source }` or null, trying in order:
 
 1. `"roster"` — the MMSI is in the roster (committed or learned; a learned one reports its own stored source).
-2. `"ais-name"` — the AIS name, passed through `normalizeIdentity` from `lib/realtime.js`, exactly equals a roster vessel's normalized `name` or one of its `aisNames`, and exactly one vessel matches. No substring matching.
+2. `"ais-name"` — the AIS name, passed through `normalizeIdentity` from `lib/realtime.js`, exactly equals a roster vessel's normalized `name` or one of its `aisNames`, and exactly one vessel matches. No substring matching. A vessel already bound to a different MMSI is not a candidate, so one hull is never claimed by two transponders.
 
 Proximity binding is the fusion module's job and arrives as a learned binding.
 
@@ -143,8 +143,8 @@ slip = {
 | `East`, `West` | `NORTH`, `SOUTH` | `E`, `W` | passenger |
 | `<WORDS> #1` | `<WORDS>_1` | `1` | passenger |
 | `Dry Dock` | `DRY_DOCK` | `DD` | drydock |
-| `Slip 27 Fuel Tanks` | `SLIP_27` | `27` | fuel |
-| `Slip 31 <word>` | `SLIP_31` | `31` | yard |
+| `Slip <n> Fuel Tanks` | `SLIP_<n>` | `<n>` | fuel |
+| `Slip <n> <other words>` | `SLIP_<n>` | `<n>` | yard |
 
 East and West map to `NORTH` and `SOUTH` because that is what the Ferry RT catalog does in `test/fixtures/ferry-rt-slips.json` (`NYCF_23_SOUTH` is named "West", `NYCF_115_NORTH` is named "East"). `aliases` overrides the token for one slip, keyed `"<landingStopId>|<label>"` with the real landing stop id (`home-port|<label>` in the yard); its value is the replacement token. `yard: true` forces a non-passenger kind. The fixture's catalog also lists the landing itself (`id: "87"`, no platform code); that row is not a slip and the id scheme does not apply to it. Anything else becomes the label upper-cased with every run of non-alphanumerics turned into `_`. Every slip at a yard landing has a non-passenger kind.
 
