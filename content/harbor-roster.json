@@ -1,0 +1,392 @@
+{
+  "version": 1,
+  "operators": [
+    {
+      "id": "nycf",
+      "name": "NYC Ferry",
+      "feedPrefix": ""
+    }
+  ],
+  "vessels": [
+    {
+      "id": "waves-of-wonder",
+      "operatorId": "nycf",
+      "name": "Waves of Wonder",
+      "number": "H-101",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "sunset-crossing",
+      "operatorId": "nycf",
+      "name": "Sunset Crossing",
+      "number": "H-102",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "happy-hauler",
+      "operatorId": "nycf",
+      "name": "Happy Hauler",
+      "number": "H-103",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "great-eagle",
+      "operatorId": "nycf",
+      "name": "Great Eagle",
+      "number": "H-104",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "owls-head",
+      "operatorId": "nycf",
+      "name": "Owl’s Head",
+      "number": "H-105",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "munsee",
+      "operatorId": "nycf",
+      "name": "Munsee",
+      "number": "H-106",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "lunchbox",
+      "operatorId": "nycf",
+      "name": "Lunchbox",
+      "number": "H-200",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "urban-journey",
+      "operatorId": "nycf",
+      "name": "Urban Journey",
+      "number": "H-201",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "friendship-express",
+      "operatorId": "nycf",
+      "name": "Friendship Express",
+      "number": "H-202",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "connector",
+      "operatorId": "nycf",
+      "name": "Connector",
+      "number": "H-203",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "opportunity",
+      "operatorId": "nycf",
+      "name": "Opportunity",
+      "number": "H-204",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "flyer",
+      "operatorId": "nycf",
+      "name": "Flyer",
+      "number": "H-205",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "mcshiny",
+      "operatorId": "nycf",
+      "name": "McShiny",
+      "number": "H-206",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "starlight",
+      "operatorId": "nycf",
+      "name": "Starlight",
+      "number": "H-207",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "spring-mallard",
+      "operatorId": "nycf",
+      "name": "Spring Mallard",
+      "number": "H-208",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "atlantic-compass",
+      "operatorId": "nycf",
+      "name": "Atlantic Compass",
+      "number": "H-209",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "ferry-godmother",
+      "operatorId": "nycf",
+      "name": "Ferry Godmother",
+      "number": "H-107",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "ocean-queen-rockstar",
+      "operatorId": "nycf",
+      "name": "Ocean Queen Rockstar",
+      "number": "H-108",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "seas-the-day",
+      "operatorId": "nycf",
+      "name": "Seas the Day",
+      "number": "H-109",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "golden-narrows",
+      "operatorId": "nycf",
+      "name": "Golden Narrows",
+      "number": "H-110",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "rainbow-cruise",
+      "operatorId": "nycf",
+      "name": "Rainbow Cruise",
+      "number": "H-111",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "unity",
+      "operatorId": "nycf",
+      "name": "Unity",
+      "number": "H-112",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "traversity",
+      "operatorId": "nycf",
+      "name": "Traversity",
+      "number": "H-113",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "jewel-of-the-harbor",
+      "operatorId": "nycf",
+      "name": "Jewel of the Harbor",
+      "number": "H-114",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "koalafied-cruiser",
+      "operatorId": "nycf",
+      "name": "Koalafied Cruiser",
+      "number": "H-214",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "dream-boat",
+      "operatorId": "nycf",
+      "name": "Dream Boat",
+      "number": "H-115",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "forget-me-knot",
+      "operatorId": "nycf",
+      "name": "Forget Me Knot",
+      "number": "H-090",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "signs-to-liberty",
+      "operatorId": "nycf",
+      "name": "Signs to Liberty",
+      "number": "H-215",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "river-sprinter",
+      "operatorId": "nycf",
+      "name": "River Sprinter",
+      "number": "H-119",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "bay-hopper",
+      "operatorId": "nycf",
+      "name": "Bay Hopper",
+      "number": "H-120",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "cyclone-shark",
+      "operatorId": "nycf",
+      "name": "Cyclone Shark",
+      "number": "H-121",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "white-sands",
+      "operatorId": "nycf",
+      "name": "White Sands",
+      "number": "H-501",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "tooth-ferry",
+      "operatorId": "nycf",
+      "name": "Tooth Ferry",
+      "number": "H-122",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "time-traveler",
+      "operatorId": "nycf",
+      "name": "Time Traveler",
+      "number": "H-123",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "melting-pot",
+      "operatorId": "nycf",
+      "name": "Melting Pot",
+      "number": "H-091",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "purpose",
+      "operatorId": "nycf",
+      "name": "Purpose",
+      "number": "H-401",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "curiosity",
+      "operatorId": "nycf",
+      "name": "Curiosity",
+      "number": "H-301",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    },
+    {
+      "id": "city-fishy",
+      "operatorId": "nycf",
+      "name": "City Fishy",
+      "number": "H-092",
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true
+    }
+  ]
+}
