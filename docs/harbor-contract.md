@@ -246,15 +246,15 @@ Ids are the namespaced ones the rest of the board uses (`wtr:…`, `sea:…`). S
 
 `matchDeparture({ schedule, operatorId, landingStopId, departedAt, taken = new Set() })` returns `{ tripId, routeId, serviceDate, nextSequence, confidence: 0.5, source: "schedule" }` or null. Candidates are trips of that operator active on that service day (today's, and yesterday's for after-midnight calls) with a scheduled departure from that landing between 4 minutes after and 20 minutes before the observed departure, in other words the boat left no more than 4 minutes early and no more than 20 minutes late. The nearest wins. A trip in `taken` (already matched to another vessel, keyed `"<serviceDate>|<tripId>"`) is skipped.
 
-`confirmArrival({ schedule, trip, landingStopId })` returns the trip with `confidence: 0.9` and `nextSequence` advanced when the landing is the trip's next call, the trip unchanged when the landing is a later call, and null when the landing is not on the rest of the trip.
+`confirmArrival({ schedule, trip, landingStopId })` returns the trip with `confidence: 0.9` and `nextSequence` advanced when the landing is the trip's next call, the trip unchanged when the landing is a later call, and null when the landing is not on the rest of the trip. After the final call `nextSequence` is null.
 
 ## Fusion with operator realtime
 
 The board already polls NYC Ferry's GTFS-realtime feeds. `normalizeVehiclePositions(vehicleFeed, fleet)` in `lib/realtime.js` gives `{ id, tripId, latitude, longitude, bearing, speed /* m/s */, status, stopSequence, boatName, vesselNumber, updatedAtEpochSeconds }`.
 
-- `operatorFix(position)` turns one of those into a Fix with `source: "operator"`, `mmsi: null`, speed converted to knots.
-- `joinOperatorPositions({ tracks, positions, roster, now })` returns `[{ key, vesselId, tripId, stopSequence, position, ageSeconds }]`: each operator position matched to the track of the same rostered vessel, when there is one. A trip id from a position less than 180 s old is authoritative for that vessel.
-- `proximityBindings({ samples, now })` proposes `{ mmsi, vesselId, source: "proximity", at }` bindings. `samples` is a list of `{ at, vesselId, operator: {latitude, longitude, at}, candidates: [{ mmsi, latitude, longitude, sogKnots, docked }] }` the service has collected, where each candidate position is already interpolated to the operator timestamp. A binding needs, for one MMSI and one vessel: at least 5 samples spanning at least 3 minutes; every one within 75 m; the vessel making 5 kn or more and covering at least 500 m across them; no other unbound MMSI within 150 m in any of them; and no sample taken while docked.
+- `operatorFix(position, { fallbackAt = null })` turns one of those into a Fix with `source: "operator"`, `mmsi: null`, speed converted to knots. `at` is the position's own timestamp, else `fallbackAt`, else the result is null.
+- `joinOperatorPositions({ tracks, positions, roster, now })` returns `[{ key, vesselId, tripId, stopSequence, position, ageSeconds, authoritative }]`: each operator position matched to the track of the same rostered vessel, when there is one (`key` is null when there is none). A position less than 180 s old is `authoritative` and its trip id stands for that vessel; an older one still joins, with `tripId` and `stopSequence` null at the top level and the raw values left inside `position`.
+- `proximityBindings({ samples, now, boundMmsis = new Set(), boundVesselIds = new Set() })` proposes `{ mmsi, vesselId, source: "proximity", at }` bindings. `samples` is a list of `{ at, vesselId, operator: {latitude, longitude, at}, candidates: [{ mmsi, latitude, longitude, sogKnots, docked }] }` the service has collected, where each candidate position is already interpolated to the operator timestamp. A binding needs, for one MMSI and one vessel: at least 5 samples spanning at least 3 minutes; every one within 75 m; the vessel making 5 kn or more and covering at least 500 m across them; no other unbound MMSI within 150 m in any of them; and no sample taken while docked. An MMSI in `boundMmsis` or a vessel in `boundVesselIds` is never proposed, and a bound MMSI nearby does not count as a rival.
 
 A rostered vessel whose AIS fix is stale while its operator position is fresh is advanced with the operator fix through the same reducer, and reports `positionSource: "operator"`.
 
@@ -282,7 +282,7 @@ A rostered vessel whose AIS fix is stale while its operator position is fresh is
 ```
 
 - `id` is the roster vessel id, or `mmsi:<n>` for an unrostered vessel.
-- Every active rostered vessel is listed, as `state: "unknown"` with null position if it has never been seen. Unrostered vessels are listed only with `includeUnrostered`.
+- Every active rostered vessel is listed, as `state: "unknown"` with null position if it has never been seen. An inactive rostered vessel is listed only while its track has a fix and a state other than `unknown`. Unrostered vessels are listed only with `includeUnrostered`. `tracks` may be an array or a Map.
 - `status` is the GTFS-style value the map already understands: `stopped` for `docked` and `laid-up`, `incoming` for `arriving`, `in-transit` for `departing` and `underway`, null for `unknown`.
 - `bearing` is the true heading, or the course when the vessel is making more than 1 kn and reports no heading.
 - `slip` is given when the dock has a slip id; `slipCandidates` is always given while docked. Neither ever carries a coordinate.
