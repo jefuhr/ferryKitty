@@ -199,7 +199,7 @@ dock = { landingStopId, landingId, slipId, confidence, ambiguous, candidates, si
 trip = { tripId, routeId, serviceDate, source: "operator-rt" | "schedule", confidence, nextSequence }
 ```
 
-`advanceTrack(track, fix, { slipIndex, assignSlip, now, slipHeadings })` is pure. It returns `{ track, events }` and never mutates its input. `assignSlip` is passed in (it is the function from `lib/harbor-slips.js`, with the signature given above) so that the reducer depends on the slip index's shape and not on its module. `refreshTrack(track, { now })` applies ageing only, for the moments between fixes, and returns `{ track, events }` too. `emptyTrack(key)` gives a new track. Trip fields are set by the service, not by the reducer.
+`advanceTrack(track, fix, { slipIndex, assignSlip, now, slipHeadings })` is pure. It returns `{ track, events }` and never mutates its input. `assignSlip` is passed in (it is the function from `lib/harbor-slips.js`, with the signature given above) so that the reducer depends on the slip index's shape and not on its module. `refreshTrack(track, { now })` applies every purely time-driven change for the moments between fixes (stale, unknown at 20 minutes, `departing` expiring at 3 minutes, `docked` becoming `laid-up`) and returns `{ track, events }` too. `advanceTrack` computes the state from its fix and then applies the same time rules against `now`, so a late fix still updates the track and is marked stale. `emptyTrack(key)` gives a new track. Trip fields are set by the service, not by the reducer.
 
 States, and the constants in `THRESHOLDS`:
 
