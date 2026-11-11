@@ -21,6 +21,7 @@
     "build:shoreline": "node scripts/build-harbor-shoreline.js",
     "stamp": "node scripts/stamp-assets.js",
     "stamp:bump": "node scripts/stamp-assets.js --bump",
+    "test:harbor": "node scripts/check-harbor-api.mjs",
     "test:mobile-browser": "node scripts/check-mobile-browser.cjs",
     "test:staff-app": "node scripts/check-staff-app.cjs",
     "test:visual-polish": "node scripts/check-visual-polish.cjs",

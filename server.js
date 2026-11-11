@@ -9,10 +9,13 @@ import { clampLimit, createConnectionIndex, tripConnections, vesselsByBoat } fro
 import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
 import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
+import { buildHarborSchedule } from "./lib/harbor-schedule.js";
+import { createHarborService } from "./lib/harbor-service.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
 import { createRideService, resolveVessel } from "./lib/ride.js";
 import { createRidePush, handleRidePush } from "./lib/ride-push.js";
+import { PARTNER_FEEDS, parseCsv } from "./lib/schedule-builder.js";
 import { createServiceAlertService } from "./lib/service-alerts.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +32,8 @@ const displayConfig = JSON.parse(await readFile(DISPLAY_CONFIG, "utf8"));
 // This server answers for every landing, not just config/display.json's. See lib/landing-data.js
 // for why the merged view matters as much as the per-landing map: without it the realtime feeds
 // stay scoped to one landing and partner operators docking elsewhere never get fetched at all.
-const LANDING_CHOICES = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
+const LANDINGS_CONFIG = JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8"));
+const LANDING_CHOICES = landingChoices(LANDINGS_CONFIG);
 const landingData = await loadAllLandingData({ root: ROOT, choices: LANDING_CHOICES });
 const displayDataJson = new Map([...landingData.byLanding].map(([id, data]) => [id, precompressed(`${JSON.stringify(data)}\n`)]));
 // The filter panel is per device and spans every landing, so it needs the whole roster rather
@@ -62,9 +66,14 @@ const harborMapJson = precompressed(`${JSON.stringify(harbor.map)}\n`);
 console.log(`Charted ${harbor.map.routes.length} routes and ${harbor.map.landings.length} docks for the map.`);
 
 const fleet = JSON.parse(await readFile(path.join(ROOT, "content/vessels.json"), "utf8")).vessels;
+let harborService = null;
 const rideService = await createRideService({ fleet, byLanding: landingData.byLanding, historyPath: path.join(STATE, "vessel-trip-history.json") });
 const vesselIdentity = item => resolveVessel({ id: item.vesselNumber || item.number, label: item.boatName || item.name }, fleet)?.id || null;
-const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(STATE, "realtime.json"), onRefresh: rideService.observe });
+const realtimeService = createRealtimeService({ loadDisplay: async () => landingData.merged, fleetPath: path.join(ROOT, "content/vessels.json"), cachePath: path.join(STATE, "realtime.json"), onRefresh: async (update) => {
+  // Two listeners, neither of which may cost the other its turn: the ride history and the harbor
+  // tracker both read the same refresh, and the tracker never throws.
+  try { await rideService.observe(update); } finally { harborService?.observeOperatorFeed(update); }
+} });
 let ridePush = null, notificationFreshness = { stale: true };
 try {
   ridePush = await createRidePush({ directory: STATE, subject: process.env.WEB_PUSH_SUBJECT || "https://juliet.nyc/ferryTimesMobile/",
@@ -86,6 +95,43 @@ statsStore.markSince(new Date().toISOString());
 const pruned = statsStore.prune();
 if (pruned.removed) console.log(`Pruned ${pruned.removed} stats rows older than ${pruned.cutoff}.`);
 const counters = createCounterService({ store: statsStore });
+// The harbor tracker: every passenger ferry AIS can see, which landing and slip it is in, and which
+// trip it is running. It needs one place per pier, so each board landing becomes one harbor landing
+// named by its first stop id, and remembers every stop id any operator uses for that pier so a
+// departure can be matched against whichever timetable the boat belongs to.
+const harborStopIds = new Map();
+const landingTable = LANDINGS_CONFIG.landings || LANDINGS_CONFIG;
+const harborLandings = landingData.available.flatMap((landing) => {
+  const configured = landingTable[String(landing.id)] || {};
+  const ids = [...(configured.stopIds || []).map(String),
+    ...Object.values(PARTNER_FEEDS).flatMap((feed) => (configured[feed.stopIdsKey] || []).map((id) => `${feed.prefix}${id}`))];
+  if (!ids.length || !Number.isFinite(landing.latitude) || !Number.isFinite(landing.longitude)) return [];
+  harborStopIds.set(ids[0], ids);
+  return [{ landingStopId: ids[0], landingId: landing.id, name: landing.displayName || landing.name, latitude: landing.latitude, longitude: landing.longitude }];
+});
+const harborStops = parseCsv(await readFile(path.join(ROOT, "gtfs/stops.txt"), "utf8"))
+  .map((stop) => ({ stopId: stop.stop_id, name: stop.stop_name, latitude: Number(stop.stop_lat), longitude: Number(stop.stop_lon) }));
+harborService = await createHarborService({
+  stateDir: STATE,
+  roster: JSON.parse(await readFile(path.join(ROOT, "content/harbor-roster.json"), "utf8")),
+  fleet, stops: harborStops, landings: harborLandings,
+  stopIdsOfLanding: (id) => harborStopIds.get(id) || [id],
+  // The berth survey is private and lives outside the repository. Without it the tracker reports
+  // landings and leaves slips blank.
+  slipsCsvPath: process.env.HARBOR_SLIPS_CSV || path.join(ROOT, "secrets/slip-positions.csv"),
+  slipAliasesPath: path.join(ROOT, "secrets/slip-aliases.json"),
+  schedule: await buildHarborSchedule({ root: ROOT, serviceTrips: harbor.serviceTrips }),
+  routes: harbor.routes, serviceTrips: harbor.serviceTrips,
+  apiKey: process.env.AISSTREAM_API_KEY || null,
+  streamUrl: process.env.AISSTREAM_URL || undefined,
+  replayPath: process.env.AIS_REPLAY_PATH || null,
+  onEvent: (name) => { if (name === "ais-reconnect") counters.event(name); },
+  warn: (message) => console.warn(message)
+});
+{
+  const status = harborService.status();
+  console.log(`Harbor tracker: ${status.landings} landings, ${status.slips} slips, ${status.tracks} remembered vessels, AIS ${status.ais.state}.`);
+}
 // The counters key landings by number, which is what an agent dials and not what anyone reading a
 // stats page knows a dock by.
 const LANDING_NAMES = Object.fromEntries(landingData.available.map((landing) => [landing.id, landing.displayName || landing.name]));
@@ -130,6 +176,12 @@ function buildStats() {
       ok: statsStore.series("event", { hours: 48, keys: ["realtime-ok"] }),
       stale: statsStore.series("event", { hours: 48, keys: ["realtime-stale"] }),
       unavailable: statsStore.series("event", { hours: 48, keys: ["realtime-unavailable"] })
+    },
+    harbor: {
+      ok: statsStore.series("event", { hours: 48, keys: ["harbor-ok"] }),
+      stale: statsStore.series("event", { hours: 48, keys: ["harbor-stale"] }),
+      unavailable: statsStore.series("event", { hours: 48, keys: ["harbor-unavailable"] }),
+      reconnects: statsStore.series("event", { hours: 48, keys: ["ais-reconnect"] })
     },
     latency: statsStore.latencies({ hours: 24 })
   };
@@ -288,6 +340,23 @@ async function handle(request, response) {
       boats: boats.map(item => ({ ...item, vesselId: vesselIdentity(item) }))
     });
   }
+  // Every passenger ferry the tracker knows, from AIS first and the operator's feed second. The
+  // operator's feed is only read when somebody asks, exactly as /api/boats reads it, so this adds
+  // no polling of its own; AIS arrives on its own connection whether anyone is asking or not.
+  if (url.pathname === "/api/harbor/vessels") {
+    await realtimeService.getCurrent().catch(() => null);
+    const current = harborService.getCurrent({ includeUnrostered: url.searchParams.get("include") === "unrostered" });
+    counters.event(!current.available ? "harbor-unavailable" : current.stale ? "harbor-stale" : "harbor-ok");
+    return json(response, current.available ? 200 : 503, current);
+  }
+  // The slip catalog and the slip-level trip updates, in the shapes the iOS app already reads.
+  // Yard, fuel and dry-dock berths are never listed here, and no coordinate is ever sent.
+  if (url.pathname === "/api/slips") return json(response, 200, harborService.slips());
+  if (url.pathname === "/gtfs-rt/tripupdate") {
+    await realtimeService.getCurrent().catch(() => null);
+    return send(response, 200, { "Content-Type": "application/x-protobuf", "Cache-Control": "no-store" },
+      { raw: Buffer.from(harborService.tripUpdates()), gzip: null });
+  }
   // What else leaves from the stops one trip calls at. The client cannot answer this from its own
   // payload — that is scoped to a single landing — so it asks here, naming only the trip.
   //
@@ -349,6 +418,7 @@ server.listen(PORT, HOST, () => {
   console.log(`Ferry Kitty ready at http://${HOST}:${PORT}`);
   counters.start();
   ridePush?.start();
+  void harborService.start();
 });
-const shutdown = () => server.close(() => void Promise.all([counters.stop(), ridePush?.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
+const shutdown = () => server.close(() => void Promise.all([counters.stop(), ridePush?.stop(), harborService.stop()]).finally(() => { statsStore.close(); process.exit(0); }));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);

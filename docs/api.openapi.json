@@ -728,6 +728,115 @@
           }
         }
       }
+    },
+    "/api/harbor/vessels": {
+      "get": {
+        "summary": "Every tracked passenger ferry: position, state, landing, slip and trip",
+        "operationId": "api_harbor_vessels",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "unrostered"
+              ]
+            },
+            "description": "Also list passenger-type vessels seen on AIS that are not in the roster."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect freshness fields independently of HTTP status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarborVessels"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No source has ever answered; the roster is still listed with unknown states.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarborVessels"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/slips": {
+      "get": {
+        "summary": "Passenger slip catalog, in the Ferry RT shape",
+        "operationId": "api_slips",
+        "responses": {
+          "200": {
+            "description": "Success. Never includes coordinates or non-passenger berths.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Slips"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gtfs-rt/tripupdate": {
+      "get": {
+        "summary": "NYC Ferry trip updates with the stop replaced by the slip a docked vessel is in",
+        "operationId": "gtfs_rt_tripupdate",
+        "responses": {
+          "200": {
+            "description": "A GTFS-realtime FeedMessage. A call carries a slip id in stop_id and stop_time_properties.assigned_stop_id only while the vessel is docked there with slip confidence of at least 0.8.",
+            "content": {
+              "application/x-protobuf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2346,6 +2455,395 @@
             "type": "string"
           }
         },
+        "additionalProperties": true
+      },
+      "HarborVessel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tripId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bearing": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speedKnots": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ageSeconds": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "routeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "route": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "routeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stop": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "reportedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "destination": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mode": {
+            "type": "string"
+          },
+          "vesselId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "operatorId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mmsi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "docked",
+              "arriving",
+              "departing",
+              "underway",
+              "laid-up",
+              "unknown"
+            ]
+          },
+          "stateSince": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "moving": {
+            "type": "boolean"
+          },
+          "positionSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "ais",
+              "operator",
+              null
+            ]
+          },
+          "identitySource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "roster",
+              "ais-name",
+              "proximity",
+              null
+            ]
+          },
+          "rostered": {
+            "type": "boolean"
+          },
+          "landing": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "stopId": {
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          },
+          "slip": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          },
+          "slipCandidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "p": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "slipAmbiguous": {
+            "type": "boolean"
+          },
+          "tripSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "operator-rt",
+              "schedule",
+              null
+            ]
+          },
+          "tripConfidence": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "rostered"
+        ],
+        "additionalProperties": true
+      },
+      "HarborVessels": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sources": {
+            "type": "object",
+            "properties": {
+              "ais": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "connected": {
+                    "type": "boolean"
+                  },
+                  "lastMessageAt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "reconnects": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              },
+              "nycFerry": {
+                "type": "object",
+                "properties": {
+                  "available": {
+                    "type": "boolean"
+                  },
+                  "stale": {
+                    "type": "boolean"
+                  },
+                  "fetchedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          },
+          "vessels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HarborVessel"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "stale",
+          "fetchedAt",
+          "vessels"
+        ],
+        "additionalProperties": true
+      },
+      "Slip": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platformCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "landingStopId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "landingStopId"
+        ],
+        "additionalProperties": false
+      },
+      "Slips": {
+        "type": "object",
+        "properties": {
+          "slips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Slip"
+            }
+          }
+        },
+        "required": [
+          "slips"
+        ],
         "additionalProperties": true
       }
     }

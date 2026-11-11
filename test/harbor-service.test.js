@@ -1,0 +1,315 @@
+import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { normalizeAisMessage } from "../lib/ais-stream.js";
+import { offsetPoint } from "../lib/harbor-geo.js";
+import { buildHarborSchedule } from "../lib/harbor-schedule.js";
+import { createHarborService } from "../lib/harbor-service.js";
+
+// Failure modes covered here, all of them about the modules meeting each other:
+// - a real message sequence must come out as one docked vessel in the right slip, then a trip
+// - a restart must not forget where boats are, or who they are
+// - AIS being down, or never configured, must be said plainly rather than shown as an empty harbor
+// - a stranger must be remembered only if it could be a ferry, and never forever
+// - a name match must become a lasting binding and must never displace the committed roster
+// - the operator's feed must fill in for a hull AIS cannot see, and step back when AIS returns
+// - a transponder beside an operator-reported boat for long enough must be learned as that boat
+// - with no slip survey, docking still works at landing level and no slip is invented
+// Every coordinate is invented (test/fixtures/harbor).
+
+const FIXTURES = fileURLToPath(new URL("./fixtures/harbor/", import.meta.url));
+const stops = JSON.parse(await readFile(path.join(FIXTURES, "stops.json"), "utf8")).stops;
+const roster = JSON.parse(await readFile(path.join(FIXTURES, "roster.json"), "utf8"));
+const arrival = (await readFile(path.join(FIXTURES, "ais-arrival.ndjson"), "utf8")).trim().split("\n").map((line) => JSON.parse(line));
+const landings = stops.map((stop) => ({ landingStopId: stop.stopId, landingId: null, name: stop.name, latitude: stop.latitude, longitude: stop.longitude }));
+const fleet = roster.vessels.filter((vessel) => vessel.operatorId === "nycf").map(({ id, name, number }) => ({ id, name, number }));
+const POINT_NORTH = { latitude: 40.51018, longitude: -73.99 };
+
+// One weekday trip that leaves Test Point at 10:08 local and calls at Test Cove next. The fixture
+// boat pulls away at 10:09:50 on Wednesday 11 November 2026.
+const schedule = await buildHarborSchedule({ tables: [{ operatorId: "nycf", prefix: "",
+  trips: [{ trip_id: "T1", route_id: "TR", service_id: "wk" }],
+  stopTimes: [
+    { trip_id: "T1", stop_id: "9003", stop_sequence: "1", arrival_time: "09:50:00", departure_time: "09:50:00" },
+    { trip_id: "T1", stop_id: "9002", stop_sequence: "2", arrival_time: "10:04:00", departure_time: "10:08:00" },
+    { trip_id: "T1", stop_id: "9001", stop_sequence: "3", arrival_time: "10:20:00", departure_time: "10:20:00" }
+  ],
+  calendar: [{ service_id: "wk", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "0", sunday: "0", start_date: "20260101", end_date: "20271231" }],
+  calendarDates: [] }] });
+
+async function harness(t, options = {}) {
+  const stateDir = options.stateDir || await mkdtemp(path.join(os.tmpdir(), "harbor-service-"));
+  if (!options.stateDir) t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const world = { clock: Date.UTC(2026, 10, 11, 15, 0, 0), status: { state: "open", connected: true, lastMessageAt: null, reconnects: 0 }, events: [], stream: null, stateDir };
+  world.service = await createHarborService({
+    stateDir, roster, fleet, stops, landings, schedule,
+    slipsCsvPath: options.noSlips ? null : path.join(FIXTURES, "slips.csv"),
+    apiKey: "apiKey" in options ? options.apiKey : "test-key",
+    now: () => world.clock,
+    setIntervalImpl: () => ({ unref() {} }), clearIntervalImpl: () => {},
+    onEvent: (name) => world.events.push(name),
+    createStream: (callbacks) => {
+      world.stream = callbacks;
+      return { start() {}, stop() {}, status: () => ({ ...world.status, state: callbacks.apiKey ? world.status.state : "disabled", lastMessageAt: world.status.lastMessageAt ?? world.clock }) };
+    },
+    ...options.extra
+  });
+  // Feeds messages through the same callbacks the live socket uses, with the clock following them.
+  world.feed = (messages) => {
+    for (const raw of messages) {
+      const record = normalizeAisMessage(raw, world.clock);
+      if (record?.kind === "static") world.stream.onStatic(record.static);
+      if (record?.kind === "fix") { world.clock = record.fix.at; world.stream.onFix(record.fix); }
+    }
+  };
+  world.vessel = (id, query) => world.service.getCurrent(query).vessels.find((vessel) => vessel.id === id);
+  return world;
+}
+
+function position(mmsi, point, at, { sog = 12, cog = 90, heading = 90 } = {}) {
+  return { MessageType: "PositionReport", MetaData: { MMSI: Number(mmsi), time_utc: new Date(at).toISOString().replace("T", " ").replace("Z", "000000 +0000 UTC") },
+    Message: { PositionReport: { UserID: Number(mmsi), Valid: true, Latitude: point.latitude, Longitude: point.longitude, Sog: sog, Cog: cog, TrueHeading: heading, NavigationalStatus: 0 } } };
+}
+
+function staticData(mmsi, name, type) {
+  return { MessageType: "ShipStaticData", MetaData: { MMSI: Number(mmsi) },
+    Message: { ShipStaticData: { UserID: Number(mmsi), Valid: true, Name: name, CallSign: "TEST", Type: type, ImoNumber: 0, Dimension: { A: 10, B: 15, C: 3, D: 3 } } } };
+}
+
+function vehicleFeed(entries) {
+  return { entity: entries.map(({ label, point, at, speed = 8, tripId = null, sequence = null }, index) => ({ id: String(index), vehicle: {
+    ...(tripId ? { trip: { tripId } } : {}), position: { latitude: point.latitude, longitude: point.longitude, speed },
+    ...(sequence == null ? {} : { currentStopSequence: sequence }), vehicle: { id: label, label }, timestamp: Math.floor(at / 1000) } })) };
+}
+
+test("a message sequence becomes a docked vessel in the right slip, and then a trip", async (t) => {
+  const world = await harness(t);
+  const dwellEnds = arrival.findIndex((raw) => raw.Message.PositionReport?.Cog === 90);
+  world.feed(arrival.slice(0, dwellEnds));
+
+  const docked = world.vessel("test-ferry-one");
+  assert.equal(docked.state, "docked");
+  assert.equal(docked.status, "stopped");
+  assert.equal(docked.operatorId, "nycf");
+  assert.equal(docked.identitySource, "roster");
+  assert.equal(docked.positionSource, "ais");
+  assert.deepEqual(docked.landing, { id: null, stopId: "9002", name: "Test Point" });
+  assert.equal(docked.slip.id, "NYCF_9002_NORTH");
+  assert.equal(docked.slip.name, "North");
+  assert.ok(docked.slip.confidence >= 0.8);
+  assert.equal(docked.tripId, null);
+
+  world.feed(arrival.slice(dwellEnds));
+  const away = world.vessel("test-ferry-one");
+  assert.equal(away.landing, null);
+  assert.equal(away.slip, null);
+  assert.equal(away.tripId, "T1");
+  assert.equal(away.tripSource, "schedule");
+  assert.equal(away.tripConfidence, 0.5);
+  assert.deepEqual(world.events.filter((name) => name === "docked" || name === "departed"), ["docked", "departed"]);
+
+  // Arriving where the timetable said it would go next turns a guess into a confirmed trip.
+  let at = world.clock + 10 * 60_000;
+  const cove = { latitude: 40.500063, longitude: -74 };
+  world.feed([0, 40, 80].map((seconds) => position("367000001", cove, at + seconds * 1000, { sog: 0.1 })));
+  const next = world.vessel("test-ferry-one");
+  assert.equal(next.state, "docked");
+  assert.equal(next.landing.stopId, "9001");
+  assert.equal(next.tripId, "T1");
+  assert.equal(next.tripConfidence, 0.9);
+  // Two slips 14 m apart on one face: the tracker says so instead of pretending to know.
+  assert.equal(next.slipAmbiguous, true);
+  assert.ok(next.slipCandidates.length >= 2);
+});
+
+test("no output of the service carries a slip coordinate", async (t) => {
+  const world = await harness(t);
+  world.feed(arrival.slice(0, 30));
+  const csv = await readFile(path.join(FIXTURES, "slips.csv"), "utf8");
+  // A boat's own AIS position is public and is the one coordinate a vessel row may carry; in this
+  // fixture the boat approaches along the slip's own latitude, so it is set aside before looking.
+  const current = world.service.getCurrent({ includeUnrostered: true });
+  assert.ok(current.vessels.some((vessel) => vessel.latitude != null));
+  const withoutOwnPosition = { ...current, vessels: current.vessels.map(({ latitude, longitude, ...rest }) => rest) };
+  const text = JSON.stringify(withoutOwnPosition) + JSON.stringify(world.service.slips({ includeYard: true }))
+    + Buffer.from(world.service.tripUpdates()).toString("latin1");
+  for (const row of csv.trim().split("\n").slice(1)) {
+    const [, , latitude, longitude] = row.split(",");
+    for (const value of [latitude, longitude]) if (value.includes(".") && value.split(".")[1].length >= 4) assert.ok(!text.includes(value), `leaked ${value}`);
+  }
+  assert.ok(world.service.slips().slips.every((slip) => Object.keys(slip).sort().join() === "id,landingStopId,name,platformCode"));
+  assert.ok(world.service.slips().slips.every((slip) => slip.landingStopId !== "home-port"));
+});
+
+test("a restart remembers where boats are and who they are", async (t) => {
+  const first = await harness(t);
+  const dwellEnds = arrival.findIndex((raw) => raw.Message.PositionReport?.Cog === 90);
+  first.feed(arrival.slice(0, dwellEnds));
+  await first.service.stop();
+
+  const second = await harness(t, { stateDir: first.stateDir });
+  second.clock = first.clock + 60_000;
+  const vessel = second.vessel("test-ferry-one");
+  assert.equal(vessel.state, "docked");
+  assert.equal(vessel.slip.id, "NYCF_9002_NORTH");
+  assert.equal(vessel.name, "Test Ferry One");
+
+  // Twenty minutes of silence across a restart is an unknown boat, not a docked one.
+  second.clock = first.clock + 25 * 60_000;
+  await second.service.tick();
+  assert.equal(second.vessel("test-ferry-one").state, "unknown");
+  assert.ok(second.events.includes("lost"));
+});
+
+test("AIS being down is reported as stale, and never configured as unavailable", async (t) => {
+  const world = await harness(t);
+  world.feed(arrival.slice(0, 10));
+  assert.equal(world.service.getCurrent().stale, false);
+  world.status = { ...world.status, state: "waiting", connected: false };
+  const down = world.service.getCurrent();
+  assert.equal(down.available, true);
+  assert.equal(down.stale, true);
+  assert.equal(down.sources.ais.connected, false);
+  assert.ok(down.vessels.some((vessel) => vessel.id === "test-ferry-one" && vessel.latitude != null));
+
+  const bare = await harness(t, { apiKey: null });
+  const empty = bare.service.getCurrent();
+  assert.equal(empty.available, false);
+  assert.equal(empty.sources.ais.state, "disabled");
+  assert.match(empty.error, /not configured/);
+  // Every active rostered vessel is still listed, as unknown.
+  assert.deepEqual(empty.vessels.map((vessel) => vessel.state), ["unknown", "unknown", "unknown"]);
+});
+
+test("strangers are remembered only when they could be ferries", async (t) => {
+  const world = await harness(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  world.feed([staticData("367111111", "MYSTERY FERRY", 60), position("367111111", here, world.clock + 1000),
+    staticData("367222222", "BIG TANKER", 80), position("367222222", here, world.clock + 2000)]);
+  assert.equal(world.vessel("mmsi:367111111"), undefined);
+  const stranger = world.vessel("mmsi:367111111", { includeUnrostered: true });
+  assert.equal(stranger.name, "MYSTERY FERRY");
+  assert.equal(stranger.rostered, false);
+  assert.equal(world.vessel("mmsi:367222222", { includeUnrostered: true }), undefined);
+  await world.service.stop();
+  const saved = JSON.parse(await readFile(path.join(world.stateDir, "harbor-discovery.json"), "utf8"));
+  assert.deepEqual(saved.vessels.map((entry) => entry.mmsi), ["367111111"]);
+  assert.equal(saved.vessels[0].shipType, 60);
+  const tracks = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  assert.ok(!tracks.tracks.some((track) => track.key === "367222222"));
+});
+
+test("a name match becomes a lasting binding and never displaces the roster", async (t) => {
+  const world = await harness(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  world.feed([staticData("367000002", "TEST FERRY 2@@@", 60), position("367000002", here, world.clock + 1000)]);
+  const named = world.vessel("test-ferry-two");
+  assert.equal(named.mmsi, "367000002");
+  assert.equal(named.identitySource, "ais-name");
+
+  // A second transponder using the same name does not get the hull.
+  world.feed([staticData("367000022", "TEST FERRY 2", 60), position("367000022", here, world.clock + 1000)]);
+  assert.equal(world.vessel("test-ferry-two").mmsi, "367000002");
+  assert.equal(world.vessel("mmsi:367000022", { includeUnrostered: true }).rostered, false);
+
+  // Nor does a transponder using a committed vessel's name displace its committed MMSI.
+  world.feed([staticData("367000033", "TEST FERRY ONE", 60), position("367000033", here, world.clock + 1000)]);
+  assert.notEqual(world.vessel("test-ferry-one").mmsi, "367000033");
+
+  await world.service.stop();
+  const identities = JSON.parse(await readFile(path.join(world.stateDir, "harbor-identities.json"), "utf8"));
+  assert.deepEqual(identities.learned.map(({ mmsi, vesselId, source }) => ({ mmsi, vesselId, source })),
+    [{ mmsi: "367000002", vesselId: "test-ferry-two", source: "ais-name" }]);
+  const again = await harness(t, { stateDir: world.stateDir });
+  assert.equal(again.vessel("test-ferry-two").mmsi, "367000002");
+});
+
+test("the operator feed fills in for a hull AIS cannot see, and steps back when AIS returns", async (t) => {
+  const world = await harness(t);
+  const start = { latitude: 40.55, longitude: -74.03 };
+  world.service.observeOperatorFeed({ feed: null, now: world.clock,
+    vehicleFeed: vehicleFeed([{ label: "H902", point: start, at: world.clock - 5000, tripId: "T1", sequence: 3 }]) });
+  const seen = world.vessel("test-ferry-two");
+  assert.equal(seen.positionSource, "operator");
+  assert.equal(seen.mmsi, null);
+  assert.equal(seen.tripId, "T1");
+  assert.equal(seen.tripSource, "operator-rt");
+  assert.equal(seen.state, "underway");
+  assert.equal(world.service.getCurrent().sources.nycFerry.available, true);
+
+  // A report three minutes old still places the boat but no longer vouches for its trip.
+  world.clock += 200_000;
+  world.service.observeOperatorFeed({ feed: null, now: world.clock,
+    vehicleFeed: vehicleFeed([{ label: "H902", point: start, at: world.clock - 190_000, tripId: "T1", sequence: 3 }]) });
+  assert.equal(world.vessel("test-ferry-two").tripId, null);
+
+  // The same hull now turns up on AIS under a committed MMSI: AIS becomes the position of record.
+  world.feed([position("367000001", start, world.clock + 1000)]);
+  world.service.observeOperatorFeed({ feed: null, now: world.clock,
+    vehicleFeed: vehicleFeed([{ label: "H901", point: offsetPoint(start, 0, 500), at: world.clock - 2000, tripId: "T1", sequence: 3 }]) });
+  const one = world.vessel("test-ferry-one");
+  assert.equal(one.positionSource, "ais");
+  assert.equal(one.tripSource, "operator-rt");
+  assert.ok(Math.abs(one.latitude - start.latitude) < 1e-4);
+
+  // A broken feed is the operator's problem, not the board's.
+  assert.doesNotThrow(() => world.service.observeOperatorFeed({ vehicleFeed: { entity: [{ vehicle: null }, null] }, now: world.clock }));
+});
+
+test("a transponder that keeps station with an operator-reported boat is learned as that boat", async (t) => {
+  const world = await harness(t);
+  const origin = { latitude: 40.58, longitude: -74.04 };
+  world.feed([staticData("367000444", "UNNAMED", 60)]);
+  for (let step = 0; step <= 8; step += 1) {
+    const at = world.clock + 30_000;
+    const point = offsetPoint(origin, 45, step * 180);
+    world.feed([position("367000444", offsetPoint(point, 90, 20), at, { sog: 12, cog: 45, heading: 45 })]);
+    world.clock = at + 2000;
+    world.service.observeOperatorFeed({ feed: null, now: world.clock,
+      vehicleFeed: vehicleFeed([{ label: "H902", point, at, speed: 6.2, tripId: "T1", sequence: 3 }]) });
+  }
+  const bound = world.vessel("test-ferry-two");
+  assert.equal(bound.mmsi, "367000444");
+  assert.equal(bound.identitySource, "proximity");
+  assert.equal(bound.positionSource, "ais");
+  assert.equal(bound.tripId, "T1");
+  assert.ok(world.events.includes("identity-learned"));
+  // One hull, one row.
+  assert.equal(world.service.getCurrent({ includeUnrostered: true }).vessels.filter((vessel) => vessel.vesselId === "test-ferry-two" || vessel.mmsi === "367000444").length, 1);
+});
+
+test("with no slip survey, docking is reported by landing and no slip is invented", async (t) => {
+  const world = await harness(t, { noSlips: true });
+  const dwellEnds = arrival.findIndex((raw) => raw.Message.PositionReport?.Cog === 90);
+  world.feed(arrival.slice(0, dwellEnds));
+  const vessel = world.vessel("test-ferry-one");
+  assert.equal(vessel.state, "docked");
+  assert.equal(vessel.landing.stopId, "9002");
+  assert.equal(vessel.slip, null);
+  assert.deepEqual(world.service.slips().slips, []);
+  assert.ok(distanceOk(vessel, POINT_NORTH));
+});
+
+function distanceOk(vessel, point) {
+  return Math.abs(vessel.latitude - point.latitude) < 1e-3 && Math.abs(vessel.longitude - point.longitude) < 1e-3;
+}
+
+test("a capture can be replayed without a key, ending at the present moment", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "harbor-replay-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const capture = path.join(directory, "capture.ndjson");
+  await writeFile(capture, arrival.map((raw) => JSON.stringify(raw)).join("\n") + "\nnot json\n");
+  const world = await harness(t, { apiKey: null, extra: { replayPath: capture } });
+  world.clock = Date.UTC(2027, 0, 5, 12, 0, 0);
+  await world.service.start();
+  const current = world.service.getCurrent();
+  assert.equal(current.available, true);
+  const vessel = current.vessels.find((item) => item.id === "test-ferry-one");
+  assert.equal(vessel.state, "underway");
+  assert.ok(vessel.ageSeconds <= 1);
+  await world.service.stop();
+});
