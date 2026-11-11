@@ -258,3 +258,57 @@ test("fake server sends long text and binary frames, can go silent and closes id
   await until(() => received.length === 3); assert.equal(received[2], "visible");
   await server.close(); await server.close(); assert.equal(server.connections[0].closed, true);
 });
+
+// Regression failure modes: boolean PartNumber, invalid placeholder reports,
+// simultaneous valid parts, legacy fallback overriding explicit validity, and
+// unavailable static fields erasing previously learned vessel identity/dimensions.
+test("StaticDataReport honors explicit valid reports with boolean part numbers", () => {
+  const reportA = { Valid: true, Name: "CLASS B FERRY@@ " };
+  const reportB = { Valid: true, ShipType: 60, CallSign: "WDX0003@@ ", Dimension: { A: 10, B: 16, C: 3, D: 4 } };
+  const base = { mmsi: "367000001", aisClass: "B", at: Date.parse("2026-11-11T15:00:00Z") };
+  const aFields = { name: "CLASS B FERRY" };
+  const bFields = { shipType: 60, callSign: "WDX0003", dims: { a: 10, b: 16, c: 3, d: 4 } };
+  const normalize = (PartNumber, ReportA, ReportB) => normalizeAisMessage(message("StaticDataReport", { UserID: 367000001, PartNumber, ReportA, ReportB }));
+  assert.deepEqual(normalize(false, reportA, { ...reportB, Valid: false }), { kind: "static", static: { ...base, ...aFields } });
+  assert.deepEqual(normalize(true, { ...reportA, Valid: false }, reportB), { kind: "static", static: { ...base, ...bFields } });
+  // The report validity wins even when the part discriminator disagrees.
+  assert.deepEqual(normalize(true, reportA, { ...reportB, Valid: false }).static, { ...base, ...aFields });
+  assert.deepEqual(normalize(false, { ...reportA, Valid: false }, reportB).static, { ...base, ...bFields });
+  for (const part of [false, true, 0, 1, undefined]) {
+    assert.deepEqual(normalize(part, reportA, reportB).static, { ...base, ...aFields, ...bFields });
+  }
+  assert.equal(normalize(false, { ...reportA, Valid: false }, { ...reportB, Valid: false }), null);
+});
+
+test("StaticDataReport only falls back to PartNumber when neither report declares validity", () => {
+  const reportA = { Name: "LEGACY FERRY" };
+  const reportB = { ShipType: 60, CallSign: "WDX0004", Dimension: { A: 1, B: 2, C: 3, D: 4 } };
+  const normalize = (PartNumber, ReportA, ReportB) => normalizeAisMessage(message("StaticDataReport", { UserID: 367000001, PartNumber, ReportA, ReportB }));
+  for (const part of [false, 0]) {
+    const data = normalize(part, reportA, reportB).static;
+    assert.equal(data.name, "LEGACY FERRY"); assert.equal("callSign" in data, false);
+  }
+  for (const part of [true, 1]) {
+    const data = normalize(part, reportA, reportB).static;
+    assert.equal(data.callSign, "WDX0004"); assert.equal("name" in data, false);
+  }
+  assert.equal(normalize(true, { ...reportA, Valid: false }, reportB), null);
+  assert.equal(normalize(false, reportA, { ...reportB, Valid: false }), null);
+  assert.equal(normalize(undefined, reportA, reportB), null);
+});
+
+test("unavailable static fields preserve cached values while class and timestamp update", () => {
+  const h = harness(); h.stream.start(); h.sockets[0].emit("open");
+  const original = { ...staticMessage.Message.ShipStaticData, ImoNumber: 1234567 };
+  h.sockets[0].data(message("ShipStaticData", original));
+  const first = h.statics[0];
+  const nextAt = "2026-11-11T15:00:01Z";
+  h.sockets[0].data(message("ShipStaticData", { ...original, Name: "@@ ", CallSign: " ", Type: null, ImoNumber: 0,
+    Dimension: { A: 0, B: 0, C: 0, D: 0 } }, { time_utc: nextAt }));
+  assert.deepEqual(h.statics[1], { ...first, at: Date.parse(nextAt) });
+  const finalAt = "2026-11-11T15:00:02Z";
+  h.sockets[0].data(message("StaticDataReport", { UserID: 367000001, PartNumber: false,
+    ReportA: { Valid: true, Name: "@@ " }, ReportB: { Valid: true, CallSign: " ", ShipType: null, Dimension: { A: 0, B: 0, C: 0, D: 0 } } }, { time_utc: finalAt }));
+  assert.deepEqual(h.statics[2], { ...first, aisClass: "B", at: Date.parse(finalAt) });
+  h.stream.stop();
+});
