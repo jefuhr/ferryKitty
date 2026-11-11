@@ -1,13 +1,18 @@
 // Failure modes: overlapping operator ids, unsorted and sparse stop sequences, inactive services,
 // calendar additions/removals, taken trips, early/late window edges, previous-day times past 24:00,
-// DST clock changes, shared landings, skipped arrival calls, and the final arrival. Bundled-feed
-// coverage checks structure only, so an expired timetable does not change these tests' meaning.
+// DST clock changes, shared landings, skipped arrival calls, and the final arrival. Layered NYC
+// coverage checks historical-base replacement, reused live ids, dated and holiday candidates,
+// exception-only service, date-aware arrival lookup, and a real departure from the server's index.
+// Bundled-feed coverage derives its service date from the data, so feed refreshes do not stale it.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PARTNER_FEEDS, parseCsv, timeToSeconds } from "../lib/schedule-builder.js";
+import { activeServices, addDays, zonedParts } from "../public/assets/schedule.js";
+import { landingChoices, loadAllLandingData } from "../lib/landing-data.js";
+import { describedServiceTrip, loadHarborMap, serviceFrame } from "../lib/fleet-map.js";
 import { buildHarborSchedule, matchDeparture, confirmArrival } from "../lib/harbor-schedule.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -46,6 +51,22 @@ const scheduleFor = (...feeds) => buildHarborSchedule({ tables: feeds.length ? f
 const depart = (schedule, overrides = {}) => matchDeparture({
   schedule, operatorId: "nycf", landingStopId: "9001", departedAt: AT_EIGHT, ...overrides
 });
+
+function liveCalendar(serviceId = "live", overrides = {}) {
+  return { serviceId, weekdays: Array(7).fill(true), startDate: "2026-01-01", endDate: "2026-12-31", ...overrides };
+}
+
+function liveCandidate({ serviceId = "live", routeId = "R", time = "08:00:00", dates = null, holiday = false } = {}) {
+  return { serviceId, routeId, dates, holiday, stops: plan("published-id", time).calls.map(call => ({
+    stopId: call.stopId, sequence: call.sequence,
+    arrivalSeconds: timeToSeconds(call.time), departureSeconds: timeToSeconds(call.time)
+  })) };
+}
+
+function serviceIndex(overrides = {}) {
+  return { timezone: "America/New_York", trips: new Map([["live-44", [liveCandidate()]]]),
+    calendars: [liveCalendar()], exceptions: [], holidayDates: new Set(), ...overrides };
+}
 
 test("parsed feed tables build the contract index without changing their input", async () => {
   const tables = [feed(), feed({ operatorId: "waterway", prefix: "wtr:" })];
@@ -197,6 +218,129 @@ test("the final arrival confirms the call and clears nextSequence", async () => 
   assert.equal(confirmArrival({ schedule, trip: final, landingStopId: "9003" }), null);
 });
 
+test("the layered index replaces NYC base tables, preserves live ids, and leaves partners on GTFS", async () => {
+  const serviceTrips = serviceIndex();
+  serviceTrips.trips.set("wtr:shadow", [liveCandidate({ routeId: "wtr:R" })]);
+  const original = structuredClone(serviceTrips);
+  const schedule = await buildHarborSchedule({ serviceTrips, tables: [
+    feed(), feed({ operatorId: "waterway", prefix: "wtr:" })
+  ] });
+  assert.deepEqual(schedule.operators.get("nycf"), { prefix: "", tripCount: 1 });
+  assert.equal(schedule.trip("morning"), null);
+  assert.equal(schedule.trip("wtr:shadow"), null);
+  assert.equal(depart(schedule).tripId, "live-44");
+  assert.equal(depart(schedule, { operatorId: "waterway", landingStopId: "wtr:9001" }).tripId, "wtr:morning");
+  assert.deepEqual(schedule.activeOn("2026-11-11"), new Set(["live", "wtr:daily"]));
+  assert.equal(schedule.trip("live-44", "2026-11-11").operatorId, "nycf");
+  assert.deepEqual(serviceTrips, original);
+});
+
+test("reused live ids resolve the candidate for the supplied service date, including arrivals", async () => {
+  const old = liveCandidate({ serviceId: "old", routeId: "OLD" });
+  const current = liveCandidate({ serviceId: "current", routeId: "CURRENT" });
+  current.stops[1].stopId = "9003";
+  current.stops[2].stopId = "9002";
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["reused-live", [old, current]]]), calendars: [
+      liveCalendar("old", { endDate: "2026-11-10" }),
+      liveCalendar("current", { startDate: "2026-11-11" })
+    ]
+  }) });
+  assert.equal(schedule.operators.get("nycf").tripCount, 1);
+  assert.equal(schedule.trip("reused-live"), null);
+  assert.equal(schedule.trip("reused-live", "2026-11-10").routeId, "OLD");
+  assert.equal(schedule.trip("reused-live", "2026-11-11").routeId, "CURRENT");
+  assert.deepEqual(schedule.departuresFrom("9001", "nycf", "2026-11-10").map(call => call.routeId), ["OLD"]);
+  assert.deepEqual(schedule.departuresFrom("9001", "nycf", "2026-11-11").map(call => call.routeId), ["CURRENT"]);
+  const trip = depart(schedule);
+  assert.equal(trip.tripId, "reused-live");
+  assert.equal(trip.routeId, "CURRENT");
+  assert.deepEqual(confirmArrival({ schedule, trip, landingStopId: "9003" }), { ...trip, confidence: 0.9, nextSequence: 70 });
+});
+
+test("an unresolved dated lookup stays null while an already-matched route disambiguates arrivals", async () => {
+  const earlier = liveCandidate({ routeId: "EARLIER", time: "07:30:00" });
+  const current = liveCandidate({ routeId: "CURRENT" });
+  current.stops[1].stopId = "9003";
+  current.stops[2].stopId = "9002";
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["shared-live", [earlier, current]]])
+  }) });
+  assert.equal(schedule.trip("shared-live", "2026-11-11"), null);
+  assert.equal(schedule.trip("shared-live", "2026-11-11", "CURRENT").routeId, "CURRENT");
+  const trip = depart(schedule);
+  assert.equal(trip.routeId, "CURRENT");
+  assert.deepEqual(confirmArrival({ schedule, trip, landingStopId: "9003" }), { ...trip, confidence: 0.9, nextSequence: 70 });
+});
+
+test("a layered candidate's dates list further restricts its active calendar", async () => {
+  const serviceTrips = serviceIndex({ trips: new Map([["dated-live", [liveCandidate({ dates: ["2026-11-12"] })]]]) });
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips });
+  assert.equal(depart(schedule), null);
+  assert.equal(schedule.trip("dated-live", "2026-11-11"), null);
+  assert.deepEqual(schedule.departuresFrom("9001", "nycf", "2026-11-11"), []);
+  assert.equal(depart(schedule, { departedAt: Date.parse("2026-11-12T13:00:00Z") }).tripId, "dated-live");
+  assert.ok(schedule.trip("dated-live", "2026-11-12"));
+});
+
+test("an empty layered dates list never activates a candidate", async () => {
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["no-dates", [liveCandidate({ dates: [] })]]])
+  }) });
+  assert.equal(depart(schedule), null);
+  assert.equal(schedule.trip("no-dates", "2026-11-11"), null);
+});
+
+test("holiday and ordinary candidates sharing a live id obey the service day's holiday flag", async () => {
+  const ordinary = liveCandidate({ routeId: "ORDINARY" });
+  const holiday = liveCandidate({ routeId: "HOLIDAY", holiday: true });
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["holiday-reused", [ordinary, holiday]]]), holidayDates: new Set(["2026-11-11"])
+  }) });
+  assert.equal(depart(schedule).routeId, "HOLIDAY");
+  assert.equal(schedule.trip("holiday-reused", "2026-11-11").routeId, "HOLIDAY");
+  assert.equal(depart(schedule, { departedAt: Date.parse("2026-11-12T13:00:00Z") }).routeId, "ORDINARY");
+  assert.equal(schedule.trip("holiday-reused", "2026-11-12").routeId, "ORDINARY");
+});
+
+test("a layered holiday candidate cannot run on an ordinary day and ordinary service is withdrawn on a holiday", async () => {
+  const holidayOnly = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["holiday-only", [liveCandidate({ holiday: true })]]])
+  }) });
+  assert.equal(depart(holidayOnly), null);
+  const ordinaryOnly = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({ holidayDates: new Set(["2026-11-11"]) }) });
+  assert.equal(depart(ordinaryOnly), null);
+});
+
+test("layered calendars and exceptions control service even when the old root calendar is active", async () => {
+  const schedule = await buildHarborSchedule({ tables: [feed()], serviceTrips: serviceIndex({
+    trips: new Map([["removed", [liveCandidate()]], ["added", [liveCandidate({ serviceId: "special" })]]]),
+    exceptions: [
+      { serviceId: "live", date: "2026-11-11", added: false },
+      { serviceId: "special", date: "2026-11-11", added: true }
+    ]
+  }) });
+  assert.deepEqual(schedule.activeOn("2026-11-11"), new Set(["special"]));
+  assert.equal(depart(schedule).tripId, "added");
+  assert.equal(schedule.trip("removed", "2026-11-11"), null);
+});
+
+test("layered overnight candidates use the previous service day's date and holiday rules", async () => {
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["night-live", [liveCandidate({ time: "25:05:00", dates: ["2026-11-10"] })]]]),
+    holidayDates: new Set(["2026-11-11"])
+  }) });
+  const trip = depart(schedule, { departedAt: Date.parse("2026-11-11T06:05:00Z") });
+  assert.equal(trip?.tripId, "night-live");
+  assert.equal(trip.serviceDate, "2026-11-10");
+});
+
+test("the layered index supplies its timezone", async () => {
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({ timezone: "America/Chicago" }) });
+  assert.equal(schedule.timezone, "America/Chicago");
+  assert.equal(depart(schedule, { departedAt: Date.parse("2026-11-11T14:00:00Z") }).tripId, "live-44");
+});
+
 test("every bundled GTFS directory yields namespaced trips and root-stop departures", async () => {
   const schedule = await buildHarborSchedule({ root: ROOT });
   assert.ok(schedule.operators.get("nycf").tripCount > 0);
@@ -219,4 +363,46 @@ test("every bundled GTFS directory yields namespaced trips and root-stop departu
       assert.ok(trip.stops.every(call => call.stopId.startsWith(spec.prefix)));
     }
   }
+});
+
+test("the server's real layered index yields an active NYC departure beyond the historical base", async t => {
+  const choices = landingChoices(JSON.parse(await readFile(path.join(ROOT, "config/landings.json"), "utf8")));
+  const landingData = await loadAllLandingData({ root: ROOT, choices });
+  assert.equal(landingData.failures.size, 0);
+  const { serviceTrips } = await loadHarborMap({ root: ROOT, landings: landingData.available, byLanding: landingData.byLanding });
+  const schedule = await buildHarborSchedule({ root: ROOT, serviceTrips });
+  const rootStops = new Set(parseCsv(await readFile(path.join(ROOT, "gtfs/stops.txt"), "utf8")).map(stop => stop.stop_id));
+  const nycCandidates = [...serviceTrips.trips.values()].flat().filter(trip => !trip.routeId.includes(":"));
+  const serviceIds = new Set(nycCandidates.map(trip => trip.serviceId));
+  const dates = [
+    ...serviceTrips.calendars.filter(calendar => serviceIds.has(calendar.serviceId)).flatMap(calendar => [calendar.startDate, calendar.endDate]),
+    ...serviceTrips.exceptions.filter(exception => exception.added && serviceIds.has(exception.serviceId)).map(exception => exception.date)
+  ].filter(Boolean).sort();
+  assert.ok(dates.length > 0);
+  let selected = null;
+  // Start at the latest service boundary, so this regression exercises the current supplement
+  // rather than succeeding against an old root trip that happens to share its live id.
+  for (let day = dates.at(-1); day >= dates[0] && !selected; day = addDays(day, -1)) {
+    const active = activeServices(serviceTrips, day);
+    const trip = nycCandidates.find(candidate => active.has(candidate.serviceId) &&
+      (!candidate.dates || candidate.dates.includes(day)) && candidate.holiday === serviceTrips.holidayDates.has(day) &&
+      candidate.stops.slice(0, -1).some(call => rootStops.has(call.stopId) && call.departureSeconds >= 8 * 3600 && call.departureSeconds < 20 * 3600));
+    if (trip) selected = { day, call: trip.stops.slice(0, -1).find(call =>
+      rootStops.has(call.stopId) && call.departureSeconds >= 8 * 3600 && call.departureSeconds < 20 * 3600) };
+  }
+  assert.ok(selected, "the layered index has an active daytime call at a root stop");
+  const noonUtc = Date.parse(`${selected.day}T12:00:00Z`);
+  const local = zonedParts(new Date(noonUtc), serviceTrips.timezone);
+  const departedAt = noonUtc + (selected.call.departureSeconds - local.seconds) * 1000;
+  assert.deepEqual(zonedParts(new Date(departedAt), serviceTrips.timezone), {
+    dateKey: selected.day, seconds: selected.call.departureSeconds
+  });
+  const departures = schedule.departuresFrom(selected.call.stopId, "nycf", selected.day);
+  assert.ok(departures.some(call => schedule.activeOn(selected.day).has(call.serviceId)));
+  const trip = matchDeparture({ schedule, operatorId: "nycf", landingStopId: selected.call.stopId, departedAt });
+  assert.ok(trip, "a real layered NYC departure matches at its scheduled time");
+  assert.equal(trip.serviceDate, selected.day);
+  assert.ok(serviceTrips.trips.has(trip.tripId));
+  assert.equal(describedServiceTrip(serviceTrips, trip.tripId, trip.nextSequence, serviceFrame(serviceTrips, departedAt))?.routeId, trip.routeId);
+  t.diagnostic(`matched live NYC trip ${trip.tripId} on ${trip.serviceDate}, route ${trip.routeId}, root stop ${selected.call.stopId}, scheduled seconds ${selected.call.departureSeconds}`);
 });
