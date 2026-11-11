@@ -189,7 +189,8 @@ A track is everything known about one MMSI (or one operator-only vessel).
   state: "unknown", stateSince: 0,
   moving: false,
   stale: false,                 // the fix is older than its freshness limit but the state still stands
-  dock: null,
+  pending: null,                // { landingStopId, since, fixes, points } while a stop is being confirmed as a docking
+  dock: null,                   // non-null only while docked or laid-up
   lastDock: null,               // the previous dock with `until`, kept for departure matching
   trip: null
 }
@@ -198,7 +199,7 @@ dock = { landingStopId, landingId, slipId, confidence, ambiguous, candidates, si
 trip = { tripId, routeId, serviceDate, source: "operator-rt" | "schedule", confidence, nextSequence }
 ```
 
-`advanceTrack(track, fix, { slipIndex, assignSlip, now, slipHeadings })` is pure. It returns `{ track, events }` and never mutates its input. `assignSlip` is passed in (it is the function from `lib/harbor-slips.js`, with the signature given above) so that the reducer depends on the slip index's shape and not on its module. `refreshTrack(track, { now })` applies ageing only, for the moments between fixes. `emptyTrack(key)` gives a new track. Trip fields are set by the service, not by the reducer.
+`advanceTrack(track, fix, { slipIndex, assignSlip, now, slipHeadings })` is pure. It returns `{ track, events }` and never mutates its input. `assignSlip` is passed in (it is the function from `lib/harbor-slips.js`, with the signature given above) so that the reducer depends on the slip index's shape and not on its module. `refreshTrack(track, { now })` applies ageing only, for the moments between fixes, and returns `{ track, events }` too. `emptyTrack(key)` gives a new track. Trip fields are set by the service, not by the reducer.
 
 States, and the constants in `THRESHOLDS`:
 
@@ -211,6 +212,8 @@ States, and the constants in `THRESHOLDS`:
 | `laid-up` | docked at a non-passenger slip for ≥ 5 min, or at any landing for ≥ 90 min | as for `docked` |
 | `unknown` | no fix yet, or the fix is more than 20 min old | a fresh fix arrives |
 
+- `dock.since` is the time of the first qualifying stopped fix. Until a stop is confirmed it is held in `pending`, never in `dock`.
+- A range is closing when the last three samples show two successive decreases and a net decrease of at least 5 m, and opening when they show two successive increases and a net increase of at least 5 m.
 - `moving` is true when speed is 2 kn or more. A vessel stopped away from any berth is `underway` with `moving: false`.
 - Landing radius for a landing with no slips is 120 m.
 - Freshness: a fix is `stale` after 90 s when the last known speed is 2 kn or more and after 6 minutes otherwise. Staleness alone does not change the state; 20 minutes does.
