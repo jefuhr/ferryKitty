@@ -14,7 +14,7 @@ Berth coordinates come from a private file that is read at runtime and is never 
 |---|---|
 | `lib/harbor-geo.js` | `distanceMetres`, `bearingDegrees`, `angleDifference`, `offsetPoint`, `median` |
 | `lib/harbor-slips.js` | `parseSlipCsv`, `slipId`, `buildSlipIndex`, `assignSlip` |
-| `lib/harbor-roster.js` | `loadRoster`, `rosterFromFleet`, `resolveIdentity` |
+| `lib/harbor-roster.js` | `loadRoster`, `buildRoster`, `rosterFromFleet`, `resolveIdentity` |
 | `lib/ais-stream.js` | `createAisStream`, `normalizeAisMessage`, `HARBOR_BOUNDING_BOXES` |
 | `lib/harbor-state.js` | `advanceTrack`, `refreshTrack`, `emptyTrack`, `THRESHOLDS` |
 | `lib/harbor-schedule.js` | `buildHarborSchedule`, `matchDeparture`, `confirmArrival` |
@@ -102,7 +102,7 @@ createAisStream({
 
 NYC Ferry entries are generated from `content/vessels.json` by `rosterFromFleet(fleet)` and keep the same `id`, so a harbor vessel joins `/api/vessels`. Other operators use a prefixed id such as `sif:<slug>` and the `feedPrefix` their GTFS ids carry in this repo (`wtr:`, `sea:`, `sif:` and so on; see `PARTNER_FEEDS` in `lib/schedule-builder.js`). MMSIs are filled in later; `null` is normal.
 
-`loadRoster({ rosterPath, learned = [] })` returns `{ operators, vessels, byMmsi: Map, byId: Map }`. `learned` is a list of `{ mmsi, vesselId, source, at }` bindings from state; a committed MMSI always wins over a learned one, and a learned binding for an MMSI or vessel the roster already binds is ignored.
+`loadRoster({ rosterPath, learned = [] })` is async, reads the file and returns what the pure `buildRoster({ operators, vessels }, learned)` builds: `{ operators, vessels, byMmsi: Map, byId: Map }`. `byMmsi` maps an MMSI to `{ vesselId, source, at }` (`source` is `"roster"` for a committed MMSI, with `at: null`). `byId` maps a vessel id to its record, with its effective `mmsi` and a `learned` flag. `rosterFromFleet(fleet)` returns the array of vessel entries. `learned` is a list of `{ mmsi, vesselId, source, at }` bindings from state; a committed MMSI always wins over a learned one, and a learned binding for an MMSI or vessel the roster already binds is ignored.
 
 `resolveIdentity({ mmsi, staticData }, roster)` returns `{ vesselId, source }` or null, trying in order:
 
