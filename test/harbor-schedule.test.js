@@ -406,3 +406,18 @@ test("the server's real layered index yields an active NYC departure beyond the 
   assert.equal(describedServiceTrip(serviceTrips, trip.tripId, trip.nextSequence, serviceFrame(serviceTrips, departedAt))?.routeId, trip.routeId);
   t.diagnostic(`matched live NYC trip ${trip.tripId} on ${trip.serviceDate}, route ${trip.routeId}, root stop ${selected.call.stopId}, scheduled seconds ${selected.call.departureSeconds}`);
 });
+
+test("a boat leaving a few minutes early is matched across tomorrow's service-day boundary", async () => {
+  const schedule = await buildHarborSchedule({ tables: [{ operatorId: "nycf", prefix: "",
+    trips: [{ trip_id: "LATE", route_id: "R", service_id: "daily" }],
+    stopTimes: [
+      { trip_id: "LATE", stop_id: "A", stop_sequence: "1", arrival_time: "00:01:00", departure_time: "00:01:00" },
+      { trip_id: "LATE", stop_id: "B", stop_sequence: "2", arrival_time: "00:20:00", departure_time: "00:20:00" }],
+    calendar: [{ service_id: "daily", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "1", sunday: "1", start_date: "20260101", end_date: "20271231" }],
+    calendarDates: [] }] });
+  const early = matchDeparture({ schedule, operatorId: "nycf", landingStopId: "A", departedAt: Date.parse("2026-11-11T23:59:00-05:00") });
+  assert.equal(early?.tripId, "LATE");
+  assert.equal(early.serviceDate, "2026-11-12");
+  // Five minutes early is still outside the window, on either side of midnight.
+  assert.equal(matchDeparture({ schedule, operatorId: "nycf", landingStopId: "A", departedAt: Date.parse("2026-11-11T23:55:00-05:00") }), null);
+});

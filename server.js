@@ -10,6 +10,7 @@ import { createCounterService } from "./lib/counters.js";
 import { openStatsStore } from "./lib/stats-store.js";
 import { describeBoats, loadHarborMap } from "./lib/fleet-map.js";
 import { buildHarborSchedule } from "./lib/harbor-schedule.js";
+import { encodeTripUpdates } from "./lib/harbor-api.js";
 import { createHarborService } from "./lib/harbor-service.js";
 import { createNyuRealtimeService } from "./lib/nyu-realtime.js";
 import { createRealtimeService } from "./lib/realtime.js";
@@ -111,6 +112,15 @@ const harborLandings = landingData.available.flatMap((landing) => {
 });
 const harborStops = parseCsv(await readFile(path.join(ROOT, "gtfs/stops.txt"), "utf8"))
   .map((stop) => ({ stopId: stop.stop_id, name: stop.stop_name, latitude: Number(stop.stop_lat), longitude: Number(stop.stop_lon) }));
+// The tracker is an addition to the board, so nothing about it may stop the board from starting.
+// If it cannot be built, its three routes say so and every other route carries on.
+const harborUnavailable = (reason) => ({
+  start: async () => {}, stop: async () => {}, observeOperatorFeed: () => {},
+  getCurrent: () => ({ available: false, stale: true, fetchedAt: null, error: reason, sources: {}, vessels: [] }),
+  slips: () => ({ slips: [] }),
+  tripUpdates: () => encodeTripUpdates({ feed: null, now: Date.now() }),
+  status: () => ({ ais: { state: "disabled" }, tracks: 0, slips: 0, landings: 0 })
+});
 harborService = await createHarborService({
   stateDir: STATE,
   roster: JSON.parse(await readFile(path.join(ROOT, "content/harbor-roster.json"), "utf8")),
@@ -127,6 +137,9 @@ harborService = await createHarborService({
   replayPath: process.env.AIS_REPLAY_PATH || null,
   onEvent: (name) => { if (name === "ais-reconnect") counters.event(name); },
   warn: (message) => console.warn(message)
+}).catch((error) => {
+  console.error(`Harbor tracker unavailable: ${error.message}`);
+  return harborUnavailable("The harbor tracker could not start.");
 });
 {
   const status = harborService.status();

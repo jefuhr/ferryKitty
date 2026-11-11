@@ -19,7 +19,9 @@ function report(patch = {}, metadata) {
   return message("PositionReport", { ...position.Message.PositionReport, ...patch }, metadata);
 }
 function clock() {
-  let time = 1000;
+  // A clock later than the fixture's timestamps: a message stamped ahead of the clock that
+  // receives it is treated as a broken timestamp.
+  let time = Date.parse("2026-11-11T16:00:00Z");
   let id = 0;
   const timers = new Map();
   return {
@@ -311,4 +313,13 @@ test("unavailable static fields preserve cached values while class and timestamp
     ReportA: { Valid: true, Name: "@@ " }, ReportB: { Valid: true, CallSign: " ", ShipType: null, Dimension: { A: 0, B: 0, C: 0, D: 0 } } }, { time_utc: finalAt }));
   assert.deepEqual(h.statics[2], { ...first, aisClass: "B", at: Date.parse(finalAt) });
   h.stream.stop();
+});
+
+test("a timestamp from the future is replaced by the receive time, and a recent one is kept", () => {
+  const body = { UserID: 367000001, Valid: true, Latitude: 40.5, Longitude: -74, Sog: 1, Cog: 2, TrueHeading: 3, NavigationalStatus: 0 };
+  const at = (time) => normalizeAisMessage({ MessageType: "PositionReport", MetaData: { time_utc: time }, Message: { PositionReport: body } }, Date.UTC(2026, 10, 11, 15, 0, 0)).fix.at;
+  assert.equal(at("2027-11-11 15:00:00.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 15, 0, 0));
+  assert.equal(at("2026-11-11 15:00:59.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 15, 0, 59));
+  assert.equal(at("2026-11-11 15:01:01.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 15, 0, 0));
+  assert.equal(at("2026-11-11 14:58:00.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 14, 58, 0));
 });

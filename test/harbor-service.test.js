@@ -61,9 +61,12 @@ async function harness(t, options = {}) {
   // Feeds messages through the same callbacks the live socket uses, with the clock following them.
   world.feed = (messages) => {
     for (const raw of messages) {
+      // The clock follows the message's own timestamp, as if each were received when it was sent.
+      const stamped = normalizeAisMessage(raw, Number.MAX_SAFE_INTEGER);
+      if (stamped?.kind === "fix" && stamped.fix.at !== Number.MAX_SAFE_INTEGER) world.clock = Math.max(world.clock, stamped.fix.at);
       const record = normalizeAisMessage(raw, world.clock);
       if (record?.kind === "static") world.stream.onStatic(record.static);
-      if (record?.kind === "fix") { world.clock = record.fix.at; world.stream.onFix(record.fix); }
+      if (record?.kind === "fix") world.stream.onFix(record.fix);
     }
   };
   world.vessel = (id, query) => world.service.getCurrent(query).vessels.find((vessel) => vessel.id === id);
@@ -312,4 +315,109 @@ test("a capture can be replayed without a key, ending at the present moment", as
   assert.equal(vessel.state, "underway");
   assert.ok(vessel.ageSeconds <= 1);
   await world.service.stop();
+});
+
+// Regressions from the adversarial review of the assembled tracker.
+
+test("saved state that is valid JSON but the wrong shape is ignored rather than fatal", async (t) => {
+  const stateDir = await mkdtemp(path.join(os.tmpdir(), "harbor-corrupt-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  await writeFile(path.join(stateDir, "harbor-identities.json"), "null");
+  await writeFile(path.join(stateDir, "harbor-tracks.json"), JSON.stringify({ tracks: "nope" }));
+  await writeFile(path.join(stateDir, "harbor-discovery.json"), JSON.stringify({ vessels: [null, 4, { name: "no mmsi" }] }));
+  await writeFile(path.join(stateDir, "harbor-dwells.json"), "{ half written");
+  const world = await harness(t, { stateDir });
+  assert.equal(world.service.getCurrent().vessels.length, 3);
+  const mixed = await mkdtemp(path.join(os.tmpdir(), "harbor-corrupt-"));
+  t.after(() => rm(mixed, { recursive: true, force: true }));
+  await writeFile(path.join(mixed, "harbor-tracks.json"), JSON.stringify({ tracks: [null, 7, { nokey: true }, { key: 12 }, { key: "367000001", recent: "x", fix: 3 }] }));
+  await writeFile(path.join(mixed, "harbor-identities.json"), JSON.stringify({ learned: [null, { mmsi: 5 }, { mmsi: "367000002", vesselId: "test-ferry-two", source: "ais-name", at: 1 }], static: [1, 2] }));
+  const second = await harness(t, { stateDir: mixed });
+  assert.equal(second.vessel("test-ferry-two").mmsi, "367000002");
+  second.feed(arrival.slice(0, 5));
+  assert.equal(second.vessel("test-ferry-one").state, "underway");
+});
+
+test("an operator's trip stops being vouched for once the operator stops reporting the boat", async (t) => {
+  const world = await harness(t);
+  const here = { latitude: 40.55, longitude: -74.03 };
+  world.service.observeOperatorFeed({ feed: null, now: world.clock, vehicleFeed: vehicleFeed([{ label: "H902", point: here, at: world.clock - 2000, tripId: "T1", sequence: 3 }]) });
+  assert.equal(world.vessel("test-ferry-two").tripId, "T1");
+  // The boat drops out of the feed entirely.
+  world.clock += 4 * 60_000;
+  world.service.observeOperatorFeed({ feed: null, now: world.clock, vehicleFeed: vehicleFeed([]) });
+  assert.equal(world.vessel("test-ferry-two").tripId, null);
+
+  // Or the feed itself stops being read: the clock alone is enough.
+  world.service.observeOperatorFeed({ feed: null, now: world.clock, vehicleFeed: vehicleFeed([{ label: "H902", point: here, at: world.clock - 2000, tripId: "T1", sequence: 3 }]) });
+  assert.equal(world.vessel("test-ferry-two").tripId, "T1");
+  world.clock += 4 * 60_000;
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-two").tripId, null);
+});
+
+test("one trip is never given to two hulls, and the operator's word beats a timetable guess", async (t) => {
+  const world = await harness(t);
+  const dwellEnds = arrival.findIndex((raw) => raw.Message.PositionReport?.Cog === 90);
+  world.feed(arrival.slice(0, dwellEnds));
+  // The operator says another hull is running T1 just as this one leaves T1's stop on time.
+  world.service.observeOperatorFeed({ feed: null, now: world.clock, vehicleFeed: vehicleFeed([{ label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: world.clock - 2000, tripId: "T1", sequence: 3 }]) });
+  world.feed(arrival.slice(dwellEnds));
+  assert.equal(world.vessel("test-ferry-two").tripId, "T1");
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+
+  // The other way round: a guess made first is withdrawn when the operator names a different hull.
+  const other = await harness(t);
+  other.feed(arrival);
+  assert.equal(other.vessel("test-ferry-one").tripId, "T1");
+  other.service.observeOperatorFeed({ feed: null, now: other.clock, vehicleFeed: vehicleFeed([{ label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: other.clock - 2000, tripId: "T1", sequence: 3 }]) });
+  assert.equal(other.vessel("test-ferry-two").tripId, "T1");
+  assert.equal(other.vessel("test-ferry-one").tripId, null);
+});
+
+test("what is remembered about passing ships is bounded", async (t) => {
+  const world = await harness(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  for (let index = 0; index < 300; index += 1) {
+    const mmsi = String(368000000 + index);
+    world.feed([staticData(mmsi, `CARGO ${index}`, 70), position(mmsi, here, world.clock + 100)]);
+  }
+  world.feed([staticData("367111111", "MYSTERY FERRY", 60), position("367111111", here, world.clock + 100)]);
+  assert.equal(world.service.status().tracks, 301);
+  world.clock += 7 * 60 * 60_000;
+  await world.service.tick();
+  await world.service.stop();
+  assert.equal(world.service.status().tracks, 0);
+  const identities = JSON.parse(await readFile(path.join(world.stateDir, "harbor-identities.json"), "utf8"));
+  // Only the one that could be a ferry, and so sits in the discovery log, is still remembered.
+  assert.deepEqual(Object.keys(identities.static), ["367111111"]);
+});
+
+test("a fix dated in the future cannot freeze a vessel's track", async (t) => {
+  const world = await harness(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  const receivedAt = world.clock;
+  const future = normalizeAisMessage(position("367000001", here, receivedAt + 365 * 86_400_000), receivedAt);
+  assert.equal(future.fix.at, receivedAt);
+  world.stream.onFix(future.fix);
+  world.clock += 60_000;
+  const later = normalizeAisMessage(position("367000001", offsetPoint(here, 90, 300), world.clock - 1000), world.clock);
+  world.stream.onFix(later.fix);
+  const vessel = world.vessel("test-ferry-one");
+  assert.ok(Math.abs(vessel.longitude - offsetPoint(here, 90, 300).longitude) < 1e-4);
+  assert.ok(vessel.ageSeconds <= 2);
+});
+
+test("a partial static update after a restart adds to what was saved instead of erasing it", async (t) => {
+  const first = await harness(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  first.feed([staticData("367111111", "MYSTERY FERRY", 60), position("367111111", here, first.clock + 100)]);
+  await first.service.stop();
+  const second = await harness(t, { stateDir: first.stateDir });
+  second.clock = first.clock + 60_000;
+  // Part A of a Class B report: a name and nothing else, as a freshly started stream delivers it.
+  second.stream.onStatic({ mmsi: "367111111", name: "MYSTERY FERRY II", callSign: null, shipType: null, imo: null, dims: null, aisClass: "B", at: second.clock });
+  const stranger = second.vessel("mmsi:367111111", { includeUnrostered: true });
+  assert.ok(stranger, "the vessel is still recognised as a passenger type");
+  assert.equal(stranger.name, "MYSTERY FERRY II");
 });
