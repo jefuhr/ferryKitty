@@ -1,5 +1,6 @@
 // Failure modes: missing/invalid fixes, speed/time units, missing timestamps, incorrect or
-// ambiguous vessel identity, operator-only tracks, stale trip authority, and input mutation.
+// ambiguous vessel identity, binding metadata versus vessel records, learned MMSIs, operator-only
+// tracks, stale trip authority, and input mutation.
 // Proximity failures are isolated: sample count, span, separation, speed, distance travelled,
 // competing MMSIs, docked samples, existing bindings, duplicate reports, and side-by-side vessels.
 import test from "node:test";
@@ -18,8 +19,9 @@ const VESSEL = "test-ferry-two";
 
 function roster() {
   const data = structuredClone(rosterFixture);
-  return { ...data, byId: new Map(data.vessels.map(vessel => [vessel.id, vessel])),
-    byMmsi: new Map(data.vessels.filter(vessel => vessel.mmsi).map(vessel => [vessel.mmsi, vessel])) };
+  return { ...data, byId: new Map(data.vessels.map(vessel => [vessel.id, { ...vessel, learned: null }])),
+    byMmsi: new Map(data.vessels.filter(vessel => vessel.mmsi).map(vessel => [vessel.mmsi,
+      { vesselId: vessel.id, source: "roster", at: null }])) };
 }
 
 function position(overrides = {}) {
@@ -100,6 +102,20 @@ test("rostered MMSIs join even before a track has its vesselId populated", () =>
   assert.equal(joined.vesselId, "test-ferry-one");
 });
 
+test("a learned MMSI joins through binding metadata and the effective vessel directory", () => {
+  const data = roster();
+  const learned = { vesselId: VESSEL, source: "proximity", at: NOW - 600_000 };
+  data.byMmsi.set(MMSI, learned);
+  data.byId.set(VESSEL, { ...data.byId.get(VESSEL), mmsi: MMSI, learned: { mmsi: MMSI, ...learned } });
+  const tracks = new Map([[MMSI, { key: MMSI, mmsi: MMSI, vesselId: null }]]);
+  const raw = position({ boatName: "Test Ferry Two", vesselNumber: "H-902" });
+  const original = structuredClone({ tracks, roster: data });
+  const [joined] = joinOperatorPositions({ tracks, positions: [raw], roster: data, now: NOW });
+  assert.equal(joined.key, MMSI);
+  assert.equal(joined.vesselId, VESSEL);
+  assert.deepEqual({ tracks, roster: data }, original);
+});
+
 test("a rostered vessel without an AIS track still yields an operator-only key", () => {
   const raw = position({ boatName: "Test Ferry Two", vesselNumber: "H-902" });
   const [joined] = joinOperatorPositions({ tracks: [], positions: [raw], roster: roster(), now: NOW });
@@ -129,7 +145,9 @@ test("unknown, substring-only, conflicting, and other-operator identities are no
 
 test("ambiguous exact roster identities are not joined", () => {
   const data = roster();
-  data.vessels.push({ ...data.vessels[0], id: "duplicate-name", number: "H-999", mmsi: null });
+  const duplicate = { ...data.byId.get("test-ferry-one"), id: "duplicate-name", number: "H-999", mmsi: null };
+  data.vessels.push(duplicate);
+  data.byId.set(duplicate.id, duplicate);
   assert.deepEqual(joinOperatorPositions({ tracks: [], positions: [position({ vesselNumber: null })], roster: data, now: NOW }), []);
 });
 
