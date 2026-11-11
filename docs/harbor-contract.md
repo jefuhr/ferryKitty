@@ -133,7 +133,7 @@ slip = {
 }
 ```
 
-`slipId(landingToken, label, aliases)` builds `NYCF_<landingToken>_<TOKEN>`, where `landingToken` is the stop id or the yard token:
+`slipId(landingToken, label, { aliases = {}, landingStopId = landingToken, yard = false })` returns `{ id, token, platformCode, kind }`, where `id` is `NYCF_<landingToken>_<TOKEN>` and `landingToken` is the stop id or the yard token:
 
 | Label | Token | platformCode | kind |
 |---|---|---|---|
@@ -146,7 +146,7 @@ slip = {
 | `Slip 27 Fuel Tanks` | `SLIP_27` | `27` | fuel |
 | `Slip 31 <word>` | `SLIP_31` | `31` | yard |
 
-East and West map to `NORTH` and `SOUTH` because that is what the Ferry RT catalog does in `test/fixtures/ferry-rt-slips.json` (`NYCF_23_SOUTH` is named "West", `NYCF_115_NORTH` is named "East"). `aliases` overrides the token for one slip, keyed `"<landingStopId>|<label>"`. Anything else becomes the label upper-cased with every run of non-alphanumerics turned into `_`. Every slip at a yard landing has a non-passenger kind.
+East and West map to `NORTH` and `SOUTH` because that is what the Ferry RT catalog does in `test/fixtures/ferry-rt-slips.json` (`NYCF_23_SOUTH` is named "West", `NYCF_115_NORTH` is named "East"). `aliases` overrides the token for one slip, keyed `"<landingStopId>|<label>"` with the real landing stop id (`home-port|<label>` in the yard); its value is the replacement token. `yard: true` forces a non-passenger kind. The fixture's catalog also lists the landing itself (`id: "87"`, no platform code); that row is not a slip and the id scheme does not apply to it. Anything else becomes the label upper-cased with every run of non-alphanumerics turned into `_`. Every slip at a yard landing has a non-passenger kind.
 
 `buildSlipIndex(slips, { stops, landings = [] })` returns:
 
@@ -160,7 +160,7 @@ East and West map to `NORTH` and `SOUTH` because that is what the Ferry RT catal
 }
 ```
 
-A landing with slips is centred on the mean of its slip points. A landing with none (`landings` supplies `{ landingStopId, landingId, name, latitude, longitude }` for partner terminals) is centred on its stop coordinate. `landingId` is the board's landing number when known, else null.
+A landing with slips is centred on the mean of its slip points, and its `radiusMetres` is the greatest distance from that centre to any slip point plus 60 m, with a floor of 120 m. A landing with none (`landings` supplies `{ landingStopId, landingId, name, latitude, longitude }` for partner terminals) is centred on its stop coordinate. `landingId` is the board's landing number when known, else null.
 
 `assignSlip(points, index, { landingStopId, headingDegrees = null, slipHeadings = new Map() })` takes the docked fixes' positions and returns:
 
