@@ -195,7 +195,8 @@ A track is everything known about one MMSI (or one operator-only vessel).
   trip: null
 }
 
-dock = { landingStopId, landingId, slipId, confidence, ambiguous, candidates, since, points: [...] }
+dock = { landingStopId, landingId, slipId, kind, confidence, ambiguous, candidates, since, points: [...] }
+// kind is the assigned slip's kind, "passenger" with no slip, and "yard" with no slip at a yard landing
 trip = { tripId, routeId, serviceDate, source: "operator-rt" | "schedule", confidence, nextSequence }
 ```
 
