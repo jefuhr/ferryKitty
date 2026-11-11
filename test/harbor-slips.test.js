@@ -1,6 +1,7 @@
 // Failure modes: catalog ids drifting, label and yard kinds being lost, private coordinates in
 // warnings, duplicate survey points becoming separate slips, incorrect landing bounds, outlier
-// fixes, nearby-slip ambiguity, weak distant matches, and heading filters rejecting unknowns.
+// fixes, nearby-slip ambiguity, weak distant matches, heading filters rejecting unknowns, and
+// numbered fuel/yard suffixes being mistaken for number-specific exceptions.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -41,7 +42,12 @@ test("slipId covers every label rule without case sensitivity", () => {
     ["Outer Dock #1", "OUTER_DOCK_1", "1", "passenger"],
     ["Dry Dock", "DRY_DOCK", "DD", "drydock"],
     ["Slip 27 Fuel Tanks", "SLIP_27", "27", "fuel"],
-    ["Slip 31 Annex", "SLIP_31", "31", "yard"]
+    ["Slip 28 Fuel Tanks", "SLIP_28", "28", "fuel"],
+    ["slip 30 fuel tanks", "SLIP_30", "30", "fuel"],
+    ["Slip 31 Annex", "SLIP_31", "31", "yard"],
+    ["Slip 34 Annex", "SLIP_34", "34", "yard"],
+    ["Slip 35 Outer Annex", "SLIP_35", "35", "yard"],
+    ["Slip 36 Fuel Tanks Annex", "SLIP_36", "36", "yard"]
   ];
   for (const [label, token, platformCode, kind] of rows) {
     for (const variant of [label, label.toLowerCase(), label.toUpperCase()]) {
@@ -55,7 +61,7 @@ test("slipId covers every label rule without case sensitivity", () => {
 test("slipId supports fallback tokens and alias overrides scoped to the real stop id", () => {
   assert.equal(slipId("9001", "Outer...Berth / A").token, "OUTER_BERTH_A");
   assert.deepEqual(slipId("9001", "Slip 44 Mystery"), {
-    id: "NYCF_9001_SLIP_44_MYSTERY", token: "SLIP_44_MYSTERY", platformCode: null, kind: "passenger"
+    id: "NYCF_9001_SLIP_44", token: "SLIP_44", platformCode: "44", kind: "yard"
   });
   const aliases = { "9001|North": "CUSTOM", "home-port|Slip 2": "YARD_TWO" };
   assert.deepEqual(slipId("9001", "North", { aliases }), {
@@ -94,6 +100,20 @@ test("CSV parsing merges repeated labels and keeps yard slip kinds and ids", () 
   assert.deepEqual(yard.map((slip) => slip.kind), ["drydock", "yard", "fuel", "yard"]);
   assert.ok(yard.every((slip) => slip.id.startsWith("NYCF_PIERC_")));
   assert.ok(slips.every((slip) => Object.keys(slip).sort().join() === "id,kind,landingStopId,name,platformCode,points"));
+});
+
+test("CSV parsing merges repeated numbered yard labels beyond the original examples", () => {
+  const points = [stops[0], offsetPoint(stops[0], 90, 10)];
+  const text = "landing,slip,latitude,longitude\n" + points.map((point) => (
+    `${stops[0].name},Slip 32 Annex,${point.latitude},${point.longitude}\n`
+  )).join("");
+  const slips = parseSlipCsv(text, { stops });
+  assert.equal(slips.length, 1);
+  assert.equal(slips[0].id, "NYCF_9001_SLIP_32");
+  assert.equal(slips[0].platformCode, "32");
+  assert.equal(slips[0].kind, "yard");
+  assert.equal(slips[0].points.length, 2);
+  assert.equal(distanceMetres(slips[0].points[1], points[1]), 0);
 });
 
 test("an unknown landing warns once without disclosing its coordinate", () => {

@@ -1,6 +1,7 @@
 // Failure modes: fleet/roster drift, missing lookup indexes, learned identities overriding
 // committed identities or binding a vessel twice, inactive identities disappearing, substring
-// matches, duplicate normalized names, and AIS aliases being ignored.
+// matches, duplicate normalized names, AIS aliases being ignored, and name fallbacks allowing a
+// second MMSI to claim a vessel with a committed or learned binding.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -85,11 +86,36 @@ test("identity falls back to one exact normalized name or AIS alias", async () =
   for (const name of ["  TÉST FERRY TWO@@ ", "TEST FERRY 2"]) {
     assert.deepEqual(resolveIdentity({ mmsi: "367099999", staticData: { name } }, roster), { vesselId: "test-ferry-two", source: "ais-name" });
   }
-  assert.deepEqual(resolveIdentity({ staticData: { name: "Test Ferry Retired" } }, roster), { vesselId: "test-ferry-retired", source: "ais-name" });
+  assert.equal(resolveIdentity({ staticData: { name: "Test Ferry Retired" } }, roster), null);
   for (const name of ["Test Ferry", "Test Ferry Two Extended", "", null]) {
     assert.equal(resolveIdentity({ staticData: { name } }, roster), null);
   }
   assert.equal(resolveIdentity({}, roster), null);
+});
+
+test("name fallback cannot claim a vessel already bound to a different MMSI", () => {
+  const roster = buildRoster(fixtureRoster);
+  const vessel = roster.byId.get("test-ferry-one");
+  assert.equal(resolveIdentity({ mmsi: "367099999", staticData: { name: vessel.name } }, roster), null);
+  assert.deepEqual(resolveIdentity({ mmsi: vessel.mmsi, staticData: { name: vessel.name } }, roster), {
+    vesselId: vessel.id, source: "roster"
+  });
+  assert.deepEqual(resolveIdentity({ mmsi: "367099999", staticData: { name: "Test Ferry Two" } }, roster), {
+    vesselId: "test-ferry-two", source: "ais-name"
+  });
+});
+
+test("name fallback checks learned MMSIs in byId rather than the committed vessel array", () => {
+  const roster = buildRoster(fixtureRoster, [
+    { mmsi: "367000002", vesselId: "test-ferry-two", source: "proximity", at: 10 }
+  ]);
+  assert.equal(roster.vessels.find((vessel) => vessel.id === "test-ferry-two").mmsi, null);
+  for (const name of ["Test Ferry Two", "TEST FERRY 2"]) {
+    assert.equal(resolveIdentity({ mmsi: "367099999", staticData: { name } }, roster), null);
+  }
+  assert.deepEqual(resolveIdentity({ mmsi: "367000002", staticData: { name: "Test Ferry Two" } }, roster), {
+    vesselId: "test-ferry-two", source: "proximity"
+  });
 });
 
 test("two normalized name matches are ambiguous, including aliases, but MMSI still wins", async (t) => {
@@ -97,11 +123,15 @@ test("two normalized name matches are ambiguous, including aliases, but MMSI sti
   t.after(() => rm(directory, { recursive: true, force: true }));
   const customPath = path.join(directory, "roster.json");
   const data = structuredClone(fixtureRoster);
+  data.vessels[0].mmsi = null;
   data.vessels[0].aisNames = ["Tést Ferry Two", "TEST FERRY 2"];
   data.vessels[1].aisNames.push("Test Ferry Two");
   await writeFile(customPath, JSON.stringify(data));
   const roster = await loadRoster({ rosterPath: customPath });
   assert.equal(resolveIdentity({ staticData: { name: "TEST FERRY TWO" } }, roster), null);
   assert.equal(resolveIdentity({ staticData: { name: "TEST FERRY 2" } }, roster), null);
-  assert.deepEqual(resolveIdentity({ mmsi: "367000001", staticData: { name: "TEST FERRY TWO" } }, roster), { vesselId: "test-ferry-one", source: "roster" });
+  data.vessels[0].mmsi = "367000001";
+  const bound = buildRoster(data);
+  assert.deepEqual(resolveIdentity({ mmsi: "367000001", staticData: { name: "TEST FERRY TWO" } }, bound), { vesselId: "test-ferry-one", source: "roster" });
+  assert.deepEqual(resolveIdentity({ mmsi: "367099999", staticData: { name: "TEST FERRY TWO" } }, bound), { vesselId: "test-ferry-two", source: "ais-name" });
 });
