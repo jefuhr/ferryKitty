@@ -185,7 +185,7 @@ async function withDirectory(t) {
   return { root, rosterPath, store, calls };
 }
 
-test("script --dry reads a fake store but prints and writes nothing and does not call confirm", async (t) => {
+test("script --dry reads a fake store, reports what it would propose, writes nothing and does not call confirm", async (t) => {
   const deps = await withDirectory(t);
   const outPath = join(deps.root, "proposed.json");
   await writeFile(outPath, "untouched");
@@ -193,7 +193,8 @@ test("script --dry reads a fake store but prints and writes nothing and does not
   const result = await runHarborResearch({ ...deps, args: ["--dry", "--db", join(deps.root, "unused.sqlite"), "--out", outPath],
     confirm: () => assert.fail("dry run called confirm"), stdout: (value) => prints.push(value) });
   assert.equal(result.vessels.length, 1);
-  assert.deepEqual(prints, []);
+  // A dry run reports what it would propose and says that nothing was written.
+  assert.match(prints.join(""), /1 would be proposed.*nothing written/);
   assert.equal(await readFile(outPath, "utf8"), "untouched");
   assert.deepEqual((await readdir(deps.root)).sort(), ["proposed.json", "roster.json"]);
 });
@@ -225,7 +226,7 @@ test("script uses the supplied state directory and opens the database read-only"
   const database = { close: () => closed++ };
   const result = await runHarborResearch({ root: deps.root, rosterPath: deps.rosterPath, stateDir: deps.root, args: ["--dry"],
     openDb: (options) => { assert.deepEqual(options, { databasePath, readOnly: true }); return database; },
-    createStore: (value) => { assert.equal(value, database); return deps.store; }, stdout: () => assert.fail("dry run printed") });
+    createStore: (value) => { assert.equal(value, database); return deps.store; }, stdout: () => {} });
   assert.equal(result.vessels.length, 1);
   assert.equal(closed, 1);
   assert.equal(await readFile(databasePath, "utf8"), "invented database");

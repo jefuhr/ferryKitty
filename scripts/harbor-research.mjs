@@ -75,7 +75,13 @@ export async function runHarborResearch({ args = [], store, root = projectRoot,
       }
     }
     const proposal = propose({ candidates: ranked, fcc, confirmations, roster });
-    if (!settings.dry) {
+    if (settings.dry) {
+      // A dry run shows what would be proposed and why, and touches nothing.
+      stdout(`${ranked.length} unlinked vessels seen; ${proposal.vessels.length} would be proposed, ${proposal.conflicts.length} conflicts, ${proposal.skipped.length} skipped (dry run, nothing written)\n`);
+      for (const candidate of ranked) {
+        stdout(`  ${candidate.mmsi}  ${(candidate.name ?? "(no name)").padEnd(22)} operator ${candidate.operatorGuess ?? "?"}  share ${candidate.share.toFixed(2)}  dwells ${candidate.dwellCount}\n`);
+      }
+    } else {
       const retrievedAt = new Date(now()).toISOString().slice(0, 10);
       for (const vessel of [...proposal.vessels, ...proposal.conflicts.map((conflict) => conflict.vessel)]) {
         for (const reference of vessel.references) reference.retrievedAt ??= retrievedAt;

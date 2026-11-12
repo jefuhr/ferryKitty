@@ -314,6 +314,8 @@ test("a capture can be replayed without a key, ending at the present moment", as
   const vessel = current.vessels.find((item) => item.id === "test-ferry-one");
   assert.equal(vessel.state, "underway");
   assert.ok(vessel.ageSeconds <= 1);
+  // The whole capture was lived through, not just its first message: the boat docked and left.
+  assert.deepEqual(world.events.filter((name) => name === "docked" || name === "departed"), ["docked", "departed"]);
   await world.service.stop();
 });
 
