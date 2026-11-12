@@ -40,6 +40,7 @@
     "check:nyc-feed": "python3 scripts/check-nyc-feed-freshness.py"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
     "gtfs-realtime-bindings": "2.1.0",
     "web-push": "3.6.7"
   },
