@@ -75,7 +75,7 @@ The harbor tracker answers where every passenger ferry is and what it is doing, 
 
 Vessels are known by `content/harbor-roster.json`, which keeps the ids of `content/vessels.json`. MMSIs there may be null; the tracker binds them by exact AIS name or by proximity and remembers what it learned. A committed MMSI always wins. Passenger-type vessels that are not in the roster are logged for curation and shown only with `?include=unrostered`.
 
-Berth positions are private. They are read at startup from `HARBOR_SLIPS_CSV` (default `secrets/slip-positions.csv`, which is gitignored) and never leave the process: no response, log line or feed carries a slip coordinate, and tests use invented coordinates only (`test/fixtures/harbor/`). Without the file the tracker reports landings and leaves slips blank. A slip is reported with a confidence, and two berths on one face are reported as ambiguous rather than guessed.
+Berth positions come from a personal survey committed as `content/harbor-slips.csv` (override with `HARBOR_SLIPS_CSV`). Without the file the tracker reports landings and leaves slips blank. A slip is reported with a confidence, and two berths on one face are reported as ambiguous rather than guessed.
 
 Routes, all additive:
 

@@ -421,3 +421,13 @@ test("a partial static update after a restart adds to what was saved instead of 
   assert.ok(stranger, "the vessel is still recognised as a passenger type");
   assert.equal(stranger.name, "MYSTERY FERRY II");
 });
+
+test("a boat is recognised from the name on its position reports, before any static report", async (t) => {
+  const world = await harness(t);
+  const raw = position("367000002", { latitude: 40.6, longitude: -74.05 }, world.clock + 1000);
+  raw.MetaData.ShipName = "TEST FERRY 2        ";
+  world.service.ingest(raw, world.clock + 1000);
+  const named = world.vessel("test-ferry-two");
+  assert.equal(named.mmsi, "367000002");
+  assert.equal(named.identitySource, "ais-name");
+});

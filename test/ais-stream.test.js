@@ -124,7 +124,8 @@ test("subscription happens on open, frame variants decode and malformed frames a
   const padded = new Uint8Array(bytes.length + 8); padded.set(bytes, 4); socket.data(padded.subarray(4, -4));
   socket.data(new DataView(bytes.buffer));
   socket.data("{"); socket.data(staticMessage); socket.data(fixture.at(-1));
-  assert.equal(h.fixes.length, 4); assert.equal(h.statics.length, 1);
+  // Two static records: the name carried on the first position report, then the static report.
+  assert.equal(h.fixes.length, 4); assert.equal(h.statics.length, 2);
   assert.equal(h.stream.status().messages, 7); assert.equal(h.stream.status().dropped, 1);
   assert.equal(h.stream.status().lastMessageAt, h.timers.now());
   assert.deepEqual(h.states.map((s) => s.state), ["connecting", "open"]);
@@ -322,4 +323,23 @@ test("a timestamp from the future is replaced by the receive time, and a recent 
   assert.equal(at("2026-11-11 15:00:59.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 15, 0, 59));
   assert.equal(at("2026-11-11 15:01:01.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 15, 0, 0));
   assert.equal(at("2026-11-11 14:58:00.000000000 +0000 UTC"), Date.UTC(2026, 10, 11, 14, 58, 0));
+});
+
+test("a position report's metadata name stands in until a static report names the ship", () => {
+  const named = { ...position.MetaData, ShipName: "HARBOR QUEEN         " };
+  assert.equal(normalizeAisMessage(report({}, named)).name, "HARBOR QUEEN");
+  assert.equal("name" in normalizeAisMessage(report({}, { ...position.MetaData, ShipName: "   " })), false);
+
+  const h = harness(); h.stream.start(); h.sockets[0].emit("open");
+  h.sockets[0].data(report({ UserID: 367000050 }, { ...named, MMSI: 367000050 }));
+  assert.deepEqual(h.statics.map(({ mmsi, name, callSign, shipType }) => ({ mmsi, name, callSign, shipType })),
+    [{ mmsi: "367000050", name: "HARBOR QUEEN", callSign: null, shipType: null }]);
+  assert.equal(h.fixes.length, 1);
+
+  // Once any name is known, later position reports add nothing, and a real static report wins.
+  h.sockets[0].data(report({ UserID: 367000050 }, { ...named, MMSI: 367000050, ShipName: "SOMETHING ELSE" }));
+  assert.equal(h.statics.length, 1);
+  h.sockets[0].data(message("StaticDataReport", { UserID: 367000050, PartNumber: 0, ReportA: { Valid: true, Name: "HARBOR QUEEN II" } }));
+  assert.equal(h.statics.at(-1).name, "HARBOR QUEEN II");
+  h.stream.stop();
 });

@@ -128,7 +128,7 @@ harborService = await createHarborService({
   stopIdsOfLanding: (id) => harborStopIds.get(id) || [id],
   // The berth survey is private and lives outside the repository. Without it the tracker reports
   // landings and leaves slips blank.
-  slipsCsvPath: process.env.HARBOR_SLIPS_CSV || path.join(ROOT, "secrets/slip-positions.csv"),
+  slipsCsvPath: process.env.HARBOR_SLIPS_CSV || path.join(ROOT, "content/harbor-slips.csv"),
   slipAliasesPath: path.join(ROOT, "secrets/slip-aliases.json"),
   schedule: await buildHarborSchedule({ root: ROOT, serviceTrips: harbor.serviceTrips }),
   routes: harbor.routes, serviceTrips: harbor.serviceTrips,

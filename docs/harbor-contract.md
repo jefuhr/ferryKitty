@@ -304,3 +304,118 @@ A rostered vessel whose AIS fix is stale while its operator position is fresh is
 - `ais-arrival.ndjson` — one aisstream message per line: static data, then a vessel approaching, docking, dwelling and departing.
 
 A test that needs more builds its own points with `offsetPoint` from a fixture landing.
+
+## Phase 2: fleet database, terminals, runs and assignments
+
+Phase 2 adds every operator that docks in NYC, links hulls to AIS with references, adds New Jersey terminals, and estimates which boat is on which trip. This section is the shared contract for that work. Where it disagrees with an earlier section, this section wins.
+
+### What changed from phase 1
+
+- **Slip coordinates are no longer private.** The survey is committed as `content/harbor-slips.csv` (the default for `HARBOR_SLIPS_CSV`) and the API may return slip coordinates. Tests may use it, though unit tests still prefer the invented fixtures because their geometry is known.
+- **A position report names the ship.** `normalizeAisMessage` returns `{ kind: "fix", fix, name }` when `MetaData.ShipName` is present. The stream and the service use it as the static name until a static report supplies one.
+- **Observed history lives in SQLite**, not in JSON logs. `harbor-tracks.json` stays as the restart snapshot.
+
+### Database
+
+`lib/harbor-db.js` is the schema and the only place it is defined. `openHarborDb({ databasePath })` returns `{ database, schemaVersion, transaction(work), close() }`; `seedRoster(store, roster)` loads the committed roster. Read the SQL there for column names. Conventions: times are epoch milliseconds, service dates are `YYYYMMDD` text, `*_json` columns hold JSON text, booleans are 0 or 1. Nobody else creates or alters tables; a needed change is raised with the coordinator.
+
+`lib/harbor-store.js` wraps the database for everyone else. `createHarborStore(store)` returns functions that take and return camelCase objects (never raw rows, never JSON text):
+
+```js
+recordSighting({ mmsi, name, callSign, shipType, dims, aisClass, at, sogKnots, terminalId })  // upsert; counts fixes and terminal visits
+listSightings({ since, limit })
+recordDwell({ trackKey, mmsi, vesselId, terminalId, slipId, confidence, ambiguous, since, until, latitude, longitude, headingDegrees, dims })
+listDwells({ vesselId, mmsi, terminalId, since, limit })
+linkAis({ mmsi, vesselId, source, confidence, at, name, callSign })   // returns false and changes nothing when a roster link holds that MMSI or that vessel
+listAisLinks({ vesselId })
+recordConflict({ kind, mmsi, vesselId, detail, at })                  // upsert on (kind, mmsi, vesselId)
+listConflicts({ resolved = false })
+recordTripObservation({ trackKey, mmsi, vesselId, operatorId, tripId, routeId, runId, serviceDate, terminalId, departedAt, arrivedTerminalId, arrivedAt, confidence, source })  // upsert on (trackKey, tripId, serviceDate)
+listTripObservations({ operatorId, serviceDate, vesselId })
+saveRuns(operatorId, serviceDate, runs)     // replaces that operator-day
+listRuns(operatorId, serviceDate)
+replacePatterns(operatorId, rows)           // rows: { vesselId, runSignature, dayType, count, lastSeen }
+listPatterns({ operatorId, vesselId })
+saveEstimate({ vesselId, operatorId, serviceDate, runId, runSignature, routeId, confidence, source, reasoning, evidence, model, createdAt })  // upsert on (vesselId, serviceDate, source)
+listEstimates({ serviceDate, operatorId, vesselId })
+recordLlmRun({ purpose, model, serviceDate, batchId, status, inputTokens, outputTokens, cacheReadTokens, costUsd, createdAt })
+llmSpendSince(at)                           // total costUsd
+syncTerminals(terminals, slips)             // replaces both tables from the in-memory index
+listTerminals()                             // each with its slips
+listOperators(), listVessels({ operatorId }), vesselDetail(id)   // detail: vessel, links, references, conflicts
+importLegacy({ stateDir })                  // one-time import of harbor-discovery.json, harbor-dwells.json and learned identities; safe to run twice
+```
+
+### Roster
+
+`content/harbor-roster.json` gains optional vessel fields `class`, `capacity`, `builder`, `year`, and `references: [{ field, value, url, retrievedAt, note }]`, and optional operator fields `website`, `realtime`. Non-NYC-Ferry vessel ids are `<operatorId>:<slug>`. Operator ids match `PARTNER_FEEDS` ids in `lib/schedule-builder.js` where a feed exists (`waterway`, `seastreak`, `siferry`, `liberty`, `statue`, `gi`); `feedPrefix` is that feed's prefix.
+
+### Terminals
+
+`config/harbor-terminals.json` lists terminals that are not board landings:
+
+```js
+{ "terminals": [{ "id": "nj-port-imperial", "name": "Port Imperial", "town": "Weehawken", "state": "NJ",
+    "latitude": 40.7757, "longitude": -74.0124, "stopIds": ["wtr:2439137"] }] }
+```
+
+`lib/harbor-terminals.js` exports `harborLandings({ boardLandings, terminals })` returning `{ landings, stopIdsOfLanding }` in the shapes `createHarborService` already takes (`landings: [{ landingStopId, landingId, name, latitude, longitude }]`). For a terminal, `landingStopId` is its first stop id and `landingId` is null. Board landings keep the `landingStopId` they have today. A terminal has no slips until someone surveys it, so it is a 120 m zone.
+
+### Slip model
+
+`lib/harbor-slips.js` exports `SLIP_MODEL = { sigmaMetres: 12, noneMetres: 45, minP: 0.6, ambiguity: { mode: "spacing", metres: 25 } }` and `assignSlip(points, index, { ..., model = SLIP_MODEL })`. `ambiguity.mode` is `"spacing"` (the phase 1 rule) or `"margin"` (`{ mode: "margin", p: 0.2 }`: ambiguous only when the best two candidates' probabilities differ by less than `p`; no confidence cap otherwise). Defaults do not change until the calibration report on real dwells says so.
+
+### Runs and patterns
+
+A run is the chain of trips one boat can work on one service date.
+
+```js
+run = { runId: "waterway:20261112:3", signature: "wtr:2439137>07:10>wtr:rt-1", source: "block" | "synthesized",
+        trips: [{ tripId, routeId, firstStopId, lastStopId, departsAt, arrivesAt }] }   // times are epoch ms, in order
+```
+
+`lib/harbor-runs.js` exports:
+
+- `buildRuns({ schedule, operatorId, serviceDate, minTurnMs = 120_000, maxTurnMs = 2_700_000 })` → `run[]`. Uses `block_id` where the feed fills it. Otherwise it chains greedily: a trip ending at a terminal is followed by the earliest unclaimed trip of that operator leaving the same terminal (any stop id of the same landing counts) within the turn window. Every trip is in exactly one run.
+- `signature` identifies the same run on another date: first stop id, local departure time `HH:MM`, and route id of its first trip.
+- `runOfTrip(runs, tripId)`, `tripsAfter(run, tripId)`.
+- `dayType(serviceDate)` → `"weekday" | "saturday" | "sunday"`.
+- `buildPatterns(observations, runs)` → rows for `replacePatterns`. An observation counts once per vessel, run signature and service date, and only with confidence ≥ 0.9 or source `operator-rt`.
+- `estimateFromPatterns({ vesselId, operatorId, dayType, patterns, runs })` → `{ runId, runSignature, routeId, confidence, source: "pattern", evidence } | null`. Confidence is the vessel's share of that run's observations on that day type, capped at 0.8, and null below 3 observations.
+
+Precedence when sources disagree, highest first: `operator-rt`, a confirmed `schedule` match (0.9), `run` (inherited from a confirmed trip earlier in the run), `pattern`, `model`.
+
+### Claude
+
+`lib/harbor-llm.js` exports `createHarborLlm({ client, store, now, dailyCapUsd = 1, models = { routine: "claude-haiku-5-5", review: "claude-opus-5-5" } })`. `client` is an `@anthropic-ai/sdk` client, injected so tests use a fake. It is never called from a request handler.
+
+```js
+estimateCost({ model, inputTokens, outputTokens, batch })      // USD, from the price table in the module
+dayRequest({ operator, serviceDate, runs, observations, unmatched, patterns, vessels })   // the request params for one operator-day
+submitDay(requests)        // Batches API; returns { batchId }, records an llm_runs row
+collectDay(batchId)        // when ended: saves estimates (source "model"), updates llm_runs; returns { done, saved, flagged }
+reviewFlagged(items)       // review model, one request each, for what the routine model flagged
+confirmVessel(candidate)   // review model with web search; see Research
+```
+
+Every call first checks `store.llmSpendSince(start of UTC day)` against `dailyCapUsd` and refuses with a typed error when the cap is reached. Results are parsed from structured output and rejected (not saved) when a vessel id, run id or observation id in them is not in the request.
+
+### Research
+
+`lib/harbor-research.js` is pure; `scripts/harbor-research.mjs` does the I/O.
+
+```js
+candidates({ sightings, dwells, terminals, roster })   // unrostered MMSIs ranked by how exclusively they dock at one operator's terminals
+  → [{ mmsi, name, callSign, shipType, operatorGuess, share, dwellCount, terminals: [{ terminalId, count }] }]
+parseFccShips(text)                                    // FCC ULS ship records → [{ callSign, name, mmsi, licensee }]
+propose({ candidates, fcc, confirmations, roster })    // → { vessels: [...roster vessel records with references], conflicts: [...] }
+```
+
+`confirm(candidate)` is injected: `({ mmsi, name, callSign, operatorGuess, evidence }) → { operatorId | null, name, class, capacity, builder, year, confidence, references: [{ field, value, url, note }], notes }`. The script writes `content/harbor-roster.proposed.json` and never edits the roster.
+
+### API additions
+
+- `GET /api/slips`: each slip gains `points: [{ latitude, longitude }]` and `kind`. Yard slips are included with `?include=yard` as before.
+- `GET /api/harbor/vessels`: each vessel gains `operatorName` and `assignment: { routeId, runId, tripId, nextTrips: [{ tripId, routeId, departsAt, fromStopId }], confidence, source } | null`. Query filters `operator` and `state`.
+- `GET /api/harbor/vessels/{id}`: `{ vessel, links, references, conflicts, track, assignment, estimates, dwells, trips }`.
+- `GET /api/harbor/operators`, `GET /api/harbor/terminals` (terminals with their slips and points).
