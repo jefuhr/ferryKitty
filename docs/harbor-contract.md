@@ -141,7 +141,7 @@ slip = {
 | `Slip B1` | `B1` | `B1` | passenger |
 | `North`, `South` | `NORTH`, `SOUTH` | `N`, `S` | passenger |
 | `East`, `West` | `NORTH`, `SOUTH` | `E`, `W` | passenger |
-| `<WORDS> #1` | `<WORDS>_1` | `1` | passenger |
+| `<WORDS> #1` | `<WORDS>_1` | `1` | yard (overnight storage beside a landing) |
 | `Dry Dock` | `DRY_DOCK` | `DD` | drydock |
 | `Slip <n> Fuel Tanks` | `SLIP_<n>` | `<n>` | fuel |
 | `Slip <n> <other words>` | `SLIP_<n>` | `<n>` | yard |
@@ -162,7 +162,7 @@ East and West map to `NORTH` and `SOUTH` because that is what the Ferry RT catal
 
 A landing with slips is centred on the mean of its slip points, and its `radiusMetres` is the greatest distance from that centre to any slip point plus 60 m, with a floor of 120 m. A landing with none (`landings` supplies `{ landingStopId, landingId, name, latitude, longitude }` for partner terminals) is centred on its stop coordinate. `landingId` is the board's landing number when known, else null.
 
-`assignSlip(points, index, { landingStopId, headingDegrees = null, slipHeadings = new Map() })` takes the docked fixes' positions and returns:
+`assignSlip(points, index, { landingStopId, headingDegrees = null, slipHeadings = new Map(), storage = false })` takes the docked fixes' positions and returns:
 
 ```js
 { slipId: "NYCF_9001_SLIP_2" | null, confidence: 0.83, ambiguous: false,
@@ -173,6 +173,7 @@ A landing with slips is centred on the mean of its slip points, and its `radiusM
 - Each slip of that landing within 60 m gets weight `exp(-d² / (2 · 12²))`. A "none" hypothesis gets the weight of a slip 45 m away. `p` is the weight over the sum of all weights, the none hypothesis included.
 - `slipId` is the best candidate when its `p` is at least 0.6, otherwise null. `confidence` is the best `p` either way, and 0 with no candidates.
 - When the two best slips are less than 25 m apart, `confidence` is capped at 0.6 and `ambiguous` is true.
+- At a landing with at least one passenger slip, non-passenger slips (overnight storage berths, where boats raft up a few metres from the boarding slips) are candidates only when `storage` is true. The reducer passes `storage: true` once the dwell reaches the passenger lay-up time (90 minutes). A landing with no passenger slip ignores the switch.
 - `slipHeadings` (slip id → degrees) is optional learned data. A candidate whose heading differs from the vessel's by more than 90° is dropped before weighting. With no entry, heading is ignored.
 
 ## Track and states

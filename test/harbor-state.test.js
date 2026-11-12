@@ -695,3 +695,13 @@ test("Both reducers are pure and preserve service-owned identity, static data, a
   assert.equal(result.track.recent[0].at, START + 130_000);
   assert.equal(result.track.recent.at(-1).at, START + 149_000);
 });
+
+test("Storage berths are offered to slip assignment only after a passenger-length dwell", () => {
+  const seen = [];
+  const spy = (points, index, options) => { seen.push(options.storage); return fixtureAssignSlip(points, index, options); };
+  let track = docked(north, { assignSlip: spy });
+  track = advance(track, fixAt(THRESHOLDS.passengerLayupMs / 1000 - 1), { assignSlip: spy }).track;
+  assert.ok(seen.length > 0 && seen.every((storage) => storage === false));
+  advance(track, fixAt(THRESHOLDS.passengerLayupMs / 1000), { assignSlip: spy });
+  assert.equal(seen.at(-1), true);
+});

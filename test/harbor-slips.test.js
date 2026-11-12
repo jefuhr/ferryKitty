@@ -38,8 +38,8 @@ test("slipId covers every label rule without case sensitivity", () => {
     ["South", "SOUTH", "S", "passenger"],
     ["East", "NORTH", "E", "passenger"],
     ["West", "SOUTH", "W", "passenger"],
-    ["DOCK #1", "DOCK_1", "1", "passenger"],
-    ["Outer Dock #1", "OUTER_DOCK_1", "1", "passenger"],
+    ["DOCK #1", "DOCK_1", "1", "yard"],
+    ["Outer Dock #1", "OUTER_DOCK_1", "1", "yard"],
     ["Dry Dock", "DRY_DOCK", "DD", "drydock"],
     ["Slip 27 Fuel Tanks", "SLIP_27", "27", "fuel"],
     ["Slip 28 Fuel Tanks", "SLIP_28", "28", "fuel"],
@@ -253,4 +253,27 @@ test("no points, no nearby slips, or a different landing give the exact empty as
   assert.deepEqual(assignSlip([], index, { landingStopId: slip.landingStopId }), emptyAssignment);
   assert.deepEqual(assignSlip([offsetPoint(slip.points[0], 90, 61)], index, { landingStopId: slip.landingStopId }), emptyAssignment);
   assert.deepEqual(assignSlip(slip.points, index, { landingStopId: "9001" }), emptyAssignment);
+});
+
+test("storage berths beside passenger slips are candidates only once storage is allowed", () => {
+  const south = parseSlipCsv(csv, { stops }).find((item) => item.name === "South").points[0];
+  const berth = offsetPoint(south, 180, 11);
+  const mixed = `${csv.trim()}\nTest Point,DOCK #1,${berth.latitude},${berth.longitude}\n`;
+  const index = buildSlipIndex(parseSlipCsv(mixed, { stops }), { stops });
+  const between = offsetPoint(south, 180, 7);
+
+  const service = assignSlip([between], index, { landingStopId: "9002" });
+  assert.equal(service.slipId, "NYCF_9002_SOUTH");
+  assert.equal(service.ambiguous, false);
+  assert.ok(service.candidates.every((candidate) => candidate.slipId !== "NYCF_9002_DOCK_1"));
+
+  const overnight = assignSlip([between], index, { landingStopId: "9002", storage: true });
+  assert.equal(overnight.candidates[0].slipId, "NYCF_9002_DOCK_1");
+  assert.equal(overnight.ambiguous, true);
+});
+
+test("a landing made only of storage slips ignores the storage switch", () => {
+  const index = fixtureIndex();
+  const dryDock = index.byId.get("NYCF_PIERC_DRY_DOCK");
+  assert.equal(assignSlip(dryDock.points, index, { landingStopId: "home-port" }).slipId, dryDock.id);
 });
