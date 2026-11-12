@@ -348,7 +348,9 @@ importLegacy({ stateDir })                  // one-time import of harbor-discove
 
 ### Roster
 
-`content/harbor-roster.json` gains optional vessel fields `class`, `capacity`, `builder`, `year`, and `references: [{ field, value, url, retrievedAt, note }]`, and optional operator fields `website`, `realtime`. Non-NYC-Ferry vessel ids are `<operatorId>:<slug>`. Operator ids match `PARTNER_FEEDS` ids in `lib/schedule-builder.js` where a feed exists (`waterway`, `seastreak`, `siferry`, `liberty`, `statue`, `gi`); `feedPrefix` is that feed's prefix.
+`content/harbor-roster.json` gains optional vessel fields `class`, `capacity`, `builder`, `year`, and `references: [{ field, value, url, retrievedAt, note }]`, and optional operator fields `website`, `realtime`. Non-NYC-Ferry vessel ids are `<operatorId>:<slug>`. Operator ids match `PARTNER_FEEDS` ids in `lib/schedule-builder.js` where a feed exists (`waterway`, `seastreak`, `siferry`, `liberty`, `statue`, `gi`); `feedPrefix` is that feed's prefix. An operator whose routes are spread over several bundled feeds lists the others in `extraFeedPrefixes` (NY Waterway: `wbf:` for Belford and `ike:` for the IKEA shuttle); its boats are matched against every one, and a trip matched in an extra feed carries `feedOperatorId`. The NYU Langone ferry is operator `nyu` with prefix `nyu:`.
+
+A terminal in `config/harbor-terminals.json` may carry `berth: { latitude, longitude, radiusMetres }` when its boats lie too far from the published stop for the default 120 m circle (the Staten Island Ferry terminals). It then becomes its own landing at the berth, keeps the board landing's `id`, and takes its stop ids with it.
 
 ### Terminals
 

@@ -10,7 +10,11 @@
       "id": "waterway",
       "name": "NY Waterway",
       "feedPrefix": "wtr:",
-      "website": "https://www.nywaterway.com"
+      "website": "https://www.nywaterway.com",
+      "extraFeedPrefixes": [
+        "wbf:",
+        "ike:"
+      ]
     },
     {
       "id": "seastreak",
@@ -44,7 +48,7 @@
     },
     {
       "id": "nyu",
-      "name": "NYU Ferry",
+      "name": "NYU Langone Ferry",
       "feedPrefix": "nyu:",
       "website": "https://nyu.passiogo.com"
     }
@@ -942,6 +946,13 @@
           "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
           "retrievedAt": "2026-11-12",
           "note": "FCC ULS ship licence WDF2985, status A, vessel name \"FRANK SINATRA\", licensee PORT IMPERIAL FERRY."
+        },
+        {
+          "field": "usualRoute",
+          "value": "ike:IKEA",
+          "url": null,
+          "retrievedAt": "2026-11-12",
+          "note": "Project owner: the IKEA Brooklyn weekend ferry is almost always run by this boat."
         }
       ]
     },

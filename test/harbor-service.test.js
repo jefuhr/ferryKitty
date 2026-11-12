@@ -633,3 +633,54 @@ test("a track restored from saved state is labelled by the roster entry that set
   const stranger = world.service.getCurrent({ includeUnrostered: true }).vessels.find((vessel) => vessel.mmsi === "367000555");
   assert.equal(stranger?.identitySource ?? null, null);
 });
+
+test("a large ferry stopped well off the stop coordinate docks at a terminal with its own wide berth", async (t) => {
+  // Failure mode: a 100 m boat's transponder sits 150 m or more from the published stop, outside
+  // the default circle, so it never registers as docked and never gets a departure.
+  const berth = { landingStopId: "tst:big", landingId: 3, name: "Big Terminal", latitude: 40.56, longitude: -74.05, radiusMetres: 200 };
+  const world = await harness(t, { extra: { landings: [...landings, berth] } });
+  const spot = offsetPoint(berth, 180, 170);
+  const at = world.clock;
+  world.feed([staticData("367000003", "PARTNER QUEEN", 60),
+    position("367000003", offsetPoint(berth, 180, 900), at + 1000, { sog: 12, cog: 0 }),
+    position("367000003", spot, at + 120_000, { sog: 0.1, cog: 0 }),
+    position("367000003", spot, at + 240_000, { sog: 0, cog: 0 }),
+    position("367000003", spot, at + 360_000, { sog: 0, cog: 0 })]);
+  const docked = world.vessel("tst:partner-queen");
+  assert.equal(docked.state, "docked");
+  assert.equal(docked.landing.stopId, "tst:big");
+  assert.equal(docked.landing.id, 3);
+  assert.equal(docked.slip, null);
+  // Without the wide berth the same boat is never docked.
+  const narrow = await harness(t, { extra: { landings: [...landings, { ...berth, radiusMetres: undefined }] } });
+  narrow.feed([staticData("367000003", "PARTNER QUEEN", 60),
+    position("367000003", spot, at + 120_000, { sog: 0.1, cog: 0 }),
+    position("367000003", spot, at + 240_000, { sog: 0, cog: 0 }),
+    position("367000003", spot, at + 360_000, { sog: 0, cog: 0 })]);
+  assert.notEqual(narrow.vessel("tst:partner-queen").state, "docked");
+});
+
+test("a boat is matched against every timetable its operator publishes, not only the main one", async (t) => {
+  // Failure mode: an operator's seasonal or separately published route lives in its own feed, so
+  // its boats never get a trip there (NY Waterway's Belford and IKEA routes).
+  const week = { service_id: "wk", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "0", sunday: "0", start_date: "20260101", end_date: "20271231" };
+  const twoFeeds = await buildHarborSchedule({ tables: [
+    { operatorId: "tst", prefix: "tst:", trips: [], stopTimes: [], calendar: [week], calendarDates: [] },
+    { operatorId: "tstSide", prefix: "tx2:", trips: [{ trip_id: "X1", route_id: "XR", service_id: "wk" }],
+      stopTimes: [
+        { trip_id: "X1", stop_id: "A", stop_sequence: "1", arrival_time: "10:05:00", departure_time: "10:05:00" },
+        { trip_id: "X1", stop_id: "B", stop_sequence: "2", arrival_time: "10:25:00", departure_time: "10:25:00" }
+      ], calendar: [week], calendarDates: [] }] });
+  const pier = { landingStopId: "tx2:A", landingId: null, name: "Side Pier", latitude: 40.57, longitude: -74.06 };
+  const run = async (operators) => {
+    const world = await harness(t, { extra: { schedule: twoFeeds, landings: [...landings, pier], roster: { ...roster, operators } } });
+    const at = world.clock;
+    world.feed([staticData("367000003", "PARTNER QUEEN", 60),
+      ...[10_000, 70_000, 130_000, 250_000].map((ms) => position("367000003", pier, at + ms, { sog: 0 })),
+      ...[1, 2, 3, 4].map((step) => position("367000003", offsetPoint(pier, 90, step * 150), at + 300_000 + step * 20_000, { sog: 12 }))]);
+    return world.vessel("tst:partner-queen");
+  };
+  const side = await run(roster.operators.map((item) => item.id === "tst" ? { ...item, extraFeedPrefixes: ["tx2:"] } : item));
+  assert.equal(side.tripId, "tx2:X1");
+  assert.equal((await run(roster.operators)).tripId, null);
+});
