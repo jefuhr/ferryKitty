@@ -106,7 +106,7 @@ test("static normalization strips padding, preserves partial updates and rejects
   assert.equal(normalizeAisMessage(message("ShipStaticData", { UserID: 367000001, Name: "@@ ", CallSign: " " })).static.name, null);
   const h = harness(); h.stream.start(); const socket = h.sockets[0]; socket.emit("open");
   socket.data(partA); socket.data(partB); socket.data(partA);
-  assert.deepEqual(h.statics.at(-1), { mmsi: "367000001", name: "FERRY TWO", callSign: "WDX0002", shipType: 60, imo: null, dims: null, aisClass: "B", at: Date.parse("2026-11-11T15:00:00Z") });
+  assert.deepEqual(h.statics.at(-1), { mmsi: "367000001", name: "FERRY TWO", callSign: "WDX0002", shipType: 60, imo: null, dims: null, aisClass: "B", at: Date.parse("2026-11-11T15:00:00Z"), nameSource: "static" });
   h.stream.stop();
 });
 
@@ -341,5 +341,7 @@ test("a position report's metadata name stands in until a static report names th
   assert.equal(h.statics.length, 1);
   h.sockets[0].data(message("StaticDataReport", { UserID: 367000050, PartNumber: 0, ReportA: { Valid: true, Name: "HARBOR QUEEN II" } }));
   assert.equal(h.statics.at(-1).name, "HARBOR QUEEN II");
+  // The record says which kind of name it carries, so a listener can refuse the weaker kind.
+  assert.deepEqual(h.statics.map((record) => record.nameSource), ["position", "static"]);
   h.stream.stop();
 });

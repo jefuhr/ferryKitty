@@ -94,3 +94,28 @@ test("a read-only open never creates a file and refuses to write", async (t) => 
   assert.throws(() => reader.database.prepare("DELETE FROM vessels").run());
   assert.throws(() => reader.transaction(() => {}), /read-only/);
 });
+
+// Regressions from the adversarial review of phase 2.
+
+test("a committed MMSI that changes leaves no link behind for the old transponder", async (t) => {
+  const store = openHarborDb({ databasePath: await temp(t) });
+  t.after(() => store.close());
+  seedRoster(store, roster);
+  seedRoster(store, { ...roster, vessels: roster.vessels.map((vessel) => vessel.id === "test-ferry-one" ? { ...vessel, mmsi: "367000111" } : vessel) });
+  assert.deepEqual(store.database.prepare("SELECT mmsi FROM vessel_ais WHERE vessel_id = 'test-ferry-one'").all().map((row) => row.mmsi), ["367000111"]);
+  // A committed MMSI that is removed altogether frees the transponder too.
+  seedRoster(store, { ...roster, vessels: roster.vessels.map((vessel) => vessel.id === "test-ferry-one" ? { ...vessel, mmsi: null } : vessel) });
+  assert.equal(store.database.prepare("SELECT COUNT(*) AS n FROM vessel_ais WHERE vessel_id = 'test-ferry-one'").get().n, 0);
+});
+
+test("a database from a newer schema is refused before anything in it is changed", async (t) => {
+  const databasePath = await temp(t);
+  const { DatabaseSync } = await import("node:sqlite");
+  const raw = new DatabaseSync(databasePath);
+  raw.exec("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID; INSERT INTO meta VALUES ('schema_version', '99');");
+  raw.close();
+  assert.throws(() => openHarborDb({ databasePath }), /newer/);
+  const after = new DatabaseSync(databasePath, { readOnly: true });
+  t.after(() => after.close());
+  assert.deepEqual(after.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => row.name), ["meta"]);
+});

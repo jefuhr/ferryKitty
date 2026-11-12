@@ -539,3 +539,74 @@ test("with a database, repeated confirmed runs become a pattern that assigns a b
   assert.ok(idle.assignment.confidence > 0 && idle.assignment.confidence <= 0.8);
   assert.equal(idle.routeId, "TR");
 });
+
+// Regressions from the adversarial review of phase 2.
+
+test("a name carried on a position report never replaces a name a static report gave, even after a restart", async (t) => {
+  const first = await harness(t);
+  first.feed([staticData("367000050", "VERIFIED STATIC NAME", 60), position("367000050", { latitude: 40.6, longitude: -74.05 }, first.clock + 1000)]);
+  await first.service.stop();
+  const again = await harness(t, { stateDir: first.stateDir });
+  // What the live stream sends for a position report when its own cache is empty.
+  again.stream.onStatic({ mmsi: "367000050", name: "UNTRUSTED POSITION NAME", nameSource: "position", callSign: null, shipType: null, imo: null, dims: null, aisClass: "A", at: again.clock + 2000 });
+  again.stream.onFix(normalizeAisMessage(position("367000050", { latitude: 40.6, longitude: -74.05 }, again.clock + 2000), again.clock + 2000).fix);
+  assert.equal(again.vessel("mmsi:367000050", { includeUnrostered: true }).name, "VERIFIED STATIC NAME");
+});
+
+test("with a database, a binding the database refuses is not adopted by the live tracker", async (t) => {
+  const world = await remembering(t);
+  const refuse = world.store.linkAis;
+  world.store.linkAis = () => false;
+  t.after(() => { world.store.linkAis = refuse; });
+  world.feed([staticData("367000002", "TEST FERRY 2", 60), position("367000002", { latitude: 40.6, longitude: -74.05 }, world.clock + 1000)]);
+  assert.equal(world.vessel("test-ferry-two").mmsi, null);
+  assert.equal(world.vessel("mmsi:367000002", { includeUnrostered: true }).rostered, false);
+});
+
+test("with a database, an unconfirmed guess never becomes a held run, and a contradicted trip leaves nothing behind", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  assert.equal(world.vessel("test-ferry-one").assignment.source, "schedule");
+  // The timetable said Test Cove next. The boat goes to the partner terminal instead.
+  const at = world.clock + 10 * 60_000;
+  world.feed([0, 40, 80].map((seconds) => position("367000001", { latitude: 40.52, longitude: -73.98 }, at + seconds * 1000, { sog: 0.1 })));
+  const elsewhere = world.vessel("test-ferry-one");
+  assert.equal(elsewhere.state, "docked");
+  assert.equal(elsewhere.tripId, null);
+  assert.equal(elsewhere.assignment, null);
+});
+
+test("with a database, two boats with the same learned claim on a run do not both get it", async (t) => {
+  const world = await remembering(t);
+  for (const [vesselId, trackKey] of [["test-ferry-one", "367000001"], ["test-ferry-two", "367000002"]]) {
+    for (const serviceDate of ["20261021", "20261028", "20261104"]) {
+      world.store.recordTripObservation({ trackKey, mmsi: trackKey, vesselId, operatorId: "nycf", tripId: "T1", routeId: "TR", runId: null,
+        serviceDate, terminalId: "9002", departedAt: 1, arrivedTerminalId: "9001", arrivedAt: 2, confidence: 0.9, source: "schedule" });
+    }
+  }
+  world.service.learn();
+  const claims = ["test-ferry-one", "test-ferry-two"].map((id) => world.vessel(id).assignment).filter(Boolean);
+  assert.ok(claims.length <= 1, "an evenly split claim is left unresolved or given to one boat, never both");
+  // A boat with the stronger history takes the run outright.
+  world.store.recordTripObservation({ trackKey: "367000001", mmsi: "367000001", vesselId: "test-ferry-one", operatorId: "nycf", tripId: "T1", routeId: "TR", runId: null,
+    serviceDate: "20261014", terminalId: "9002", departedAt: 1, arrivedTerminalId: "9001", arrivedAt: 2, confidence: 0.9, source: "schedule" });
+  world.service.learn();
+  assert.equal(world.vessel("test-ferry-one").assignment?.source, "pattern");
+  assert.equal(world.vessel("test-ferry-two").assignment, null);
+});
+
+test("with a database, a trip the operator vouches for is filed under its own service day and remembered", async (t) => {
+  const world = await remembering(t);
+  const at = world.clock + 8 * 60_000;                      // 10:08 local on Wednesday 11 November: trip T1 is under way
+  world.clock = at;
+  world.service.observeOperatorFeed({ now: at, vehicleFeed: vehicleFeed([{ label: "H-902", point: { latitude: 40.505, longitude: -73.995 }, at, tripId: "T1", sequence: 3 }]) });
+  const live = world.vessel("test-ferry-two");
+  assert.equal(live.tripSource, "operator-rt");
+  assert.equal(live.assignment.runId, "nycf:20261111:1");
+  const [seen] = world.store.listTripObservations({ vesselId: "test-ferry-two" });
+  assert.deepEqual({ tripId: seen.tripId, serviceDate: seen.serviceDate, source: seen.source, confidence: seen.confidence },
+    { tripId: "T1", serviceDate: "20261111", source: "operator-rt", confidence: 1 });
+  // Hearing the same trip again does not file it twice.
+  world.service.observeOperatorFeed({ now: at + 20_000, vehicleFeed: vehicleFeed([{ label: "H-902", point: { latitude: 40.504, longitude: -73.996 }, at: at + 20_000, tripId: "T1", sequence: 3 }]) });
+  assert.equal(world.store.listTripObservations({ vesselId: "test-ferry-two" }).length, 1);
+});

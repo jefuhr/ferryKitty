@@ -118,13 +118,21 @@ const harborTerminals = await loadHarborTerminals(path.join(ROOT, "config/harbor
   return [];
 });
 const { landings: harborLandings, stopIdsOfLanding: harborStopIds } = joinHarborLandings({ boardLandings, terminals: harborTerminals });
-const harborRoster = JSON.parse(await readFile(path.join(ROOT, "content/harbor-roster.json"), "utf8"));
+// A missing or unreadable fleet list costs the tracker its roster, never the board its startup.
+let harborRosterLoaded = true;
+const harborRoster = await readFile(path.join(ROOT, "content/harbor-roster.json"), "utf8").then(JSON.parse).catch((error) => {
+  console.warn(`Harbor roster unavailable: ${error.message}`);
+  harborRosterLoaded = false;
+  return { version: 1, operators: [], vessels: [] };
+});
 // The tracker's long memory. Like the tracker itself it is optional: if the database cannot be
 // opened the tracker still runs, it just forgets what it saw.
 let harborDb = null, harborStore = null;
 try {
   harborDb = openHarborDb({ databasePath: path.join(STATE, "harbor.db") });
-  seedRoster(harborDb, harborRoster);
+  // Seeding retires every hull the roster does not list, so a roster that failed to load must
+  // not be seeded: the database keeps the fleet it already knows.
+  if (harborRosterLoaded) seedRoster(harborDb, harborRoster);
   harborStore = createHarborStore(harborDb);
   await harborStore.importLegacy({ stateDir: STATE });
 } catch (error) {
