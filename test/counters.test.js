@@ -155,3 +155,10 @@ test("stopping rolls up what is still only in memory", () => {
 
   assert.equal(store.last().counts.route["/api/landings"], 1);
 });
+
+test("every vessel page counts under one key, and a made-up id counts as a probe", () => {
+  assert.equal(routeKey("/api/harbor/vessels/waves-of-wonder", 200), "/api/harbor/vessels/{id}");
+  assert.equal(routeKey("/api/harbor/vessels/mmsi:367000001", 200), "/api/harbor/vessels/{id}");
+  assert.equal(routeKey("/api/harbor/vessels/no-such-boat", 404), routeKey("/definitely/not/here", 404));
+  assert.equal(routeKey("/api/harbor/vessels", 200), "/api/harbor/vessels");
+});

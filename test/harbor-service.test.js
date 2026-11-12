@@ -440,8 +440,10 @@ async function remembering(t, options = {}) {
   t.after(() => db.close());
   seedRoster(db, roster);
   const store = createHarborStore(db);
+  // The same object the harness keeps advancing, so its clock stays the one the feed moves.
   const world = await harness(t, { stateDir, extra: { store } });
-  return { ...world, store, vessel: world.vessel, feed: world.feed };
+  world.store = store;
+  return world;
 }
 
 test("with a database, a dwell, a sighting and a matched trip are written down as they happen", async (t) => {

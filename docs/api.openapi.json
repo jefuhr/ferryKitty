@@ -745,6 +745,32 @@
               ]
             },
             "description": "Also list passenger-type vessels seen on AIS that are not in the roster."
+          },
+          {
+            "name": "operator",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only vessels of this operator id (see /api/harbor/operators)."
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "docked",
+                "arriving",
+                "departing",
+                "underway",
+                "laid-up",
+                "unknown"
+              ]
+            },
+            "description": "Only vessels in this state."
           }
         ],
         "responses": {
@@ -781,13 +807,118 @@
         }
       }
     },
+    "/api/harbor/vessels/{id}": {
+      "get": {
+        "summary": "One vessel: identity with references, AIS links, track, estimated assignment and recent history",
+        "operationId": "api_harbor_vessel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "A roster vessel id, or mmsi:<number> for an unrostered vessel."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarborVesselDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such vessel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/harbor/operators": {
+      "get": {
+        "summary": "Operators in the fleet database, with how many active vessels each has",
+        "operationId": "api_harbor_operators",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarborOperators"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/harbor/terminals": {
+      "get": {
+        "summary": "Every terminal the tracker watches, with its slips and their surveyed points",
+        "operationId": "api_harbor_terminals",
+        "responses": {
+          "200": {
+            "description": "Success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarborTerminals"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/slips": {
       "get": {
-        "summary": "Passenger slip catalog, in the Ferry RT shape",
+        "summary": "Slip catalog with surveyed points, extending the Ferry RT shape",
         "operationId": "api_slips",
         "responses": {
           "200": {
-            "description": "Success. Never includes coordinates or non-passenger berths.",
+            "description": "Success. Passenger slips only unless include=yard is given.",
             "content": {
               "application/json": {
                 "schema": {
@@ -806,7 +937,21 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "yard"
+              ]
+            },
+            "description": "Also list yard, fuel and dry-dock berths."
+          }
+        ]
       }
     },
     "/gtfs-rt/tripupdate": {
@@ -2713,6 +2858,22 @@
               "number",
               "null"
             ]
+          },
+          "operatorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assignment": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HarborAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2879,6 +3040,274 @@
           "slips"
         ],
         "additionalProperties": true
+      },
+      "HarborAssignment": {
+        "type": "object",
+        "description": "Which run a vessel is estimated to be working. source says how it is known, most trusted first: operator-rt, schedule, run, pattern, model.",
+        "properties": {
+          "routeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tripId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nextTrips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tripId": {
+                  "type": "string"
+                },
+                "routeId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "departsAt": {
+                  "type": "integer",
+                  "description": "Epoch milliseconds."
+                },
+                "fromStopId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "tripId",
+                "departsAt",
+                "fromStopId"
+              ]
+            }
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "operator-rt",
+              "schedule",
+              "run",
+              "pattern",
+              "model"
+            ]
+          }
+        },
+        "required": [
+          "routeId",
+          "runId",
+          "tripId",
+          "nextTrips",
+          "confidence",
+          "source"
+        ]
+      },
+      "HarborVesselDetail": {
+        "type": "object",
+        "properties": {
+          "vessel": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "The fleet database record; null for an unrostered vessel."
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Transponders linked to this hull and how each link is known."
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Where each researched fact came from."
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "track": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HarborVessel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignment": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HarborAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimates": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Stored estimates for today, with reasoning and evidence."
+          },
+          "dwells": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "vessel",
+          "links",
+          "references",
+          "conflicts",
+          "track",
+          "assignment",
+          "estimates",
+          "dwells",
+          "trips"
+        ]
+      },
+      "HarborOperators": {
+        "type": "object",
+        "properties": {
+          "operators": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "feedPrefix": {
+                  "type": "string"
+                },
+                "website": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "vessels": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "feedPrefix",
+                "vessels"
+              ]
+            }
+          }
+        },
+        "required": [
+          "operators"
+        ]
+      },
+      "HarborTerminals": {
+        "type": "object",
+        "properties": {
+          "terminals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "town": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "state": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                },
+                "radiusMetres": {
+                  "type": "number"
+                },
+                "landingId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "stopIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "slips": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "latitude",
+                "longitude",
+                "stopIds",
+                "slips"
+              ]
+            }
+          }
+        },
+        "required": [
+          "terminals"
+        ]
       }
     }
   }
