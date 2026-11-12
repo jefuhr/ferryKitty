@@ -2,9 +2,18 @@
 // batch/cache billing; cap bypass on submissions, reviews, and continuations; unordered, failed,
 // repeated, or interrupted batch collection; refusals/truncation parsed as evidence; malformed
 // output and invented ids; missing bookkeeping; and estimate mode constructing a network client.
+// Reservations must also bound pending/concurrent paid calls and survive midnight and retries;
+// the CLI must share server state, honor its cap, and estimate without creating or changing files.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import os from "node:os";
+import path from "node:path";
 import { createHarborLlm, estimateCost, HARBOR_LLM_PRICING, HarborLlmCapError } from "../lib/harbor-llm.js";
+import { openHarborDb } from "../lib/harbor-db.js";
+import { createHarborStore } from "../lib/harbor-store.js";
 import { runHarborAssign } from "../scripts/harbor-assign.mjs";
 
 const NOW = Date.parse("2026-11-12T18:00:00Z");
@@ -42,11 +51,16 @@ function harness(options = {}) {
   let spend = 0;
   const store = {
     recordLlmRun(row) { rows.push(clone(row)); return rows.length; },
+    reserveLlmSpend({ since, capUsd, row }) {
+      calls.push(["reserve", clone(row)]);
+      if (store.llmSpendSince(since) + row.costUsd > capUsd) return null;
+      return store.recordLlmRun({ ...row, status: "reserved" });
+    },
     updateLlmRun(id, patch) { Object.assign(rows[id - 1], clone(patch)); },
     saveLlmBatch(row) { batches.set(row.batchId, { ...clone(row), collectedAt: null }); },
     getLlmBatch(id) { return clone(batches.get(id) ?? null); },
     markLlmBatchCollected(id, at) { batches.get(id).collectedAt = at; },
-    llmSpendSince(at) { calls.push(["spend", at]); return spend; },
+    llmSpendSince(at) { calls.push(["spend", at]); return spend + rows.filter((row) => row.createdAt >= at).reduce((total, row) => total + row.costUsd, 0); },
     saveEstimate(row) { saved.push(clone(row)); }
   };
   let results = [], reviewResponses = [message([estimate()], { model: MODELS.review })];
@@ -280,8 +294,9 @@ test("API errors are recorded and partial batch stream retries do not double-cha
   const a = { custom_id: sent[0].custom_id, result: { type: "succeeded", message: message() } };
   other.client.messages.batches.results = async () => (async function* () { yield a; throw new Error("stream lost"); })();
   await assert.rejects(service.collectDay("batch-1"), /stream lost/);
-  const cost = other.rows[0].costUsd;
-  assert.ok(cost > 0);
+  const cost = estimateCost({ model: MODELS.routine, inputTokens: 100, cacheCreationTokens: 10,
+    cacheReadTokens: 40, outputTokens: 20, batch: true });
+  assert.ok(other.rows[0].costUsd > cost);
   other.client.messages.batches.results = async () => (async function* () {
     yield a; yield { custom_id: sent[1].custom_id, result: { type: "succeeded", message: message([estimate("b")]) } };
   })();
@@ -373,13 +388,14 @@ test("fallback iterations use their own model prices, expensive unknown rates, a
   assert.match(h.rows[1].status, /unpriced-model/);
 });
 
-test("cap is rechecked for collection and each web-search continuation", async () => {
+test("collection reconciles existing reservations even at the cap, and continuations need new reservations", async () => {
   const h = harness(), llm = h.service();
   await llm.submitDay([llm.dayRequest(day())]);
   h.setSpend(1);
-  await assert.rejects(llm.collectDay("batch-1"), HarborLlmCapError);
-  assert.equal(h.calls.some(([kind]) => kind === "retrieve"), false);
-  assert.equal(h.rows[0].status, "cap_reached");
+  h.setStatus("in_progress");
+  assert.equal((await llm.collectDay("batch-1")).done, false);
+  assert.equal(h.calls.some(([kind]) => kind === "retrieve"), true);
+  assert.ok(h.rows[0].costUsd > 0);
   h.setSpend(0);
   h.setReviews([message([], { stop_reason: "pause_turn" })]);
   const original = h.client.beta.messages.create;
@@ -434,4 +450,143 @@ test("CLI validates action and calendar date before loading dependencies", async
     const code = await runHarborAssign(args, { error: (line) => errors.push(line), loadDependencies() { loaded = true; } });
     assert.equal(code, 1); assert.equal(loaded, false); assert.ok(errors.length);
   }
+});
+
+test("five pending batches cannot bypass a cap smaller than one maximum response", async () => {
+  const h = harness({ dailyCapUsd: 0.003 }), llm = h.service(), request = llm.dayRequest(day());
+  for (let index = 0; index < 5; index++) await assert.rejects(llm.submitDay([request]), HarborLlmCapError);
+  assert.equal(h.calls.filter(([kind]) => kind === "submit").length, 0);
+  assert.equal(h.rows.reduce((total, row) => total + row.costUsd, 0), 0);
+});
+
+test("four simultaneous reviews reserve their maximum cost before entering the fake API", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "harbor-llm-reserve-"));
+  const db = openHarborDb({ databasePath: path.join(directory, "harbor.db") });
+  t.after(async () => { db.close(); await rm(directory, { recursive: true, force: true }); });
+  const store = createHarborStore(db);
+  let paid = 0;
+  const client = { beta: { messages: { async create() {
+    paid++;
+    assert.ok(store.llmSpendSince(0) <= 1);
+    await new Promise((resolve) => setImmediate(resolve));
+    return message([], { model: MODELS.review, usage: { input_tokens: 0, output_tokens: 16000 } });
+  } } } };
+  const llm = createHarborLlm({ client, store, now: () => NOW, dailyCapUsd: 1 });
+  const request = llm.dayRequest(day());
+  const results = await Promise.allSettled(Array.from({ length: 4 }, () => llm.reviewFlagged([{ request, estimate: estimate() }])));
+  assert.equal(paid, 3);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 3);
+  assert.ok(results.find((result) => result.status === "rejected").reason instanceof HarborLlmCapError);
+  assert.equal(store.llmSpendSince(0), 0.96);
+});
+
+test("submission keeps an upper-bound reservation until usage is collected on its original day", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "harbor-llm-midnight-"));
+  const db = openHarborDb({ databasePath: path.join(directory, "harbor.db") });
+  t.after(async () => { db.close(); await rm(directory, { recursive: true, force: true }); });
+  const store = createHarborStore(db);
+  let at = NOW, submitted = 0;
+  const client = { messages: { batches: {
+    async create() { submitted++; return { id: "pending" }; },
+    async retrieve() { return { processing_status: "ended" }; },
+    async results() { return (async function* () {
+      yield { custom_id: "day-0", result: { type: "succeeded", message: message([], {
+        usage: { input_tokens: 0, output_tokens: 10000 } }) } };
+    })(); }
+  } } };
+  const llm = createHarborLlm({ client, store, now: () => at, dailyCapUsd: 0.006 });
+  await llm.submitDay([llm.dayRequest(day())]);
+  const reservation = store.llmSpendSince(0);
+  assert.ok(reservation >= 0.004 && reservation <= 0.006);
+  await assert.rejects(llm.submitDay([llm.dayRequest(day())]), HarborLlmCapError);
+  assert.equal(submitted, 1);
+  at += 86400000;
+  await llm.collectDay("pending");
+  assert.equal(store.llmSpendSince(0), 0.0025);
+  assert.equal(store.llmSpendSince(Date.parse("2026-11-13T00:00:00Z")), 0);
+  const row = db.database.prepare("SELECT * FROM llm_runs WHERE batch_id = ?").get("pending");
+  assert.equal(row.created_at, NOW);
+});
+
+test("partial collection retains the reserved cost of requests that have not returned", async () => {
+  const h = harness(), llm = h.service();
+  await llm.submitDay([llm.dayRequest(day("a")), llm.dayRequest(day("b"))]);
+  const reserved = h.rows[0].costUsd;
+  const sent = h.calls.find(([kind]) => kind === "submit")[1].requests;
+  h.client.messages.batches.results = async () => (async function* () {
+    yield { custom_id: sent[0].custom_id, result: { type: "succeeded", message: message() } };
+    throw new Error("stream lost");
+  })();
+  await assert.rejects(llm.collectDay("batch-1"), /stream lost/);
+  assert.ok(h.rows[0].costUsd > reserved / 2);
+  assert.ok(h.rows[0].costUsd < reserved);
+});
+
+test("an API failure without usage releases its reservation", async () => {
+  const h = harness(), llm = h.service(), request = llm.dayRequest(day());
+  h.client.messages.batches.create = async () => { throw new Error("batch unavailable"); };
+  await assert.rejects(llm.submitDay([request]), /batch unavailable/);
+  assert.equal(h.rows[0].costUsd, 0); assert.equal(h.rows[0].status, "failed");
+  h.setReviews([new Error("review unavailable")]);
+  await assert.rejects(llm.reviewFlagged([{ request, estimate: estimate() }]), /review unavailable/);
+  assert.equal(h.rows[1].costUsd, 0); assert.equal(h.rows[1].status, "failed");
+});
+
+test("CLI shares STATE_DIR/harbor.db, validates its daily cap before building a client, and honors zero", async () => {
+  let selectedPath, paid = 0, constructed = 0;
+  const h = harness();
+  Object.assign(h.store, { listOperators: () => [day().operator], listVessels: () => day().vessels,
+    listTripObservations: () => day().observations, listPatterns: () => day().patterns, saveRuns() {} });
+  h.client.messages.batches.create = async () => { paid++; return { id: "paid" }; };
+  const dependencies = {
+    env: { ANTHROPIC_API_KEY: "fake", STATE_DIR: "/tmp/test-harbor-state", HARBOR_LLM_DAILY_USD: "0" },
+    log() {}, error() {}, now: () => NOW, createClient() { constructed++; return h.client; },
+    async loadDependencies({ databasePath }) {
+      selectedPath = databasePath; return { store: h.store, schedule: {}, buildRuns: () => day().runs, close() {} };
+    }
+  };
+  assert.equal(await runHarborAssign(["--date", "20261112", "--submit"], dependencies), 1);
+  assert.equal(selectedPath, "/tmp/test-harbor-state/harbor.db"); assert.equal(paid, 0);
+  for (const value of ["", " ", "invalid", "-1", "Infinity", "NaN"]) {
+    const before = constructed;
+    assert.equal(await runHarborAssign(["--date", "20261112", "--submit"], {
+      ...dependencies, env: { ...dependencies.env, HARBOR_LLM_DAILY_USD: value }
+    }), 1);
+    assert.equal(constructed, before);
+  }
+});
+
+test("real estimate CLI does not create an absent database or its parent directory", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "harbor-assign-readonly-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const databasePath = path.join(directory, "missing", "harbor.db");
+  const result = await promisify(execFile)(process.execPath, [new URL("../scripts/harbor-assign.mjs", import.meta.url).pathname,
+    "--date", "20261112", "--estimate", "--db", databasePath]);
+  assert.match(result.stdout, /no harbor database.*yet/i);
+  assert.deepEqual(await readdir(directory), []);
+});
+
+test("real estimate CLI opens existing state read-only without changing its bytes", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "harbor-assign-existing-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const databasePath = path.join(directory, "harbor.db");
+  const db = openHarborDb({ databasePath }); db.close();
+  const before = await readFile(databasePath);
+  await promisify(execFile)(process.execPath, [new URL("../scripts/harbor-assign.mjs", import.meta.url).pathname,
+    "--date", "20261112", "--estimate", "--db", databasePath]);
+  assert.deepEqual(await readFile(databasePath), before);
+});
+
+test("research reference values stay strings, including numeric facts", async () => {
+  const h = harness(), llm = h.service();
+  h.setReviews([message([], { model: MODELS.review, content: [{ type: "text", text: JSON.stringify({
+    ...confirmation, capacity: 149, year: 2020,
+    references: [{ field: "capacity", value: "149", url: "https://example.com/boat", note: "Registry" }]
+  }) }] })]);
+  const result = await llm.confirmVessel({ mmsi: "367000001" });
+  assert.equal(result.references[0].value, "149");
+  const request = h.calls.find(([kind]) => kind === "review")[1];
+  const schema = request.output_config.format.schema.properties.references.items.properties.value;
+  assert.equal(schema.type, "string");
+  assert.match(schema.description, /numeric.*strings/i);
 });

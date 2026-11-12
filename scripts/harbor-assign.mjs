@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import Anthropic from "@anthropic-ai/sdk";
-import { mkdir } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHarborLlm, estimateCost } from "../lib/harbor-llm.js";
@@ -29,14 +29,19 @@ function parseArgs(args) {
 }
 
 async function loadDependencies({ databasePath, mode }) {
+  if (mode === "estimate") {
+    try { await stat(databasePath); }
+    catch (cause) { if (cause.code === "ENOENT") return null; throw cause; }
+  }
   // Keep the integration imports lazy so importing this CLI (and checking missing credentials)
   // does not open SQLite or need the other phase 2 modules to have been installed yet.
   const [{ openHarborDb }, { createHarborStore }, { buildRuns }, { buildHarborSchedule }] = await Promise.all([
     import("../lib/harbor-db.js"), import("../lib/harbor-store.js"),
     import("../lib/harbor-runs.js"), import("../lib/harbor-schedule.js")
   ]);
-  if (databasePath !== ":memory:") await mkdir(path.dirname(databasePath), { recursive: true });
-  const database = openHarborDb({ databasePath });
+  const readOnly = mode === "estimate";
+  if (!readOnly && databasePath !== ":memory:") await mkdir(path.dirname(databasePath), { recursive: true });
+  const database = openHarborDb({ databasePath, readOnly });
   try {
     const store = createHarborStore(database);
     const schedule = mode === "collect" ? null : await buildHarborSchedule({ root: ROOT });
@@ -52,15 +57,24 @@ export async function runHarborAssign(args, {
   let dependencies;
   try {
     const options = parseArgs(args);
+    const cap = env.HARBOR_LLM_DAILY_USD;
+    const dailyCapUsd = cap === undefined ? 1 : Number(cap);
+    if ((cap !== undefined && !cap.trim()) || !Number.isFinite(dailyCapUsd) || dailyCapUsd < 0) {
+      throw new Error("HARBOR_LLM_DAILY_USD must be a finite, nonnegative number.");
+    }
     if (options.mode !== "estimate" && !env.ANTHROPIC_API_KEY?.trim() && !env.ANTHROPIC_AUTH_TOKEN?.trim()) {
       throw new Error("Missing Anthropic credentials: set ANTHROPIC_API_KEY (or ANTHROPIC_AUTH_TOKEN) for --submit or --collect.");
     }
-    const databasePath = options.db ?? env.HARBOR_DB_PATH ?? path.join(ROOT, "state", "harbor.sqlite");
+    const databasePath = options.db ?? path.resolve(env.STATE_DIR || "state", "harbor.db");
     dependencies = await load({ databasePath, mode: options.mode });
+    if (!dependencies && options.mode === "estimate") {
+      log(`No harbor database to read yet: ${databasePath}`);
+      return 0;
+    }
     const { store, schedule, buildRuns } = dependencies;
     // No client is constructed in estimate mode, even when credentials happen to be present.
     const client = options.mode === "estimate" ? null : await createClient();
-    const llm = createHarborLlm({ client, store, now });
+    const llm = createHarborLlm({ client, store, now, dailyCapUsd });
     if (options.mode === "collect") {
       const result = await llm.collectDay(options.batchId);
       log(JSON.stringify(result));

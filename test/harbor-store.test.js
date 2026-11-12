@@ -5,11 +5,14 @@
 // LLM batches must retain manifests and collection state, while partial run updates must
 // preserve omitted fields and replace spend instead of double counting it.
 // History cursors must not skip or repeat rows sharing a page-boundary timestamp.
+// Spend reservations must atomically admit concurrent processes, retain pending charges, and
+// release unused headroom only when the same row is reconciled with usage or a failed call.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { openHarborDb, seedRoster } from "../lib/harbor-db.js";
 import { createHarborStore } from "../lib/harbor-store.js";
 
@@ -39,6 +42,81 @@ const estimate = (extra = {}) => ({ vesselId: "free", operatorId: "op", serviceD
 const run = (runId = "run") => ({ runId, signature: "terminal>07:10>route", source: "block", trips: [{ tripId: "trip", departsAt: 100, arrivesAt: 200 }] });
 const terminal = (id = "terminal") => ({ id, name: "Terminal", latitude: 1, longitude: 2, stopIds: ["stop"] });
 const slip = (id = "slip", terminalId = "terminal") => ({ id, terminalId, name: "Slip 1", kind: "passenger", points: [{ latitude: 1, longitude: 2 }] });
+
+test("LLM spend reservation admits only affordable rows and reconciles the same charge", async (t) => {
+  const { store, db } = await fixture(t);
+  const row = { purpose: "day", model: "test", createdAt: 100, costUsd: 0.5, status: "caller-status" };
+  const id = store.reserveLlmSpend({ since: 100, capUsd: 0.75, row });
+  assert.ok(id);
+  assert.equal(db.database.prepare("SELECT status FROM llm_runs WHERE id = ?").get(id).status, "reserved");
+  assert.equal(store.llmSpendSince(100), 0.5);
+  assert.equal(store.reserveLlmSpend({ since: 100, capUsd: 0.75, row }), null);
+  assert.equal(db.database.prepare("SELECT COUNT(*) AS n FROM llm_runs").get().n, 1);
+  store.updateLlmRun(id, { status: "completed", costUsd: 0.25 });
+  assert.ok(store.reserveLlmSpend({ since: 100, capUsd: 0.75, row }));
+  assert.equal(store.llmSpendSince(100), 0.75);
+  // An old charge does not spend today's budget, but an outstanding current charge does.
+  assert.ok(store.reserveLlmSpend({ since: 101, capUsd: 0.5, row: { ...row, createdAt: 101 } }));
+  assert.equal(store.reserveLlmSpend({ since: 101, capUsd: 0, row: { ...row, createdAt: 101 } }), null);
+});
+
+test("LLM reservations roll back on insertion failure and validate finite money", async (t) => {
+  const { store, db } = await fixture(t);
+  const row = { purpose: "day", model: "test", createdAt: 100, costUsd: 0.5 };
+  for (const request of [
+    { since: 0, capUsd: NaN, row }, { since: 0, capUsd: -1, row },
+    { since: 0, capUsd: 1, row: { ...row, costUsd: Infinity } },
+    { since: 0, capUsd: 1, row: { ...row, costUsd: -1 } }
+  ]) assert.throws(() => store.reserveLlmSpend(request), /finite|nonnegative/i);
+  assert.throws(() => store.reserveLlmSpend({ since: 0, capUsd: 1, row: { ...row, purpose: null } }));
+  assert.equal(db.database.prepare("SELECT COUNT(*) AS n FROM llm_runs").get().n, 0);
+  assert.ok(store.reserveLlmSpend({ since: 0, capUsd: 1, row }));
+});
+
+test("four separate processes reserve the same SQLite budget without overspending", { timeout: 20000 }, async (t) => {
+  const { store, databasePath } = await fixture(t);
+  const dbModule = new URL("../lib/harbor-db.js", import.meta.url).href;
+  const storeModule = new URL("../lib/harbor-store.js", import.meta.url).href;
+  const children = [];
+  t.after(() => { for (const child of children) if (child.exitCode === null) child.kill(); });
+  for (let index = 0; index < 4; index++) {
+    const child = spawn(process.execPath, ["--input-type=module", "-e", `
+      import { openHarborDb } from ${JSON.stringify(dbModule)};
+      import { createHarborStore } from ${JSON.stringify(storeModule)};
+      const db = openHarborDb({ databasePath: process.argv[1] });
+      const store = createHarborStore(db);
+      process.stdout.write("ready\\n");
+      process.stdin.once("data", () => {
+        try {
+          const id = store.reserveLlmSpend({ since: 100, capUsd: 1,
+            row: { purpose: "review", model: "claude-opus-5-5", createdAt: 100, costUsd: 0.32 } });
+          process.stdout.write(JSON.stringify({ admitted: id !== null }) + "\\n");
+          db.close(); process.stdin.destroy();
+        } catch (error) { console.error(error); process.exitCode = 1; db.close(); process.stdin.destroy(); }
+      });
+    `, databasePath], { stdio: ["pipe", "pipe", "pipe"] });
+    children.push(child);
+    let output = "", errors = "";
+    child.stdout.on("data", (data) => { output += data; });
+    child.stderr.on("data", (data) => { errors += data; });
+    child.done = new Promise((resolve, reject) => {
+      child.once("error", reject);
+      child.once("exit", (code) => code === 0 ? resolve(output) : reject(new Error(errors || `Child exit ${code}`)));
+    });
+    await new Promise((resolve, reject) => {
+      const onData = () => { if (output.includes("ready\n")) { child.stdout.off("data", onData); resolve(); } };
+      child.stdout.on("data", onData); child.once("error", reject);
+      child.once("exit", (code) => { if (!output.includes("ready\n")) reject(new Error(errors || `Child exit ${code}`)); });
+      onData();
+    });
+  }
+  for (const child of children) child.stdin.end("reserve\n");
+  const results = await Promise.all(children.map((child) => child.done));
+  assert.equal(results.filter((output) => output.includes('"admitted":true')).length, 3);
+  assert.equal(results.filter((output) => output.includes('"admitted":false')).length, 1);
+  assert.ok(store.llmSpendSince(100) <= 1);
+  assert.equal(store.llmSpendSince(100), 0.96);
+});
 
 test("sightings merge late fixes, static fields, speed maxima and terminal counts", async (t) => {
   const { store } = await fixture(t);
