@@ -610,3 +610,26 @@ test("with a database, a trip the operator vouches for is filed under its own se
   world.service.observeOperatorFeed({ now: at + 20_000, vehicleFeed: vehicleFeed([{ label: "H-902", point: { latitude: 40.504, longitude: -73.996 }, at: at + 20_000, tripId: "T1", sequence: 3 }]) });
   assert.equal(world.store.listTripObservations({ vesselId: "test-ferry-two" }).length, 1);
 });
+
+test("a track restored from saved state is labelled by the roster entry that settles its transponder", async (t) => {
+  // Failure modes: a track saved before the roster carried its MMSI comes back with no identity
+  // label, or keeps the label of an older name match the committed roster has since replaced.
+  const stateDir = await mkdtemp(path.join(os.tmpdir(), "harbor-restore-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const at = Date.UTC(2026, 10, 11, 15, 0, 0) - 10_000;
+  const fix = (point) => ({ at, latitude: point.latitude, longitude: point.longitude, sogKnots: 9, cogDegrees: 90, headingDegrees: 90, source: "ais" });
+  await writeFile(path.join(stateDir, "harbor-tracks.json"), JSON.stringify({ tracks: [
+    { key: "367000001", mmsi: "367000001", vesselId: null, identitySource: null, fix: fix(POINT_NORTH) },
+    { key: "367000003", mmsi: "367000003", vesselId: "tst:partner-queen", identitySource: "ais-name", fix: fix({ latitude: 40.52, longitude: -74.0 }) },
+    { key: "367000555", mmsi: "367000555", vesselId: null, identitySource: null, fix: fix({ latitude: 40.53, longitude: -74.0 }) }
+  ] }));
+  const world = await harness(t, { stateDir });
+  const one = world.vessel("test-ferry-one");
+  assert.equal(one.mmsi, "367000001");
+  assert.equal(one.identitySource, "roster");
+  assert.equal(one.positionSource, "ais");
+  assert.equal(world.vessel("tst:partner-queen").identitySource, "roster");
+  // A transponder the roster does not know stays unidentified.
+  const stranger = world.service.getCurrent({ includeUnrostered: true }).vessels.find((vessel) => vessel.mmsi === "367000555");
+  assert.equal(stranger?.identitySource ?? null, null);
+});
