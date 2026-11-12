@@ -2,6 +2,8 @@
 // linked MMSIs, malformed FCC rows and missing MMSIs, unsafe name-only joins,
 // missing provenance, duplicate ids, conflicting roster names, CLI side effects,
 // read-only database access, absent databases, and unreferenced confirmations.
+// Complete history must survive capped pages with tied timestamps; numeric facts
+// must keep matching string references without changing their integer types.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, writeFile, readdir, rm } from "node:fs/promises";
@@ -9,6 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { candidates, parseFccShips, propose } from "../lib/harbor-research.js";
 import { runHarborResearch } from "../scripts/harbor-research.mjs";
+import { openHarborDb } from "../lib/harbor-db.js";
+import { createHarborStore } from "../lib/harbor-store.js";
 
 const operators = [
   { id: "nycf", feedPrefix: "" },
@@ -170,6 +174,22 @@ test("unreferenced or mismatched confirmation fields are dropped, including name
   assert.deepEqual(result.dropped.map((x) => x.field), ["operatorId", "name", "capacity", "year"]);
 });
 
+test("integer capacity and year retain matching trimmed string references", () => {
+  const result = propose({ candidates: [candidate()], roster, fcc: [], confirmations: { "367000001": {
+    capacity: 149, year: 2020, references: [
+      { field: "capacity", value: " 149 ", url: "https://example.invalid/capacity" },
+      { field: "year", value: "2020", url: "https://example.invalid/year" }
+    ]
+  } } });
+  assert.equal(result.vessels[0].capacity, 149);
+  assert.equal(result.vessels[0].year, 2020);
+  assert.equal(Number.isInteger(result.vessels[0].capacity), true);
+  assert.equal(Number.isInteger(result.vessels[0].year), true);
+  assert.deepEqual(result.dropped, []);
+  assert.equal(result.vessels[0].references.find((reference) => reference.field === "capacity").value, " 149 ");
+  assert.equal(result.vessels[0].references.find((reference) => reference.field === "year").value, "2020");
+});
+
 async function withDirectory(t) {
   const root = await mkdtemp(join(tmpdir(), "harbor-research-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -184,6 +204,56 @@ async function withDirectory(t) {
   };
   return { root, rosterPath, store, calls };
 }
+
+async function historyDatabase(t) {
+  const deps = await withDirectory(t);
+  const databasePath = join(deps.root, "harbor.db");
+  const db = openHarborDb({ databasePath });
+  const store = createHarborStore(db);
+  store.syncTerminals(terminals.map((terminal) => ({ ...terminal, name: terminal.id, latitude: 1, longitude: 2 })), []);
+  return { ...deps, databasePath, db, store };
+}
+
+test("script reads all 2001 real-store dwells before guessing an operator across tied pages", async (t) => {
+  const deps = await historyDatabase(t);
+  try {
+    deps.db.transaction(() => {
+      deps.store.recordSighting({ ...sighting("367000001"), at: 300 });
+      for (let i = 0; i < 2001; i++) {
+        deps.store.recordDwell({ trackKey: `track:${i}`, mmsi: "367000001", terminalId: i < 1001 ? "west" : "east", since: i < 1001 ? 100 : 200, until: 300 });
+      }
+    });
+  } finally {
+    deps.db.close();
+  }
+  const prints = [];
+  const result = await runHarborResearch({ root: deps.root, rosterPath: deps.rosterPath,
+    args: ["--dry", "--db", deps.databasePath], stdout: (value) => prints.push(value) });
+  assert.deepEqual(result.vessels, []);
+  assert.equal(result.skipped[0].mmsi, "367000001");
+  assert.match(prints.join(""), /operator \?\s+share 0\.50\s+dwells 2001/);
+  assert.match(prints.join(""), /dry run, nothing written/);
+});
+
+test("script pages real-store sightings sharing a timestamp to discover a ferry beyond the first 1000", async (t) => {
+  const deps = await historyDatabase(t);
+  const mmsi = "367001000";
+  try {
+    deps.db.transaction(() => {
+      for (let i = 0; i < 1001; i++) deps.store.recordSighting({ mmsi: String(367000000 + i), name: `Test Ferry ${i}`, at: 100 });
+      for (let i = 0; i < 3; i++) deps.store.recordDwell({ trackKey: `track:${i}`, mmsi, terminalId: "west", since: 100, until: 200 });
+    });
+  } finally {
+    deps.db.close();
+  }
+  const prints = [];
+  const result = await runHarborResearch({ root: deps.root, rosterPath: deps.rosterPath,
+    args: ["--dry", "--db", deps.databasePath], stdout: (value) => prints.push(value) });
+  assert.equal(result.vessels.length, 1);
+  assert.equal(result.vessels[0].mmsi, mmsi);
+  assert.equal(result.skipped.length, 1000);
+  assert.match(prints[0], /1001 unlinked vessels seen/);
+});
 
 test("script --dry reads a fake store, reports what it would propose, writes nothing and does not call confirm", async (t) => {
   const deps = await withDirectory(t);

@@ -5,6 +5,20 @@ import { candidates, parseFccShips, propose } from "../lib/harbor-research.js";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+async function readHistory(list, cursorOf) {
+  const limit = 1000;
+  const rows = [];
+  let before = null;
+  // Store limits are capped per page. The composite cursor preserves every row
+  // even when a timestamp is shared by observations on both sides of a page.
+  while (true) {
+    const page = await list({ limit, before });
+    rows.push(...page);
+    if (page.length < limit) return rows;
+    before = cursorOf(page.at(-1));
+  }
+}
+
 function options(args, root, stateDir) {
   const parsed = { databasePath: resolve(stateDir, "harbor.db"), outPath: resolve(root, "content/harbor-roster.proposed.json"), dry: false, fccPath: null };
   const flags = { "--db": "databasePath", "--out": "outPath", "--fcc": "fccPath" };
@@ -45,7 +59,7 @@ export async function runHarborResearch({ args = [], store, root = projectRoot,
         if (error.code !== "ENOENT") throw error;
         const message = `No harbor database to read yet: ${settings.databasePath}`;
         if (!settings.dry) throw new Error(message);
-        // An absent database is the sole dry-run diagnostic; do not bootstrap it.
+        // Report an absent database without bootstrapping it.
         stdout(`${message}\n`);
         return { vessels: [], conflicts: [], skipped: [], dropped: [] };
       }
@@ -57,9 +71,9 @@ export async function runHarborResearch({ args = [], store, root = projectRoot,
       store = createHarborStore(database);
     }
     const [sightings, dwells, terminals, links] = await Promise.all([
-      // Store defaults may cap list sizes for API callers. Research needs all
-      // retained dwells so a default page cannot skew an operator's share.
-      store.listSightings({ limit: Number.MAX_SAFE_INTEGER }), store.listDwells({ limit: Number.MAX_SAFE_INTEGER }), store.listTerminals(), store.listAisLinks({})
+      readHistory((options) => store.listSightings(options), ({ lastSeen, mmsi }) => ({ lastSeen, mmsi })),
+      readHistory((options) => store.listDwells(options), ({ since, id }) => ({ since, id })),
+      store.listTerminals(), store.listAisLinks({})
     ]);
     roster.byMmsi = new Map(links.map((link) => [link.mmsi, link]));
     for (const vessel of roster.vessels) if (vessel.mmsi) roster.byMmsi.set(vessel.mmsi, { vesselId: vessel.id });
