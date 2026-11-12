@@ -2,7 +2,8 @@
 // MMSIs, landing changes and lost-boat gaps merging stops; names being erased by static
 // patches; null assignments hiding flips; final counts, landing totals or cautious tie-breaks
 // drifting; storage being enabled too early; gap buckets or percentiles being wrong; and
-// CLI capture replay leaking coordinates, losing files or changing the default model.
+// CLI capture replay leaking coordinates, losing files or changing the default model;
+// capture times collapsing against the machine clock; and untimed records polluting replay.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -144,6 +145,63 @@ test("gap percentiles interpolate per MMSI using the earlier speed and exclude u
     stopped: { count: 0, median: null, p75: null, p90: null, p95: null }
   });
   assert.equal(reportGaps([fix(0), fix(30000)]).stopped.p95, 30);
+});
+
+const replayClock = Date.UTC(2026, 0, 1);
+const captureStart = replayClock + 86400000;
+
+function wireFix(at) {
+  return {
+    MessageType: "PositionReport", MetaData: { time_utc: new Date(at).toISOString() },
+    Message: { PositionReport: {
+      UserID: 367000001, Latitude: first.points[0].latitude, Longitude: first.points[0].longitude, Sog: 0
+    } }
+  };
+}
+
+async function calibrateWithFrozenClock(records) {
+  const dir = await mkdtemp(join(tmpdir(), "harbor-calibrate-clock-"));
+  try {
+    const stop = parseCsv(readFileSync(new URL("../gtfs/stops.txt", import.meta.url), "utf8"))[0];
+    const csvPath = join(dir, "slips.csv"), capturePath = join(dir, "capture.ndjson"), clockPath = join(dir, "clock.mjs");
+    const point = first.points[0];
+    await writeFile(csvPath, `landing,slip,latitude,longitude\n"${stop.stop_name}",Slip 1,${point.latitude},${point.longitude}\n`);
+    await writeFile(capturePath, records.map((record) => JSON.stringify(record)).join("\n"));
+    await writeFile(clockPath, `Date.now = () => ${replayClock};\n`);
+    const script = new URL("../scripts/harbor-calibrate.mjs", import.meta.url).pathname;
+    const result = await run(process.execPath, [
+      "--import", clockPath, script, "--capture", capturePath, "--slips", csvPath, "--json"
+    ], { cwd: dir });
+    return JSON.parse(result.stdout);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+test("CLI preserves a future capture's 30-second dwell and gap against an injected clock", async () => {
+  const report = await calibrateWithFrozenClock([wireFix(captureStart), wireFix(captureStart + 30000)]);
+  assert.equal(report.dwells.length, 1);
+  assert.equal(report.dwells[0].since, captureStart);
+  assert.equal(report.dwells[0].until, captureStart + 30000);
+  assert.equal(report.capture.fixes, 2);
+  assert.equal(report.capture.ignored, 0);
+  assert.deepEqual(report.gaps.stopped, { count: 1, median: 30, p75: 30, p90: 30, p95: 30 });
+});
+
+test("CLI ignores fixes and static records with missing or invalid capture timestamps", async () => {
+  const missingFix = wireFix(captureStart), invalidFix = wireFix(captureStart);
+  delete missingFix.MetaData.time_utc;
+  invalidFix.MetaData.time_utc = "not a timestamp";
+  const missingStatic = {
+    MessageType: "ShipStaticData", Message: { ShipStaticData: { UserID: 367000001, Name: "UNTIMED FERRY" } }
+  };
+  const invalidStatic = { ...missingStatic, MetaData: { time_utc: "not a timestamp" } };
+  const report = await calibrateWithFrozenClock([missingFix, invalidFix, missingStatic, invalidStatic]);
+  assert.equal(report.capture.ignored, 4);
+  assert.equal(report.capture.fixes, 0);
+  assert.equal(report.capture.invalidLines, 0);
+  assert.deepEqual(report.dwells, []);
+  assert.equal(report.gaps.stopped.count, 0);
 });
 
 test("CLI replays multiple raw captures, prints ids without coordinates, and handles invalid lines", async () => {

@@ -40,8 +40,14 @@ async function loadCaptures(paths) {
       let raw;
       try { raw = JSON.parse(line); }
       catch { capture.invalidLines += 1; continue; }
-      const record = normalizeAisMessage(raw);
-      if (record?.kind !== "fix" && record?.kind !== "static") { capture.ignored += 1; continue; }
+      // Capture time is independent of this machine's clock. The sentinel admits future
+      // capture timestamps and identifies records that fell back to an unknown receive time.
+      const record = normalizeAisMessage(raw, Number.MAX_SAFE_INTEGER);
+      if ((record?.kind !== "fix" && record?.kind !== "static") ||
+          (record.fix?.at ?? record.static?.at) === Number.MAX_SAFE_INTEGER) {
+        capture.ignored += 1;
+        continue;
+      }
       records.push(record);
       if (record.kind === "fix") capture.fixes += 1;
     }
