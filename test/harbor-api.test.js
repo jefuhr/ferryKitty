@@ -231,10 +231,18 @@ test("the envelope whitelists public source fields and becomes stale at 120 seco
   assert.equal(describe([], { sources: { ...sources, ais: { ...sources.ais, lastMessageAt: now - 119999 } } }).stale, false);
 });
 
-test("the catalog has exactly the Ferry RT fields, sorted and passenger-only by default", () => {
+// Failure modes: lost slip geometry/kind, incorrect ordering, yard leakage, and shared mutable points.
+test("the catalog includes slip points and kind, sorted and passenger-only by default", () => {
   const result = encodeSlips(slipIndex);
   assert.equal(result.slips.length, 8);
-  assert.deepEqual(result.slips[0], { id: "NYCF_9001_B1", name: "Slip B1", platformCode: "B1", landingStopId: "9001" });
+  assert.deepEqual(result.slips[0], { id: "NYCF_9001_B1", name: "Slip B1", platformCode: "B1", landingStopId: "9001", kind: "passenger", points: slipsById.get("NYCF_9001_B1").points });
+  for (const slip of encodeSlips(slipIndex, { includeYard: true }).slips) {
+    const original = slipsById.get(slip.id);
+    assert.equal(slip.kind, original.kind);
+    assert.deepEqual(slip.points, original.points);
+    assert.notEqual(slip.points, original.points);
+    assert.notEqual(slip.points[0], original.points[0]);
+  }
   assert.deepEqual(result.slips.map(s => `${s.landingStopId}|${s.id}`), result.slips.map(s => `${s.landingStopId}|${s.id}`).sort());
   assert.equal(encodeSlips(slipIndex, { includeYard: true }).slips.length, 12);
 });
@@ -327,7 +335,7 @@ test("a direct trip binding wins over a conflicting descriptor and creates missi
 });
 
 test("no output leaks any fixture slip or landing point coordinate", () => {
-  const outputs = [describe(), encodeSlips(slipIndex, { includeYard: true }),
+  const outputs = [describe(),
     plain(decode(encodeTripUpdates({ feed: feedFor(), tracks: [track()], roster, slipIndex, now })))];
   const forbidden = new Set([...slipIndex.slips.flatMap(s => s.points), ...slipIndex.landings].flatMap(p => [p.latitude, p.longitude]));
   for (const output of outputs) {

@@ -155,10 +155,12 @@ try {
 
   const catalog = await getJson("/api/slips");
   assert.deepEqual(catalog.body.slips.map((slip) => slip.id), ["NYCF_87_A1", "NYCF_87_D1"]);
-  assert.deepEqual(Object.keys(catalog.body.slips[0]).sort(), ["id", "landingStopId", "name", "platformCode"]);
-  const everything = JSON.stringify(catalog.body) + JSON.stringify({ ...(await getJson("/api/harbor/vessels")).body, vessels: [] });
-  for (const value of [slipA.latitude, slipA.longitude, slipD.latitude, slipD.longitude]) assert.ok(!everything.includes(String(value).slice(0, 9)), "a slip coordinate leaked");
-  record("slip catalog in the Ferry RT shape, without coordinates", { slips: catalog.body.slips });
+  assert.deepEqual(Object.keys(catalog.body.slips[0]).sort(), ["id", "kind", "landingStopId", "name", "platformCode", "points"]);
+  assert.deepEqual(catalog.body.slips.map(({ id, kind, points }) => ({ id, kind, points })), [
+    { id: "NYCF_87_A1", kind: "passenger", points: [slipA] },
+    { id: "NYCF_87_D1", kind: "passenger", points: [slipD] }
+  ]);
+  record("slip catalog includes the surveyed points and kind", { slips: catalog.body.slips });
 
   const tagged = await until("the trip update to name the slip", async () => { const call = await tripUpdate(); return call?.stopId === "NYCF_87_A1" ? call : null; });
   assert.equal(tagged.stopTimeProperties.assignedStopId, "NYCF_87_A1");

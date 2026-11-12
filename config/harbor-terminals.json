@@ -1,0 +1,181 @@
+{
+  "terminals": [
+    {
+      "id": "nj-edgewater",
+      "name": "Edgewater",
+      "town": "Edgewater",
+      "state": "NJ",
+      "latitude": 40.827924329813,
+      "longitude": -73.969713315575,
+      "stopIds": [
+        "wtr:2439136"
+      ]
+    },
+    {
+      "id": "nj-port-imperial",
+      "name": "Port Imperial",
+      "town": "Weehawken",
+      "state": "NJ",
+      "latitude": 40.776359418546,
+      "longitude": -74.010074289269,
+      "stopIds": [
+        "wtr:2439137"
+      ]
+    },
+    {
+      "id": "nj-lincoln-harbor",
+      "name": "Lincoln Harbor",
+      "town": "Weehawken",
+      "state": "NJ",
+      "latitude": 40.758720776126,
+      "longitude": -74.022661271313,
+      "stopIds": [
+        "wtr:2439138"
+      ]
+    },
+    {
+      "id": "nj-hoboken-14th-street",
+      "name": "Hoboken 14th Street",
+      "town": "Hoboken",
+      "state": "NJ",
+      "latitude": 40.75234103125,
+      "longitude": -74.020643022026,
+      "stopIds": [
+        "wtr:2439139"
+      ]
+    },
+    {
+      "id": "nj-hoboken-terminal",
+      "name": "Hoboken Terminal",
+      "town": "Hoboken",
+      "state": "NJ",
+      "latitude": 40.7345695617,
+      "longitude": -74.026329705863,
+      "stopIds": [
+        "wtr:2439140"
+      ]
+    },
+    {
+      "id": "nj-paulus-hook",
+      "name": "Paulus Hook",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.713718479988,
+      "longitude": -74.032029165667,
+      "stopIds": [
+        "wtr:2439141",
+        "wbf:2439141"
+      ]
+    },
+    {
+      "id": "nj-liberty-harbor",
+      "name": "Liberty Harbor",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.711274095477,
+      "longitude": -74.043428652676,
+      "stopIds": [
+        "wtr:2439142"
+      ]
+    },
+    {
+      "id": "nj-port-liberte",
+      "name": "Port Liberte",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.687425071511,
+      "longitude": -74.075089878216,
+      "stopIds": [
+        "wtr:2439143"
+      ]
+    },
+    {
+      "id": "nj-south-amboy",
+      "name": "South Amboy",
+      "town": "South Amboy",
+      "state": "NJ",
+      "latitude": 40.49081034,
+      "longitude": -74.275845827,
+      "stopIds": [
+        "wtr:4251907"
+      ]
+    },
+    {
+      "id": "nj-belford",
+      "name": "Belford",
+      "town": "Middletown",
+      "state": "NJ",
+      "latitude": 40.433209,
+      "longitude": -74.078817,
+      "stopIds": [
+        "wbf:belford"
+      ]
+    },
+    {
+      "id": "nj-highlands",
+      "name": "Highlands",
+      "town": "Highlands",
+      "state": "NJ",
+      "latitude": 40.409395,
+      "longitude": -73.996238,
+      "stopIds": [
+        "sea:176"
+      ]
+    },
+    {
+      "id": "nj-atlantic-highlands",
+      "name": "Atlantic Highlands",
+      "town": "Atlantic Highlands",
+      "state": "NJ",
+      "latitude": 40.419668,
+      "longitude": -74.034889,
+      "stopIds": [
+        "sea:175"
+      ]
+    },
+    {
+      "id": "nj-liberty-landing-marina",
+      "name": "Liberty Landing Marina",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.7096234807607,
+      "longitude": -74.0399462444888,
+      "stopIds": [
+        "lib:2557120"
+      ]
+    },
+    {
+      "id": "nj-warren-street",
+      "name": "Warren Street",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.7110053602919,
+      "longitude": -74.0402257743207,
+      "stopIds": [
+        "lib:2557121"
+      ]
+    },
+    {
+      "id": "nj-liberty-state-park",
+      "name": "Liberty State Park",
+      "town": "Jersey City",
+      "state": "NJ",
+      "latitude": 40.707675,
+      "longitude": -74.033775,
+      "stopIds": [
+        "sta:LSP"
+      ]
+    },
+    {
+      "id": "ny-ikea-red-hook",
+      "name": "IKEA Red Hook",
+      "town": "Brooklyn",
+      "state": "NY",
+      "latitude": 40.6734,
+      "longitude": -74.0156,
+      "stopIds": [
+        "ike:ikea"
+      ]
+    }
+  ]
+}
