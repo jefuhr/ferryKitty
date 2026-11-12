@@ -2,6 +2,8 @@
 // timestamps, learned identities displace roster links, JSON/booleans leak SQL encoding,
 // replacement writes partially commit, caller strings become SQL, unbounded lists grow,
 // legacy files corrupt startup or import twice, and persisted history disappears on reopen.
+// LLM batches must retain manifests and collection state, while partial run updates must
+// preserve omitted fields and replace spend instead of double counting it.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -187,6 +189,55 @@ test("LLM accounting totals inclusive timestamps with empty totals zero", async 
   assert.equal(store.llmSpendSince(201), 0);
 });
 
+test("LLM run ids allow partial updates without duplicate spend or erased fields", async (t) => {
+  const { store, db } = await fixture(t);
+  const id = store.recordLlmRun({ purpose: "day", model: "test", serviceDate: "20261112", status: "submitted", inputTokens: 50, outputTokens: 10, cacheReadTokens: 4, costUsd: 0.25, createdAt: 100 });
+  assert.ok(Number.isInteger(id));
+  const second = store.recordLlmRun({ purpose: "review", model: "other", status: "ended", costUsd: 0.5, createdAt: 200 });
+  assert.notEqual(id, second);
+  assert.equal(store.updateLlmRun(id, { status: "ended", batchId: hostile, costUsd: 0.75 }), true);
+  assert.equal(store.llmSpendSince(0), 1.25);
+  assert.equal(store.updateLlmRun(id, { costUsd: 0.75 }), true);
+  assert.equal(store.llmSpendSince(0), 1.25);
+  const read = () => ({ ...db.database.prepare("SELECT * FROM llm_runs WHERE id = ?").get(id) });
+  assert.deepEqual(read(), { id, purpose: "day", model: "test", service_date: "20261112", batch_id: hostile, status: "ended", input_tokens: 50, output_tokens: 10, cache_read_tokens: 4, cost_usd: 0.75, created_at: 100 });
+  assert.equal(store.updateLlmRun(id, { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, costUsd: 0, batchId: null, status: undefined }), true);
+  const updated = read();
+  assert.equal(updated.status, "ended");
+  assert.equal(updated.batch_id, null);
+  assert.equal(updated.input_tokens, 0);
+  assert.equal(updated.output_tokens, 0);
+  assert.equal(updated.cache_read_tokens, 0);
+  assert.equal(store.llmSpendSince(0), 0.5);
+  assert.equal(store.updateLlmRun(id, {}), false);
+  assert.equal(store.updateLlmRun(id, { purpose: "unapproved", status: undefined }), false);
+  assert.equal(store.updateLlmRun(second + 1, { status: "ended" }), false);
+  assert.equal(store.updateLlmRun(hostile, { status: "ended" }), false);
+  assert.equal(db.database.prepare("SELECT COUNT(*) AS n FROM llm_runs").get().n, 2);
+});
+
+test("LLM batch manifests upsert and retain collection markers across reopening", async (t) => {
+  const { store, db, databasePath } = await fixture(t);
+  assert.equal(store.getLlmBatch("missing"), null);
+  assert.doesNotThrow(() => store.markLlmBatchCollected("missing", 50));
+  const manifest = { requests: [{ id: hostile, evidence: [1, { confidence: 0.8 }] }], model: "test" };
+  store.saveLlmBatch({ batchId: hostile, purpose: "day", manifest, createdAt: 100 });
+  assert.deepEqual(store.getLlmBatch(hostile), { batchId: hostile, purpose: "day", manifest, llmRunId: null, createdAt: 100, collectedAt: null });
+  assert.equal(store.getLlmBatch("' OR 1=1 --"), null);
+  const id = store.recordLlmRun({ purpose: "day", model: "test", status: "submitted", createdAt: 100 });
+  store.saveLlmBatch({ batchId: hostile, purpose: "review", manifest: [manifest, null], llmRunId: id, createdAt: 200 });
+  store.markLlmBatchCollected(hostile, 300);
+  store.saveLlmBatch({ batchId: "other", purpose: "day", manifest: {}, createdAt: 400 });
+  store.saveLlmBatch({ batchId: hostile, purpose: "review", manifest, llmRunId: id, createdAt: 200 });
+  const expected = { batchId: hostile, purpose: "review", manifest, llmRunId: id, createdAt: 200, collectedAt: 300 };
+  assert.deepEqual(store.getLlmBatch(hostile), expected);
+  assert.equal(store.getLlmBatch("other").collectedAt, null);
+  db.close();
+  const reopened = openHarborDb({ databasePath });
+  try { assert.deepEqual(createHarborStore(reopened).getLlmBatch(hostile), expected); }
+  finally { reopened.close(); }
+});
+
 test("all written history survives closing and reopening the database", async (t) => {
   const { store, db, databasePath } = await fixture(t);
   store.recordDwell(dwell({ dims, ambiguous: true }));
@@ -351,6 +402,11 @@ test("multi-row methods use the injected transaction and prepare nothing after c
     await store.importLegacy({ stateDir: dir });
     store.listTerminals();
     store.vesselDetail("locked");
+    const id = store.recordLlmRun({ purpose: "day", model: "test", status: "submitted", createdAt: 100 });
+    store.updateLlmRun(id, { status: "ended" });
+    store.saveLlmBatch({ batchId: "batch", purpose: "day", manifest: { id }, llmRunId: id, createdAt: 100 });
+    store.markLlmBatchCollected("batch", 200);
+    assert.equal(store.getLlmBatch("batch").collectedAt, 200);
     assert.equal(calls, 4);
   } finally { db.database.prepare = original; }
 });
