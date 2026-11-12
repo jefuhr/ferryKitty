@@ -1,11 +1,12 @@
 // Failure modes: catalog ids drifting, label and yard kinds being lost, private coordinates in
 // warnings, duplicate survey points becoming separate slips, incorrect landing bounds, outlier
 // fixes, nearby-slip ambiguity, weak distant matches, heading filters rejecting unknowns, and
-// numbered fuel/yard suffixes being mistaken for number-specific exceptions.
+// numbered fuel/yard suffixes being mistaken for number-specific exceptions, model defaults
+// drifting, and probability margins either suppressing clear matches or naming midpoint fixes.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { parseSlipCsv, slipId, buildSlipIndex, assignSlip } from "../lib/harbor-slips.js";
+import { parseSlipCsv, slipId, buildSlipIndex, assignSlip, SLIP_MODEL } from "../lib/harbor-slips.js";
 import { distanceMetres, offsetPoint } from "../lib/harbor-geo.js";
 
 const fixture = (name) => new URL(`./fixtures/harbor/${name}`, import.meta.url);
@@ -276,4 +277,68 @@ test("a landing made only of storage slips ignores the storage switch", () => {
   const index = fixtureIndex();
   const dryDock = index.byId.get("NYCF_PIERC_DRY_DOCK");
   assert.equal(assignSlip(dryDock.points, index, { landingStopId: "home-port" }).slipId, dryDock.id);
+});
+
+test("the explicit default model preserves every fixture assignment byte for byte", () => {
+  assert.deepEqual(SLIP_MODEL, {
+    sigmaMetres: 12, noneMetres: 45, minP: 0.6, ambiguity: { mode: "spacing", metres: 25 }
+  });
+  const index = fixtureIndex();
+  for (const slip of index.slips) {
+    for (const metres of [0, 7, 30, 50, 61]) {
+      for (const storage of [false, true]) {
+        const points = [...slip.points, offsetPoint(slip.points[0], 90, metres)];
+        const options = { landingStopId: slip.landingStopId, storage };
+        assert.equal(JSON.stringify(assignSlip(points, index, options)),
+          JSON.stringify(assignSlip(points, index, { ...options, model: SLIP_MODEL })));
+      }
+    }
+  }
+});
+
+test("margin mode clears a close but decisive slip and still refuses the midpoint", () => {
+  const index = fixtureIndex();
+  const first = index.byId.get("NYCF_9001_SLIP_1");
+  const second = index.byId.get("NYCF_9001_SLIP_2");
+  const model = { ...SLIP_MODEL, sigmaMetres: 4 };
+  const options = { landingStopId: "9001", model };
+  const spacing = assignSlip(first.points, index, options);
+  const margin = assignSlip(first.points, index, {
+    ...options, model: { ...model, ambiguity: { mode: "margin", p: 0.2 } }
+  });
+  assert.equal(spacing.ambiguous, true);
+  assert.equal(spacing.confidence, 0.6);
+  assert.equal(margin.slipId, first.id);
+  assert.equal(margin.ambiguous, false);
+  assert.ok(margin.confidence > 0.99);
+  const midpoint = {
+    latitude: (first.points[0].latitude + second.points[0].latitude) / 2,
+    longitude: (first.points[0].longitude + second.points[0].longitude) / 2
+  };
+  const between = assignSlip([midpoint], index, {
+    ...options, model: { ...model, ambiguity: { mode: "margin", p: 0.2 } }
+  });
+  assert.equal(between.slipId, null);
+  assert.equal(between.ambiguous, true);
+  assert.ok(between.confidence < 0.6);
+});
+
+test("sigma, none weight, minP and both ambiguity thresholds come from the model", () => {
+  const { slip, index } = isolatedIndex();
+  const model = { ...SLIP_MODEL, sigmaMetres: 8, noneMetres: 10, minP: 0.9 };
+  const result = assignSlip(slip.points, index, { landingStopId: slip.landingStopId, model });
+  assert.equal(result.confidence, 1 / (1 + Math.exp(-(10 ** 2) / (2 * 8 ** 2))));
+  assert.equal(result.slipId, null);
+  const close = fixtureIndex();
+  const points = close.byId.get("NYCF_9001_SLIP_1").points;
+  for (const ambiguity of [{ mode: "spacing", metres: 1 }, { mode: "margin", p: 0 }]) {
+    assert.equal(assignSlip(points, close, { landingStopId: "9001", model: { ...SLIP_MODEL, ambiguity } }).ambiguous, false);
+  }
+  // Ambiguity caps confidence, but minP alone decides whether the slip is named.
+  const uncertain = assignSlip(points, close, {
+    landingStopId: "9001", model: { ...SLIP_MODEL, ambiguity: { mode: "margin", p: 1 } }
+  });
+  assert.equal(uncertain.ambiguous, true);
+  assert.equal(uncertain.confidence, 0.6);
+  assert.equal(uncertain.slipId, "NYCF_9001_SLIP_1");
 });
