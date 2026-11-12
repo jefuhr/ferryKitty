@@ -178,6 +178,31 @@ try {
   assert.equal(untagged.stopId, "87");
   record("vessel departed and the trip update went back to the landing", { state: away.state, stopId: untagged.stopId });
 
+  // The long memory: the dwell that just ended is on the vessel's page, with how the hull is known.
+  const page = await until("the dwell to reach the vessel's page", async () => {
+    const response = await getJson(`/api/harbor/vessels/${encodeURIComponent(away.id)}`);
+    return response.status === 200 && response.body.dwells.length ? response.body : null;
+  });
+  assert.equal(page.track.id, away.id);
+  assert.equal(page.dwells[0].slipId, docked.slip.id);
+  assert.ok(page.links.some((link) => link.mmsi === away.mmsi));
+  assert.equal((await getJson("/api/harbor/vessels/no-such-boat")).status, 404);
+  record("vessel page shows identity, links and the dwell that just ended", { id: away.id, dwell: page.dwells[0], links: page.links.length });
+
+  // Every operator that docks in the city, and every terminal watched, New Jersey included.
+  const operators = await getJson("/api/harbor/operators");
+  assert.equal(operators.status, 200);
+  assert.ok(["nycf", "waterway", "seastreak", "siferry", "statue", "gi", "liberty"].every((id) => operators.body.operators.some((item) => item.id === id)));
+  const onlySeastreak = await getJson("/api/harbor/vessels?operator=seastreak");
+  assert.ok(onlySeastreak.body.vessels.length > 0 && onlySeastreak.body.vessels.every((item) => item.operatorId === "seastreak" && item.operatorName === "Seastreak"));
+  const terminals = await getJson("/api/harbor/terminals");
+  assert.equal(terminals.status, 200);
+  const jersey = terminals.body.terminals.filter((item) => item.state === "NJ");
+  assert.ok(jersey.some((item) => item.name === "Port Imperial"), "New Jersey terminals are listed");
+  const surveyed = terminals.body.terminals.find((item) => item.slips.some((slip) => slip.id === docked.slip.id));
+  assert.ok(surveyed.slips.every((slip) => slip.points.length > 0));
+  record("operators and terminals listed, New Jersey included", { operators: operators.body.operators.map((item) => item.id), terminals: terminals.body.terminals.length, newJersey: jersey.length });
+
   // AIS goes away. The harbor is shown as it last stood, and says so.
   await ais.close();
   const stale = await until("the stream to be reported down", async () => { const current = await getJson("/api/harbor/vessels"); return current.body.stale && !current.body.sources.ais.connected ? current : null; });
