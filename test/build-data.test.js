@@ -8,26 +8,26 @@ import { fileURLToPath } from "node:url";
 import { applyNonRevenueRuns, buildDisplayData, decodeEntities, parseCsv } from "../scripts/build-data.js";
 import { activeServices } from "../public/assets/schedule.js";
 
-test("NPS fall feed covers September 8 through October 12 with separate weekday and weekend trips", async () => {
+test("NPS fall feed covers October 12 through November 20 with separate weekday and weekend trips", async () => {
   const [info] = parseCsv(await readFile(new URL("../gtfs/statue/feed_info.txt", import.meta.url), "utf8"));
-  assert.equal(info.feed_version, "20260908");
-  assert.equal(info.feed_end_date, "20261012");
+  assert.equal(info.feed_version, "20261013");
+  assert.equal(info.feed_end_date, "20261120");
   for (const landingNumber of [28, 30, 31]) {
     const data = await buildDisplayData({ landingNumber });
     const active = date => {
       const services = activeServices(data, date);
       return data.departures.filter(row => row.routeId.startsWith("sta:") && services.has(row.serviceId));
     };
-    for (const date of ["2026-09-08", "2026-09-20", "2026-09-21", "2026-10-12"]) {
+    for (const date of ["2026-10-12", "2026-11-14", "2026-11-16", "2026-11-20"]) {
       assert.ok(active(date).length > 0, `landing ${landingNumber} has fall service on ${date}`);
     }
-    assert.equal(active("2026-09-07").length, 0);
-    assert.equal(active("2026-10-13").length, 0);
-    assert.ok(active("2026-09-20").every(row => row.serviceId !== "sta:weekday"));
-    assert.ok(active("2026-09-21").every(row => row.serviceId !== "sta:weekend"));
+    assert.equal(active("2026-10-11").length, 0);
+    assert.equal(active("2026-11-21").length, 0);
+    assert.ok(active("2026-11-14").every(row => row.serviceId !== "sta:weekday"));
+    assert.ok(active("2026-11-16").every(row => row.serviceId !== "sta:weekend"));
     if (landingNumber === 28) {
-      assert.ok(active("2026-09-20").some(row => row.serviceId === "sta:weekend"));
-      assert.ok(active("2026-09-21").some(row => row.serviceId === "sta:weekday"));
+      assert.ok(active("2026-11-14").some(row => row.serviceId === "sta:weekend"));
+      assert.ok(active("2026-11-16").some(row => row.serviceId === "sta:weekday"));
     }
   }
 });

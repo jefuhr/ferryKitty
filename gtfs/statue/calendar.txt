@@ -1,4 +1,4 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-fall,1,1,1,1,1,1,1,20260908,20261012
-weekend,0,0,0,0,0,1,1,20260908,20261012
-weekday,1,1,1,1,1,0,0,20260908,20261012
+fall,1,1,1,1,1,1,1,20261012,20261120
+weekend,0,0,0,0,0,1,1,20261012,20261120
+weekday,1,1,1,1,1,0,0,20261012,20261120

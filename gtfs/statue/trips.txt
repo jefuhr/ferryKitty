@@ -12,7 +12,6 @@ NJ,fall,Liberty State Park Loop Fall_T08,,1,,NJ,1,2
 NJ,fall,Liberty State Park Loop Fall_T09,,1,,NJ,1,2
 NJ,fall,Liberty State Park Loop Fall_T10,,1,,NJ,1,2
 NJ,fall,Liberty State Park Loop Fall_T11,,1,,NJ,1,2
-NJ,fall,Liberty State Park Loop Fall_T12,,1,,NJ,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T01,,1,,NY,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T02,,1,,NY,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T03,,1,,NY,1,2
@@ -27,9 +26,6 @@ NY,weekday,Battery Park Loop Fall Weekday_T11,,1,,NY,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T12,,1,,NY,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T13,,1,,NY,1,2
 NY,weekday,Battery Park Loop Fall Weekday_T14,,1,,NY,1,2
-NY,weekday,Battery Park Loop Fall Weekday_T15,,1,,NY,1,2
-NY,weekday,Battery Park Loop Fall Weekday_T16,,1,,NY,1,2
-NY,weekday,Battery Park Loop Fall Weekday_T17,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T01,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T02,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T03,,1,,NY,1,2
@@ -48,12 +44,10 @@ NY,weekend,Battery Park Loop Fall Weekend_T15,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T16,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T17,,1,,NY,1,2
 NY,weekend,Battery Park Loop Fall Weekend_T18,,1,,NY,1,2
-NY,weekend,Battery Park Loop Fall Weekend_T19,,1,,NY,1,2
-NY,weekend,Battery Park Loop Fall Weekend_T20,,1,,NY,1,2
-NY,weekend,Battery Park Loop Fall Weekend_T21,,1,,NY,1,2
 LIBP,weekend,Liberty Island - Battery Park Evening Weekend Return ONLY_T01,,1,,LIBP,1,2
 LIBP,weekend,Liberty Island - Battery Park Evening Weekend Return ONLY_T02,,1,,LIBP,1,2
 LIBP,weekend,Liberty Island - Battery Park Evening Weekend Return ONLY_T03,,1,,LIBP,1,2
+LIBP,weekend,Liberty Island - Battery Park Evening Weekend Return ONLY_T04,,1,,LIBP,1,2
 EIBP,weekend,Ellis Island - Battery Park Evening Weekend Return ONLY_T01,,1,,EIBP,1,2
 EIBP,weekend,Ellis Island - Battery Park Evening Weekend Return ONLY_T02,,1,,EIBP,1,2
 LIBP,weekday,Liberty Island - Battery Park Evening Weekday Return ONLY_T01,,1,,LIBP,1,2
