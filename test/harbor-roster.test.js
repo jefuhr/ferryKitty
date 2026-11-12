@@ -23,12 +23,17 @@ test("rosterFromFleet preserves fleet ids, names and numbers with unbound active
   assert.deepEqual(rosterFromFleet([]), []);
 });
 
-test("the committed roster stays exactly in step with the NYC Ferry fleet", async () => {
+test("the committed roster stays in step with the NYC Ferry fleet", async () => {
   const { vessels: fleet } = JSON.parse(readFileSync(new URL("../content/vessels.json", import.meta.url), "utf8"));
   const committed = JSON.parse(readFileSync(new URL("../content/harbor-roster.json", import.meta.url), "utf8"));
   assert.equal(committed.version, 1);
   assert.deepEqual(committed.operators[0], { id: "nycf", name: "NYC Ferry", feedPrefix: "" });
-  assert.deepEqual(committed.vessels.filter((vessel) => vessel.operatorId === "nycf"), rosterFromFleet(fleet));
+  // The roster adds researched identifiers and references; identity, name, number and order follow the fleet.
+  const identity = ({ id, operatorId, name, number, active }) => ({ id, operatorId, name, number, active });
+  assert.deepEqual(committed.vessels.filter((vessel) => vessel.operatorId === "nycf").map(identity), rosterFromFleet(fleet).map(identity));
+  for (const vessel of committed.vessels.filter((vessel) => vessel.operatorId === "nycf" && vessel.mmsi)) {
+    assert.ok(vessel.references?.some((reference) => reference.field === "mmsi" && reference.value === vessel.mmsi && reference.url), `${vessel.id}: MMSI has no source`);
+  }
   assert.equal(new Set(committed.vessels.map((vessel) => vessel.id)).size, committed.vessels.length);
   const loaded = await loadRoster({ rosterPath: new URL("../content/harbor-roster.json", import.meta.url) });
   assert.equal(loaded.byId.size, committed.vessels.length);

@@ -25,7 +25,10 @@ import { startFakeAisServer } from "../test/helpers/fake-ais-server.js";
 const { FeedMessage } = GtfsRealtimeBindings.transit_realtime;
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const ARTIFACT = path.join(ROOT, "artifacts/harbor/e2e.json");
-const MMSI = 367000101;
+// The committed roster carries the boat's licensed MMSI, so the transponder is recognised by it.
+const committedRoster = JSON.parse(await readFile(path.join(ROOT, "content/harbor-roster.json"), "utf8"));
+const MMSI = Number(committedRoster.vessels.find((item) => item.id === "waves-of-wonder").mmsi);
+assert.ok(Number.isInteger(MMSI) && MMSI > 0, "the roster still carries an MMSI for waves-of-wonder");
 const TRIP = "E2E1";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -126,7 +129,7 @@ try {
   // and every other rostered boat is listed as unknown.
   const early = before.body.vessels.find((item) => item.id === "waves-of-wonder");
   assert.equal(early.positionSource, "operator");
-  assert.equal(early.mmsi, null);
+  assert.equal(early.mmsi, String(MMSI));
   assert.equal(early.tripId, TRIP);
   assert.equal(before.body.sources.nycFerry.available, true);
   assert.ok(before.body.vessels.filter((item) => item.state === "unknown").length >= 30);
@@ -141,7 +144,7 @@ try {
 
   const docked = await until("the vessel to dock", async () => { const item = await vessel(); return item?.state === "docked" && item.tripId ? item : null; });
   assert.equal(docked.mmsi, String(MMSI));
-  assert.equal(docked.identitySource, "ais-name");
+  assert.equal(docked.identitySource, "roster");
   assert.equal(docked.positionSource, "ais");
   assert.equal(docked.status, "stopped");
   assert.equal(docked.landing.stopId, "87");
