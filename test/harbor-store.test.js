@@ -4,6 +4,7 @@
 // legacy files corrupt startup or import twice, and persisted history disappears on reopen.
 // LLM batches must retain manifests and collection state, while partial run updates must
 // preserve omitted fields and replace spend instead of double counting it.
+// History cursors must not skip or repeat rows sharing a page-boundary timestamp.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -319,6 +320,44 @@ test("history lists sort descending, default to 200 and cap limits at 1000", asy
   assert.equal(store.listDwells()[0].since, 1004);
   assert.equal(store.listTripObservations()[0].departedAt, 1004);
   assert.equal(store.listEstimates()[0].createdAt, 1004);
+});
+
+test("sighting cursors page past tied timestamps without skipping or repeating MMSIs", async (t) => {
+  const { store, db } = await fixture(t);
+  db.transaction(() => {
+    for (let i = 0; i < 1007; i++) {
+      store.recordSighting({ mmsi: String(367000000 + i), at: i === 0 ? 200 : i === 1006 ? 50 : 100 });
+    }
+  });
+  const first = store.listSightings({ limit: 5000 });
+  assert.equal(first.length, 1000);
+  const last = first.at(-1);
+  const before = { lastSeen: last.lastSeen, mmsi: last.mmsi };
+  const second = store.listSightings({ limit: 1000, before });
+  assert.equal(second.length, 7);
+  assert.deepEqual([...first, ...second].map((row) => row.mmsi), Array.from({ length: 1007 }, (_, i) => String(367000000 + i)));
+  assert.equal(store.listSightings({ limit: 1000, before, since: 100 }).length, 6);
+  assert.deepEqual(store.listSightings({ before: { lastSeen: 50, mmsi: "367001006" } }), []);
+});
+
+test("dwell cursors preserve descending id ties and combine with the existing filters", async (t) => {
+  const { store, db } = await fixture(t);
+  db.transaction(() => {
+    for (let i = 0; i < 1007; i++) {
+      store.recordDwell(dwell({ trackKey: `track:${i}`, mmsi: "222222222", vesselId: "free", since: i === 0 ? 50 : i === 1006 ? 200 : 100 }));
+    }
+    store.recordDwell(dwell({ trackKey: "unrelated", mmsi: "333333333", vesselId: "locked", terminalId: "other", since: 100 }));
+  });
+  const filters = { mmsi: "222222222", vesselId: "free", terminalId: "terminal" };
+  const first = store.listDwells({ ...filters, limit: 5000 });
+  assert.equal(first.length, 1000);
+  const last = first.at(-1);
+  const before = { since: last.since, id: last.id };
+  const second = store.listDwells({ ...filters, limit: 1000, before });
+  assert.equal(second.length, 7);
+  assert.deepEqual([...first, ...second].map((row) => row.trackKey), Array.from({ length: 1007 }, (_, i) => `track:${1006 - i}`));
+  assert.equal(store.listDwells({ ...filters, limit: 1000, before, since: 100 }).length, 6);
+  assert.deepEqual(store.listDwells({ ...filters, before: { since: 50, id: second.at(-1).id } }), []);
 });
 
 test("legacy import preserves aggregates, maps dwell keys/terminals and runs once across reopen", async (t) => {
