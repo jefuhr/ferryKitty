@@ -5,6 +5,42 @@
       "id": "nycf",
       "name": "NYC Ferry",
       "feedPrefix": ""
+    },
+    {
+      "id": "waterway",
+      "name": "NY Waterway",
+      "feedPrefix": "wtr:",
+      "website": "https://www.nywaterway.com"
+    },
+    {
+      "id": "seastreak",
+      "name": "Seastreak",
+      "feedPrefix": "sea:",
+      "website": "https://seastreak.com"
+    },
+    {
+      "id": "siferry",
+      "name": "Staten Island Ferry",
+      "feedPrefix": "sif:",
+      "website": "https://www.nyc.gov/staten-island-ferry"
+    },
+    {
+      "id": "liberty",
+      "name": "Liberty Landing Ferry",
+      "feedPrefix": "lib:",
+      "website": "https://libertylandingcityferry.com"
+    },
+    {
+      "id": "statue",
+      "name": "Statue City Cruises",
+      "feedPrefix": "sta:",
+      "website": "https://statuecitycruises.com"
+    },
+    {
+      "id": "gi",
+      "name": "Governors Island Ferry",
+      "feedPrefix": "gi:",
+      "website": "https://www.govisland.com/plan-your-visit/ferry"
     }
   ],
   "vessels": [
@@ -387,6 +423,481 @@
       "callSign": null,
       "aisNames": [],
       "active": true
+    },
+    {
+      "id": "siferry:samuel-i-newhouse",
+      "operatorId": "siferry",
+      "name": "Samuel I. Newhouse",
+      "number": null,
+      "mmsi": "367000140",
+      "callSign": "WYR3371",
+      "aisNames": [],
+      "active": true,
+      "class": "Barberi",
+      "capacity": 6000,
+      "builder": "Equitable Shipyards",
+      "year": 1982,
+      "references": [
+        {
+          "field": "name",
+          "value": "Samuel I. Newhouse",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "6000",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "mmsi",
+          "value": "367000140",
+          "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+          "retrievedAt": "2026-11-12",
+          "note": "FCC ULS ship licence, call sign WYR3371, active record."
+        }
+      ]
+    },
+    {
+      "id": "siferry:alice-austen",
+      "operatorId": "siferry",
+      "name": "Alice Austen",
+      "number": null,
+      "mmsi": "367000120",
+      "callSign": "WTZ3864",
+      "aisNames": [],
+      "active": true,
+      "class": "Austen",
+      "capacity": 1280,
+      "year": 1986,
+      "references": [
+        {
+          "field": "name",
+          "value": "Alice Austen",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "1280",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "mmsi",
+          "value": "367000120",
+          "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+          "retrievedAt": "2026-11-12",
+          "note": "FCC ULS ship licence, call sign WTZ3864, active record."
+        }
+      ]
+    },
+    {
+      "id": "siferry:john-a-noble",
+      "operatorId": "siferry",
+      "name": "John A. Noble",
+      "number": null,
+      "mmsi": "367000110",
+      "callSign": "WTZ3863",
+      "aisNames": [],
+      "active": true,
+      "class": "Austen",
+      "capacity": 1280,
+      "year": 1986,
+      "references": [
+        {
+          "field": "name",
+          "value": "John A. Noble",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "1280",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "mmsi",
+          "value": "367000110",
+          "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+          "retrievedAt": "2026-11-12",
+          "note": "FCC ULS ship licence, call sign WTZ3863, active record."
+        }
+      ]
+    },
+    {
+      "id": "siferry:guy-v-molinari",
+      "operatorId": "siferry",
+      "name": "Guy V. Molinari",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "class": "Molinari",
+      "capacity": 4427,
+      "builder": "Marinette Marine",
+      "year": 2004,
+      "references": [
+        {
+          "field": "name",
+          "value": "Guy V. Molinari",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4427",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "siferry:sen-john-j-marchi",
+      "operatorId": "siferry",
+      "name": "Sen. John J. Marchi",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "class": "Molinari",
+      "capacity": 4427,
+      "year": 2005,
+      "references": [
+        {
+          "field": "name",
+          "value": "Sen. John J. Marchi",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4427",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "siferry:spirit-of-america",
+      "operatorId": "siferry",
+      "name": "Spirit of America",
+      "number": null,
+      "mmsi": "366952890",
+      "callSign": "WDB8298",
+      "aisNames": [],
+      "active": true,
+      "class": "Molinari",
+      "capacity": 4427,
+      "year": 2005,
+      "references": [
+        {
+          "field": "name",
+          "value": "Spirit of America",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4427",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "mmsi",
+          "value": "366952890",
+          "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+          "retrievedAt": "2026-11-12",
+          "note": "FCC ULS ship licence, call sign WDB8298, active record."
+        }
+      ]
+    },
+    {
+      "id": "siferry:ssg-michael-h-ollis",
+      "operatorId": "siferry",
+      "name": "SSG Michael H. Ollis",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "class": "Ollis",
+      "capacity": 4500,
+      "builder": "Eastern Shipbuilding",
+      "year": 2022,
+      "references": [
+        {
+          "field": "name",
+          "value": "SSG Michael H. Ollis",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4500",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "siferry:sandy-ground",
+      "operatorId": "siferry",
+      "name": "Sandy Ground",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "class": "Ollis",
+      "capacity": 4500,
+      "builder": "Eastern Shipbuilding",
+      "year": 2022,
+      "references": [
+        {
+          "field": "name",
+          "value": "Sandy Ground",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4500",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "siferry:dorothy-day",
+      "operatorId": "siferry",
+      "name": "Dorothy Day",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "class": "Ollis",
+      "capacity": 4500,
+      "builder": "Eastern Shipbuilding",
+      "year": 2023,
+      "references": [
+        {
+          "field": "name",
+          "value": "Dorothy Day",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "4500",
+          "url": "https://en.wikipedia.org/wiki/Staten_Island_Ferry",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:seastreak-highlands",
+      "operatorId": "seastreak",
+      "name": "Seastreak Highlands",
+      "number": null,
+      "mmsi": "367347670",
+      "callSign": "WDE4031",
+      "aisNames": [],
+      "active": true,
+      "capacity": 505,
+      "builder": "Gladding-Hearn",
+      "year": 2004,
+      "references": [
+        {
+          "field": "name",
+          "value": "Seastreak Highlands",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "505",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "mmsi",
+          "value": "367347670",
+          "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+          "retrievedAt": "2026-11-12",
+          "note": "FCC ULS ship licence, call sign WDE4031, active record."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:seastreak-new-york",
+      "operatorId": "seastreak",
+      "name": "Seastreak New York",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "capacity": 505,
+      "builder": "Gladding-Hearn",
+      "year": 2001,
+      "references": [
+        {
+          "field": "name",
+          "value": "Seastreak New York",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "505",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:seastreak-new-jersey",
+      "operatorId": "seastreak",
+      "name": "Seastreak New Jersey",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "capacity": 505,
+      "builder": "Gladding-Hearn",
+      "year": 2001,
+      "references": [
+        {
+          "field": "name",
+          "value": "Seastreak New Jersey",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "505",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:commodore",
+      "operatorId": "seastreak",
+      "name": "Commodore",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "capacity": 600,
+      "builder": "Gulf Craft",
+      "year": 2018,
+      "references": [
+        {
+          "field": "name",
+          "value": "Commodore",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "600",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:courageous",
+      "operatorId": "seastreak",
+      "name": "Courageous",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "capacity": 600,
+      "builder": "Midship Marine",
+      "year": 2021,
+      "references": [
+        {
+          "field": "name",
+          "value": "Courageous",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "600",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
+    },
+    {
+      "id": "seastreak:home-run",
+      "operatorId": "seastreak",
+      "name": "Home Run",
+      "number": null,
+      "mmsi": null,
+      "callSign": null,
+      "aisNames": [],
+      "active": true,
+      "capacity": 149,
+      "builder": "Gladding-Hearn",
+      "year": 2026,
+      "references": [
+        {
+          "field": "name",
+          "value": "Home Run",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        },
+        {
+          "field": "capacity",
+          "value": "149",
+          "url": "https://en.wikipedia.org/wiki/Seastreak",
+          "retrievedAt": "2026-11-12",
+          "note": "Fleet list."
+        }
+      ]
     }
   ]
 }

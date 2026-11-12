@@ -27,12 +27,30 @@ test("the committed roster stays exactly in step with the NYC Ferry fleet", asyn
   const { vessels: fleet } = JSON.parse(readFileSync(new URL("../content/vessels.json", import.meta.url), "utf8"));
   const committed = JSON.parse(readFileSync(new URL("../content/harbor-roster.json", import.meta.url), "utf8"));
   assert.equal(committed.version, 1);
-  assert.deepEqual(committed.operators, [{ id: "nycf", name: "NYC Ferry", feedPrefix: "" }]);
-  assert.deepEqual(committed.vessels, rosterFromFleet(fleet));
-  assert.equal(new Set(committed.vessels.map((vessel) => vessel.id)).size, fleet.length);
+  assert.deepEqual(committed.operators[0], { id: "nycf", name: "NYC Ferry", feedPrefix: "" });
+  assert.deepEqual(committed.vessels.filter((vessel) => vessel.operatorId === "nycf"), rosterFromFleet(fleet));
+  assert.equal(new Set(committed.vessels.map((vessel) => vessel.id)).size, committed.vessels.length);
   const loaded = await loadRoster({ rosterPath: new URL("../content/harbor-roster.json", import.meta.url) });
-  assert.equal(loaded.byId.size, fleet.length);
-  assert.equal(loaded.byMmsi.size, 0);
+  assert.equal(loaded.byId.size, committed.vessels.length);
+});
+
+test("every other operator's vessel is namespaced, sourced, and its committed MMSI is unique and referenced", () => {
+  const committed = JSON.parse(readFileSync(new URL("../content/harbor-roster.json", import.meta.url), "utf8"));
+  const operators = new Map(committed.operators.map((operator) => [operator.id, operator]));
+  assert.equal(new Set(committed.operators.map((operator) => operator.feedPrefix)).size, committed.operators.length);
+  const mmsis = new Set();
+  for (const vessel of committed.vessels) {
+    assert.ok(operators.has(vessel.operatorId), `${vessel.id}: unknown operator`);
+    if (vessel.operatorId === "nycf") continue;
+    assert.ok(vessel.id.startsWith(`${vessel.operatorId}:`), `${vessel.id}: id is not namespaced`);
+    assert.ok(vessel.references?.some((reference) => reference.field === "name" && reference.url), `${vessel.id}: no source for the vessel itself`);
+    if (vessel.mmsi) {
+      assert.match(vessel.mmsi, /^\d{9}$/);
+      assert.ok(!mmsis.has(vessel.mmsi), `${vessel.id}: MMSI used twice`);
+      mmsis.add(vessel.mmsi);
+      assert.ok(vessel.references.some((reference) => reference.field === "mmsi" && reference.value === vessel.mmsi && reference.url), `${vessel.id}: MMSI has no source`);
+    }
+  }
 });
 
 test("loadRoster indexes committed identities while preserving inactive entries", async () => {
