@@ -173,6 +173,16 @@ test("landing bounds use the farthest slip point plus 60 m, with a 120 m floor",
   assert.equal(buildSlipIndex([slip], { stops }).landings[0].radiusMetres, 120);
 });
 
+test("a landing with no surveyed slips keeps the wider radius it was given, never less than 120 m", () => {
+  // Failure mode: a terminal for 100 m boats is cut back to the default circle, so their
+  // transponders never fall inside it.
+  const big = { landingStopId: "big:1", landingId: 7, name: "Big Terminal", latitude: 40.5, longitude: -74, radiusMetres: 220 };
+  const small = { landingStopId: "small:1", landingId: null, name: "Small", latitude: 40.6, longitude: -74, radiusMetres: 40 };
+  const index = buildSlipIndex([], { stops: [], landings: [big, small] });
+  assert.equal(index.landings.find((landing) => landing.landingStopId === "big:1").radiusMetres, 220);
+  assert.equal(index.landings.find((landing) => landing.landingStopId === "small:1").radiusMetres, 120);
+});
+
 test("slipsNear measures to the nearest surveyed point and sorts by distance", () => {
   const index = fixtureIndex();
   const annex = index.slips.find((slip) => slip.name === "Slip 31 Annex");

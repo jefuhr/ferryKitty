@@ -22,7 +22,8 @@ const expectedStops = {
   "nj-south-amboy": ["wtr:4251907"], "nj-belford": ["wbf:belford"],
   "nj-highlands": ["sea:176"], "nj-atlantic-highlands": ["sea:175"],
   "nj-liberty-landing-marina": ["lib:2557120"], "nj-warren-street": ["lib:2557121"],
-  "nj-liberty-state-park": ["sta:LSP"], "ny-ikea-red-hook": ["ike:ikea"]
+  "nj-liberty-state-park": ["sta:LSP"], "ny-ikea-red-hook": ["ike:ikea"],
+  "ny-st-george-ferry-terminal": ["sif:stgeorge"], "ny-whitehall-ferry-terminal": ["sif:whitehall"]
 };
 
 test("the loader returns the terminal array and names each invalid entry", async (t) => {
@@ -88,18 +89,28 @@ test("every existing board landing retains its canonical stop id, board id, and 
     return [{ landingStopId: stopIds[0], landingId: landing.id, name: landing.displayName || landing.name, latitude: landing.latitude, longitude: landing.longitude, stopIds }];
   });
   assert.equal(boardLandings.length, 31);
-  const result = harborLandings({ boardLandings, terminals: await loadHarborTerminals(catalogPath) });
+  const terminals = await loadHarborTerminals(catalogPath);
+  const ownBerthStops = new Set(terminals.filter(row => row.berth).flatMap(row => row.stopIds));
+  const result = harborLandings({ boardLandings, terminals });
   for (const { stopIds, ...landing } of boardLandings) {
     assert.deepEqual(result.landings.find(row => row.landingId === landing.landingId), landing);
-    assert.deepEqual(result.stopIdsOfLanding.get(landing.landingStopId), stopIds);
+    // A terminal with its own berth takes its stop ids with it; everything else stays an alias.
+    assert.deepEqual(result.stopIdsOfLanding.get(landing.landingStopId), stopIds.filter(id => !ownBerthStops.has(id) || id === landing.landingStopId));
+  }
+  for (const terminal of terminals.filter(row => row.berth)) {
+    const own = result.landings.find(row => row.landingStopId === terminal.stopIds[0]);
+    const board = boardLandings.find(row => row.stopIds.includes(terminal.stopIds[0]));
+    assert.ok(own && board, terminal.id);
+    assert.equal(own.landingId, board.landingId, `${terminal.id} keeps its board landing id`);
+    assert.deepEqual(result.stopIdsOfLanding.get(own.landingStopId), terminal.stopIds);
   }
 });
 
-test("all sixteen terminals use complete ferry-only GTFS stop ids and a bundled stop coordinate", async () => {
+test("all eighteen terminals use complete ferry-only GTFS stop ids and a bundled stop coordinate", async () => {
   const terminals = await loadHarborTerminals(catalogPath);
   assert.deepEqual(Object.fromEntries(terminals.map(row => [row.id, row.stopIds])), expectedStops);
   const ferryStops = new Map();
-  for (const id of ["waterway", "waterwayBelford", "seastreak", "liberty", "statue", "ikea"]) {
+  for (const id of ["waterway", "waterwayBelford", "seastreak", "liberty", "statue", "ikea", "siferry"]) {
     const feed = PARTNER_FEEDS[id];
     const table = async name => parseCsv(await readFile(new URL(`../${feed.directory}/${name}.txt`, import.meta.url), "utf8"));
     const routes = new Set((await table("routes")).filter(row => row.route_type === "4" || feed.ferryRouteIds?.has(row.route_id)).map(row => row.route_id));
@@ -110,6 +121,41 @@ test("all sixteen terminals use complete ferry-only GTFS stop ids and a bundled 
   for (const row of terminals) {
     assert.ok(row.stopIds.every(id => ferryStops.has(id)), row.id);
     assert.deepEqual({ latitude: row.latitude, longitude: row.longitude }, ferryStops.get(row.stopIds[0]), row.id);
+    // A berth is where the boats were seen to lie, so it stays close to the published stop.
+    if (row.berth) assert.ok(distanceMetres(row, row.berth) <= 400 && row.berth.radiusMetres >= 120, `${row.id} berth`);
+  }
+});
+
+test("a terminal with its own berth becomes its own landing at the berth and leaves the board pier's aliases", () => {
+  // Failure modes: the berth is ignored because a board pier already answers to the stop id, the
+  // board pier keeps the stop id so both claim the same timetable, the board identity is lost.
+  const board = { landingStopId: "87", landingId: 16, name: "Board Pier", latitude: 40.7, longitude: -74, stopIds: ["87", "wtr:test", "sif:big"] };
+  const big = { id: "ny-big", name: "Big Ferry Terminal", town: "Test", state: "NY", latitude: 40.7001, longitude: -74.0001, stopIds: ["sif:big"],
+    berth: { latitude: 40.6985, longitude: -74.0005, radiusMetres: 180 } };
+  const inputs = { boardLandings: [board], terminals: [terminal, big] };
+  const before = structuredClone(inputs);
+  const result = harborLandings(inputs);
+  assert.deepEqual(result.landings, [
+    { landingStopId: "87", landingId: 16, name: "Board Pier", latitude: 40.7, longitude: -74 },
+    { landingStopId: "sif:big", landingId: 16, name: "Big Ferry Terminal", latitude: 40.6985, longitude: -74.0005, radiusMetres: 180 }
+  ]);
+  assert.deepEqual(result.stopIdsOfLanding, new Map([["87", ["87", "wtr:test", "sea:test"]], ["sif:big", ["sif:big"]]]));
+  assert.deepEqual(inputs, before);
+  // With no board pier it is simply a standalone terminal at its berth.
+  assert.deepEqual(harborLandings({ boardLandings: [], terminals: [big] }).landings,
+    [{ landingStopId: "sif:big", landingId: null, name: "Big Ferry Terminal", latitude: 40.6985, longitude: -74.0005, radiusMetres: 180 }]);
+});
+
+test("the loader refuses a berth without a usable position or radius", async (t) => {
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "harbor-terminals-"));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  const file = path.join(temporary, "terminals.json");
+  const berth = { latitude: 40.6, longitude: -74.1, radiusMetres: 180 };
+  await writeFile(file, JSON.stringify({ terminals: [{ ...terminal, berth }] }));
+  assert.deepEqual((await loadHarborTerminals(file))[0].berth, berth);
+  for (const bad of [{ ...berth, latitude: 91 }, { ...berth, longitude: "x" }, { ...berth, radiusMetres: 0 }, { ...berth, radiusMetres: 1001 }, { ...berth, radiusMetres: null }, "here", []]) {
+    await writeFile(file, JSON.stringify({ terminals: [{ ...terminal, berth: bad }] }));
+    await assert.rejects(loadHarborTerminals(file), /nj-test.*berth/);
   }
 });
 

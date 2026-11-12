@@ -176,6 +176,38 @@
       "stopIds": [
         "ike:ikea"
       ]
+    },
+    {
+      "id": "ny-st-george-ferry-terminal",
+      "name": "St. George Ferry Terminal",
+      "town": "Staten Island",
+      "state": "NY",
+      "latitude": 40.644169,
+      "longitude": -74.072201,
+      "stopIds": [
+        "sif:stgeorge"
+      ],
+      "berth": {
+        "latitude": 40.6451,
+        "longitude": -74.0727,
+        "radiusMetres": 200
+      }
+    },
+    {
+      "id": "ny-whitehall-ferry-terminal",
+      "name": "Whitehall Ferry Terminal",
+      "town": "New York",
+      "state": "NY",
+      "latitude": 40.70136,
+      "longitude": -74.012666,
+      "stopIds": [
+        "sif:whitehall"
+      ],
+      "berth": {
+        "latitude": 40.6998,
+        "longitude": -74.0132,
+        "radiusMetres": 150
+      }
     }
   ]
 }
