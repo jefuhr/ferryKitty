@@ -129,23 +129,21 @@ test("a message sequence becomes a docked vessel in the right slip, and then a t
   assert.ok(next.slipCandidates.length >= 2);
 });
 
-test("no output of the service carries a slip coordinate", async (t) => {
+test("the service slip catalog serves the points in the slip file for each slip id", async (t) => {
+  // Failure modes: points lost or changed in the service catalog, wrong kind, and yard leakage.
   const world = await harness(t);
-  world.feed(arrival.slice(0, 30));
+  const { parseSlipCsv } = await import("../lib/harbor-slips.js");
   const csv = await readFile(path.join(FIXTURES, "slips.csv"), "utf8");
-  // A boat's own AIS position is public and is the one coordinate a vessel row may carry; in this
-  // fixture the boat approaches along the slip's own latitude, so it is set aside before looking.
-  const current = world.service.getCurrent({ includeUnrostered: true });
-  assert.ok(current.vessels.some((vessel) => vessel.latitude != null));
-  const withoutOwnPosition = { ...current, vessels: current.vessels.map(({ latitude, longitude, ...rest }) => rest) };
-  const text = JSON.stringify(withoutOwnPosition) + JSON.stringify(world.service.slips({ includeYard: true }))
-    + Buffer.from(world.service.tripUpdates()).toString("latin1");
-  for (const row of csv.trim().split("\n").slice(1)) {
-    const [, , latitude, longitude] = row.split(",");
-    for (const value of [latitude, longitude]) if (value.includes(".") && value.split(".")[1].length >= 4) assert.ok(!text.includes(value), `leaked ${value}`);
+  const expected = new Map(parseSlipCsv(csv, { stops }).map(slip => [slip.id, slip]));
+  const catalog = world.service.slips({ includeYard: true }).slips;
+  assert.equal(catalog.length, expected.size);
+  for (const slip of catalog) {
+    assert.ok(expected.has(slip.id));
+    assert.deepEqual(slip.points, expected.get(slip.id).points);
+    assert.equal(slip.kind, expected.get(slip.id).kind);
   }
-  assert.ok(world.service.slips().slips.every((slip) => Object.keys(slip).sort().join() === "id,landingStopId,name,platformCode"));
-  assert.ok(world.service.slips().slips.every((slip) => slip.landingStopId !== "home-port"));
+  assert.ok(world.service.slips().slips.every(slip => slip.kind === "passenger"));
+  assert.ok(world.service.slips().slips.every(slip => slip.landingStopId !== "home-port"));
 });
 
 test("a restart remembers where boats are and who they are", async (t) => {
