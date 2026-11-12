@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url";
 
 import { normalizeAisMessage } from "../lib/ais-stream.js";
 import { offsetPoint } from "../lib/harbor-geo.js";
+import { openHarborDb, seedRoster } from "../lib/harbor-db.js";
 import { buildHarborSchedule } from "../lib/harbor-schedule.js";
 import { createHarborService } from "../lib/harbor-service.js";
+import { createHarborStore } from "../lib/harbor-store.js";
 
 // Failure modes covered here, all of them about the modules meeting each other:
 // - a real message sequence must come out as one docked vessel in the right slip, then a trip
@@ -428,4 +430,108 @@ test("a boat is recognised from the name on its position reports, before any sta
   const named = world.vessel("test-ferry-two");
   assert.equal(named.mmsi, "367000002");
   assert.equal(named.identitySource, "ais-name");
+});
+
+// With a database behind it, the tracker's long memory moves out of the JSON logs.
+async function remembering(t, options = {}) {
+  const stateDir = options.stateDir || await mkdtemp(path.join(os.tmpdir(), "harbor-memory-"));
+  if (!options.stateDir) t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const db = openHarborDb({ databasePath: path.join(stateDir, "harbor.db") });
+  t.after(() => db.close());
+  seedRoster(db, roster);
+  const store = createHarborStore(db);
+  const world = await harness(t, { stateDir, extra: { store } });
+  return { ...world, store, vessel: world.vessel, feed: world.feed };
+}
+
+test("with a database, a dwell, a sighting and a matched trip are written down as they happen", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+
+  const terminals = world.store.listTerminals();
+  assert.ok(terminals.some((terminal) => terminal.id === "9002" && terminal.slips.some((slip) => slip.id === "NYCF_9002_NORTH")));
+  const [dwell] = world.store.listDwells({ vesselId: "test-ferry-one" });
+  assert.equal(dwell.terminalId, "9002");
+  assert.equal(dwell.slipId, "NYCF_9002_NORTH");
+  assert.equal(dwell.mmsi, "367000001");
+  const sighting = world.store.listSightings().find((item) => item.mmsi === "367000001");
+  assert.ok(sighting.fixes > 5);
+  assert.equal(sighting.name, "TEST FERRY ONE");
+  assert.ok(sighting.terminals["9002"] >= 1);
+
+  const [guess] = world.store.listTripObservations({ vesselId: "test-ferry-one" });
+  assert.deepEqual({ tripId: guess.tripId, serviceDate: guess.serviceDate, confidence: guess.confidence, source: guess.source, terminalId: guess.terminalId },
+    { tripId: "T1", serviceDate: "20261111", confidence: 0.5, source: "schedule", terminalId: "9002" });
+  assert.ok(guess.runId);
+
+  // The public row says which run the boat is on, and what the run does next.
+  const away = world.vessel("test-ferry-one");
+  assert.equal(away.operatorName, "NYC Ferry");
+  assert.deepEqual({ tripId: away.assignment.tripId, runId: away.assignment.runId, source: away.assignment.source },
+    { tripId: "T1", runId: guess.runId, source: "schedule" });
+
+  // Reaching the next call confirms the trip, and the confirmation replaces the guess in the record.
+  const at = world.clock + 10 * 60_000;
+  world.feed([0, 40, 80].map((seconds) => position("367000001", { latitude: 40.500063, longitude: -74 }, at + seconds * 1000, { sog: 0.1 })));
+  const observations = world.store.listTripObservations({ vesselId: "test-ferry-one" });
+  assert.equal(observations.length, 1);
+  assert.equal(observations[0].confidence, 0.9);
+  assert.equal(observations[0].arrivedTerminalId, "9001");
+
+  await world.service.stop();
+  await assert.rejects(readFile(path.join(world.stateDir, "harbor-dwells.json")));
+  await assert.rejects(readFile(path.join(world.stateDir, "harbor-discovery.json")));
+});
+
+test("with a database, a learned link is recorded and a second claimant to the name becomes a conflict to review", async (t) => {
+  const world = await remembering(t);
+  const here = { latitude: 40.6, longitude: -74.05 };
+  world.feed([staticData("367000002", "TEST FERRY 2@@@", 60), position("367000002", here, world.clock + 1000)]);
+  assert.deepEqual(world.store.listAisLinks({ vesselId: "test-ferry-two" }).map(({ mmsi, source }) => ({ mmsi, source })),
+    [{ mmsi: "367000002", source: "ais-name" }]);
+
+  world.feed([staticData("367000022", "TEST FERRY 2", 60), position("367000022", here, world.clock + 1000)]);
+  const conflicts = world.store.listConflicts();
+  assert.equal(conflicts.length, 1);
+  assert.deepEqual({ kind: conflicts[0].kind, mmsi: conflicts[0].mmsi, vesselId: conflicts[0].vesselId, heldBy: conflicts[0].detail.heldBy },
+    { kind: "name-collision", mmsi: "367000022", vesselId: "test-ferry-two", heldBy: "367000002" });
+  // Hearing it again does not file it again.
+  world.feed([position("367000022", here, world.clock + 60_000)]);
+  assert.equal(world.store.listConflicts().length, 1);
+});
+
+test("with a database, a vessel's page gathers identity, track, assignment and history, and the list can be filtered", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  const detail = world.service.vesselDetail("test-ferry-one");
+  assert.equal(detail.vessel.name, "Test Ferry One");
+  assert.equal(detail.links[0].mmsi, "367000001");
+  assert.equal(detail.track.id, "test-ferry-one");
+  assert.equal(detail.assignment.tripId, "T1");
+  assert.equal(detail.dwells.length, 1);
+  assert.equal(detail.trips.length, 1);
+  assert.equal(world.service.vesselDetail("no-such-boat"), null);
+
+  const all = world.service.getCurrent().vessels;
+  assert.ok(all.some((vessel) => vessel.operatorId === "tst"));
+  assert.ok(world.service.getCurrent({ operatorId: "tst" }).vessels.every((vessel) => vessel.operatorId === "tst"));
+  assert.ok(world.service.getCurrent({ state: "underway" }).vessels.every((vessel) => vessel.state === "underway"));
+  assert.deepEqual(world.service.operators().operators.map(({ id, vessels }) => ({ id, vessels })), [{ id: "nycf", vessels: 2 }, { id: "tst", vessels: 1 }]);
+});
+
+test("with a database, repeated confirmed runs become a pattern that assigns a boat before it has sailed", async (t) => {
+  const world = await remembering(t);
+  const runs = world.store.listRuns("nycf", "20261111");
+  assert.equal(runs.length, 0);
+  // Three earlier Wednesdays on which this hull was confirmed on trip T1.
+  for (const serviceDate of ["20261021", "20261028", "20261104"]) {
+    world.store.recordTripObservation({ trackKey: "367000001", mmsi: "367000001", vesselId: "test-ferry-one", operatorId: "nycf", tripId: "T1",
+      routeId: "TR", runId: null, serviceDate, terminalId: "9002", departedAt: 1, arrivedTerminalId: "9001", arrivedAt: 2, confidence: 0.9, source: "schedule" });
+  }
+  assert.deepEqual(world.service.learn(), { operators: 1, patterns: 1 });
+  const idle = world.vessel("test-ferry-one");
+  assert.equal(idle.assignment.source, "pattern");
+  assert.equal(idle.assignment.tripId, null);
+  assert.ok(idle.assignment.confidence > 0 && idle.assignment.confidence <= 0.8);
+  assert.equal(idle.routeId, "TR");
 });
