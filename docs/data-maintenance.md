@@ -251,7 +251,7 @@ node scripts/build-liberty-gtfs.js
 
 two things to know before trusting it:
 
-- **the operator's "Arrive Midtown" column is not usable.** it prints five minutes after the Pier 11 arrival on every row, for a leg the same page gives as thirty minutes southbound — and on the 2:20 PM sailing it prints an arrival at Midtown *before* the boat reaches Pier 11. every departure is transcribed as published; that one terminal arrival is derived as Pier 11 + 30 min. it is never shown, because a trip's last stop is never a departure.
+- **the operator's "Arrive Midtown" column is now transcribed as published.** before the November 2026 reissue it printed five minutes after the Pier 11 arrival (once before it) and was derived instead; the table read on November 12, 2026 prints arrivals 20 to 25 minutes after Pier 11. it is never shown, because a trip's last stop is never a departure. the site refuses automated requests, so that reading was taken from a screenshot of the page.
 - **it expires on purpose.** the service pauses over the winter and NY Waterway reissues the image under a new filename every month or two, with no end date on the page. `SEASON_DAYS` bounds the generated calendar to 90 days so the feed lapses loudly — the build warns and the IKEA rows stop — rather than advertising sailings that don't run. re-read the page and re-run the script when `SOURCE_CHECKED_ON` gets old.
 
 ## the NYU Langone ferry

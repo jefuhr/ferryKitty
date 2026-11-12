@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
-NY Waterway,https://www.nywaterway.com/ikea.aspx,en,20260812,20261110,transcribed-2026-08-12
+NY Waterway,https://www.nywaterway.com/ikea.aspx,en,20261112,20270210,transcribed-2026-11-12

@@ -9,20 +9,22 @@
 //
 // !! This is a TRANSCRIPTION of an image, not a download. Nothing can diff it against the operator
 // !! for you. Re-read SOURCE_URL when SOURCE_CHECKED_ON gets old — NY Waterway reissues that image
-// !! under a new filename every month or two (the one transcribed here is Ikea2026ScheduleAug2026)
+// !! under a new filename every month or two (the one transcribed here was read on 2026-11-12 from
+// !! a screenshot of the page, headed "2026 Weekend Schedule ... Now Running", since the site refuses
+// !! automated requests)
 // !! and pauses the service over the winter. SEASON_DAYS deliberately bounds the generated calendar
 // !! so the feed expires loudly (build-data.js warns on a lapsed partner feed, and the IKEA rows
 // !! simply stop appearing) rather than advertising winter sailings that do not run.
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { addMinutes, gtfsDate, toCsv, writeGtfsFiles } from "./gtfs-utils.js";
+import { gtfsDate, toCsv, writeGtfsFiles } from "./gtfs-utils.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "gtfs/ikea");
 
 export const SOURCE_URL = "https://www.nywaterway.com/ikea.aspx";
-export const SOURCE_CHECKED_ON = "2026-08-12";
+export const SOURCE_CHECKED_ON = "2026-11-12";
 // Short on purpose. The service is seasonal and the operator gives no end date on the page, so the
 // feed is written to lapse well before the winter pause and force a re-read rather than guessing at
 // a season end that is not published.
@@ -48,14 +50,11 @@ const STOPS = [
 // Pier 11; the last sailing of the day is printed with the Pier 11 cell blacked out, so it runs
 // non-stop and is modelled with no Pier 11 stop at all.
 //
-// The northbound rows are the operator's IKEA and Pier 11 columns. Their third column, "Arrive
-// Midtown", is not transcribed and is not usable: it prints five minutes after the Pier 11 arrival
-// on every row, which is not a crossing anyone makes — the same leg southbound is a published
-// thirty minutes — and on the 2:20 PM sailing it prints 2:25 PM, i.e. arriving at Midtown five
-// minutes *before* the boat reaches Pier 11. So the Midtown arrival below is derived as Pier 11
-// plus the operator's own southbound running time of thirty minutes. It is the one time here that
-// the operator did not publish, and it is a terminal arrival, so it never reaches the board: a
-// trip's final stop is never shown as a departure.
+// The northbound rows are the operator's three columns as published. Until the November 2026
+// reissue the "Arrive Midtown" column was unusable (it printed five minutes after Pier 11, once
+// before it) and was derived instead; the current table prints plausible arrivals, 20 to 25
+// minutes after Pier 11, so they are transcribed like every other cell. It is a terminal arrival,
+// so it never reaches the board: a trip's final stop is never shown as a departure.
 const SOUTHBOUND = [
   { midtown: "10:30", pier11: "11:00", ikea: "11:10" },
   { midtown: "12:00", pier11: "12:30", ikea: "12:40" },
@@ -65,14 +64,13 @@ const SOUTHBOUND = [
   { midtown: "17:55", pier11: null, ikea: "18:15" }
 ];
 const NORTHBOUND = [
-  { ikea: "11:20", pier11: "11:30" },
-  { ikea: "12:50", pier11: "13:00" },
-  { ikea: "14:20", pier11: "14:30" },
-  { ikea: "15:50", pier11: "16:00" },
-  { ikea: "17:20", pier11: "17:30" },
-  { ikea: "18:25", pier11: "18:35" }
+  { ikea: "11:20", pier11: "11:30", midtown: "11:55" },
+  { ikea: "12:50", pier11: "13:00", midtown: "13:25" },
+  { ikea: "14:20", pier11: "14:30", midtown: "14:55" },
+  { ikea: "15:50", pier11: "16:00", midtown: "16:25" },
+  { ikea: "17:20", pier11: "17:30", midtown: "17:50" },
+  { ikea: "18:25", pier11: "18:35", midtown: "18:55" }
 ];
-const PIER11_TO_MIDTOWN_MINUTES = 30;
 
 function hhmmss(value) {
   return `${value}:00`;
@@ -95,7 +93,7 @@ export function buildTimetable() {
   });
   NORTHBOUND.forEach((row, index) => {
     push(`ikea-from-${String(index + 1).padStart(2, "0")}`, "Midtown / W 39th Street", "1", [
-      ["ikea", row.ikea], ["pier11", row.pier11], ["midtown", addMinutes(row.pier11, PIER11_TO_MIDTOWN_MINUTES)]
+      ["ikea", row.ikea], ["pier11", row.pier11], ["midtown", row.midtown]
     ]);
   });
 

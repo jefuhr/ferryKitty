@@ -1,2 +1,2 @@
 service_id,sunday,monday,tuesday,wednesday,thursday,friday,saturday,start_date,end_date
-ikea-weekend,1,0,0,0,0,0,1,20260812,20261110
+ikea-weekend,1,0,0,0,0,0,1,20261112,20270210
