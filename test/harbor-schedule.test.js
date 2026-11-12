@@ -421,3 +421,76 @@ test("a boat leaving a few minutes early is matched across tomorrow's service-da
   // Five minutes early is still outside the window, on either side of midnight.
   assert.equal(matchDeparture({ schedule, operatorId: "nycf", landingStopId: "A", departedAt: Date.parse("2026-11-11T23:55:00-05:00") }), null);
 });
+
+// Run-index failure modes: losing blocks or namespaces, inactive services, unsorted endpoint calls,
+// overnight/DST epoch drift, ambiguous layered ids, and accidentally changing existing API shapes.
+test("tripsOn exposes only active operator trips with blocks, endpoints, and epoch milliseconds", async () => {
+  const partner = feed({ operatorId: "waterway", prefix: "wtr:", plans: [
+    plan("night", "25:10:00"), plan("inactive", "08:00:00", { serviceId: "off" }),
+    plan("early", "07:00:00")
+  ] });
+  partner.trips[0].block_id = "boat-2";
+  const schedule = await scheduleFor(feed(), partner);
+  const original = structuredClone(partner);
+  assert.deepEqual(schedule.tripsOn("waterway", "20261112"), [
+    { tripId: "wtr:early", routeId: "wtr:R", blockId: null, firstStopId: "wtr:9001", lastStopId: "wtr:9003",
+      departsAt: Date.parse("2026-11-12T12:00:00Z"), arrivesAt: Date.parse("2026-11-12T12:20:00Z") },
+    { tripId: "wtr:night", routeId: "wtr:R", blockId: "boat-2", firstStopId: "wtr:9001", lastStopId: "wtr:9003",
+      departsAt: Date.parse("2026-11-13T06:10:00Z"), arrivesAt: Date.parse("2026-11-13T06:30:00Z") }
+  ]);
+  assert.deepEqual(schedule.tripsOn("waterway", "2026-11-12"), schedule.tripsOn("waterway", "20261112"));
+  assert.deepEqual(schedule.tripsOn("missing", "20261112"), []);
+  assert.deepEqual(schedule.tripsOn("waterway", "20270101"), []);
+  assert.equal(Object.hasOwn(schedule.trip("wtr:night"), "blockId"), false);
+  assert.equal(Object.hasOwn(schedule.departuresFrom("wtr:9001", "waterway")[0], "blockId"), false);
+  assert.equal(schedule.ambiguousTripsOn("waterway", "20261112"), 0);
+  assert.deepEqual(partner, original);
+});
+
+test("tripsOn follows calendar additions and removals without changing activeOn", async () => {
+  const schedule = await scheduleFor(feed({ plans: [plan("removed"), plan("added", "09:00:00", { serviceId: "special" })],
+    calendarDates: [
+      { service_id: "daily", date: "20261112", exception_type: "2" },
+      { service_id: "special", date: "20261112", exception_type: "1" }
+    ] }));
+  assert.deepEqual(schedule.tripsOn("nycf", "20261112").map(item => item.tripId), ["added"]);
+  assert.deepEqual(schedule.activeOn("2026-11-12"), new Set(["special"]));
+});
+
+test("tripsOn respects layered dates and holidays while reporting ambiguous active ids", async () => {
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([
+      ["ambiguous", [liveCandidate({ routeId: "ONE" }), liveCandidate({ routeId: "TWO" })]],
+      ["dated", [liveCandidate({ dates: ["2026-11-12"] })]],
+      ["holiday", [liveCandidate({ holiday: true })]],
+      ["reused", [liveCandidate({ dates: ["2026-11-11"] }), liveCandidate({ dates: ["2026-11-12"] })]]
+    ]), holidayDates: new Set(["2026-11-13"])
+  }) });
+  assert.deepEqual(schedule.tripsOn("nycf", "20261112").map(item => item.tripId), ["dated", "reused"]);
+  assert.equal(schedule.ambiguousTripsOn("nycf", "20261112"), 1);
+  assert.equal(schedule.ambiguousTripsOn("nycf", "2026-11-12"), 1);
+  assert.deepEqual(schedule.tripsOn("nycf", "20261113").map(item => item.tripId), ["holiday"]);
+  assert.equal(schedule.ambiguousTripsOn("nycf", "20261113"), 0);
+  assert.equal(schedule.tripsOn("nycf", "20261112")[0].blockId, null);
+});
+
+for (const [date, time, instant] of [
+  ["20260307", "27:10:00", "2026-03-08T07:10:00Z"],
+  ["20261031", "26:10:00", "2026-11-01T07:10:00Z"],
+  ["20260308", "01:10:00", "2026-03-08T06:10:00Z"],
+  ["20261101", "03:10:00", "2026-11-01T08:10:00Z"]
+]) {
+  test(`tripsOn converts ${date} ${time} with the schedule's local clock across DST`, async () => {
+    const schedule = await scheduleFor(feed({ plans: [plan("dst", time)] }));
+    assert.equal(schedule.tripsOn("nycf", date)[0].departsAt, Date.parse(instant));
+  });
+}
+
+test("tripsOn honors the layered timezone for both ordinary and overnight endpoints", async () => {
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({ timezone: "America/Chicago",
+    trips: new Map([["night", [liveCandidate({ time: "25:10:00" })]]])
+  }) });
+  const [trip] = schedule.tripsOn("nycf", "20261112");
+  assert.equal(trip.departsAt, Date.parse("2026-11-13T07:10:00Z"));
+  assert.equal(trip.arrivesAt, Date.parse("2026-11-13T07:30:00Z"));
+});
