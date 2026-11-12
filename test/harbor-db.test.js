@@ -78,3 +78,19 @@ test("a database from a newer schema is refused rather than written over", async
   store.close();
   assert.throws(() => openHarborDb({ databasePath }), /newer/);
 });
+
+test("a read-only open never creates a file and refuses to write", async (t) => {
+  const databasePath = await temp(t);
+  assert.throws(() => openHarborDb({ databasePath, readOnly: true }));
+  await assert.rejects(readFile(databasePath));
+
+  const writer = openHarborDb({ databasePath });
+  seedRoster(writer, roster);
+  writer.close();
+  const reader = openHarborDb({ databasePath, readOnly: true });
+  t.after(() => reader.close());
+  assert.equal(reader.schemaVersion, SCHEMA_VERSION);
+  assert.equal(reader.database.prepare("SELECT COUNT(*) AS n FROM vessels").get().n, 4);
+  assert.throws(() => reader.database.prepare("DELETE FROM vessels").run());
+  assert.throws(() => reader.transaction(() => {}), /read-only/);
+});
