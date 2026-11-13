@@ -351,7 +351,10 @@ test("every bundled GTFS directory yields namespaced trips and root-stop departu
       if (error.code === "ENOENT") return null;
       throw error;
     })) continue;
-    const rawTrips = parseCsv(await readFile(path.join(directory, "trips.txt"), "utf8"));
+    const rawRoutes = parseCsv(await readFile(path.join(directory, "routes.txt"), "utf8"));
+    const busRoutes = new Set(rawRoutes.filter(route => route.route_type === "3" && !spec.ferryRouteIds?.has(route.route_id)).map(route => route.route_id));
+    // Bus trips are covered by their own test; every remaining trip must be indexed.
+    const rawTrips = parseCsv(await readFile(path.join(directory, "trips.txt"), "utf8")).filter(trip => !busRoutes.has(trip.route_id));
     assert.ok(rawTrips.length > 0, `${operatorId} has bundled trips`);
     assert.deepEqual(schedule.operators.get(operatorId), { prefix: spec.prefix, tripCount: rawTrips.length });
     for (const raw of rawTrips) {
@@ -424,6 +427,37 @@ test("a boat leaving a few minutes early is matched across tomorrow's service-da
 
 // Run-index failure modes: losing blocks or namespaces, inactive services, unsorted endpoint calls,
 // overnight/DST epoch drift, ambiguous layered ids, and accidentally changing existing API shapes.
+test("bus routes are left out of the harbor schedule, except the ferries a feed mistypes as buses", async () => {
+  const plans = [plan("boat", "08:00:00", { routeId: "F" }), plan("shuttle", "08:01:00", { routeId: "B" }),
+    plan("mistyped", "08:02:00", { routeId: "M" }), plan("untyped", "08:03:00", { routeId: "U" })];
+  const routes = [{ route_id: "F", route_type: "4" }, { route_id: "B", route_type: "3" }, { route_id: "M", route_type: "3" }];
+  const schedule = await scheduleFor({ ...feed({ operatorId: "partner", prefix: "p:", plans }), routes, ferryRouteIds: new Set(["M"]) });
+  assert.equal(schedule.trip("p:shuttle"), null);
+  assert.deepEqual(schedule.departuresFrom("p:9001", "partner").map(item => item.tripId), ["p:boat", "p:mistyped", "p:untyped"]);
+  assert.deepEqual(schedule.tripsOn("partner", "20261111").map(item => item.tripId), ["p:boat", "p:mistyped", "p:untyped"]);
+  assert.equal(schedule.operators.get("partner").tripCount, 3);
+  // Feeds parsed without a routes table keep every trip, as before.
+  const plain = await scheduleFor(feed({ operatorId: "partner", prefix: "p:", plans }));
+  assert.equal(plain.operators.get("partner").tripCount, 4);
+});
+
+test("the bundled NY Waterway feed contributes its ferries and none of its buses", async () => {
+  const read = async name => parseCsv(await readFile(path.join(ROOT, "gtfs/waterway", name), "utf8"));
+  const [routes, trips] = await Promise.all([read("routes.txt"), read("trips.txt")]);
+  const ferryRouteIds = PARTNER_FEEDS.waterway.ferryRouteIds;
+  const busRoutes = new Set(routes.filter(route => route.route_type === "3" && !ferryRouteIds.has(route.route_id)).map(route => route.route_id));
+  const buses = trips.filter(trip => busRoutes.has(trip.route_id));
+  const boats = trips.filter(trip => !busRoutes.has(trip.route_id));
+  assert.ok(buses.length > 0 && boats.length > 0);
+  assert.ok(boats.some(trip => ferryRouteIds.has(trip.route_id)));
+  const schedule = await buildHarborSchedule({ root: ROOT });
+  assert.equal(schedule.operators.get("waterway").tripCount, boats.length);
+  for (const trip of buses) assert.equal(schedule.trip(`wtr:${trip.trip_id}`), null, trip.trip_id);
+  for (const trip of boats.filter(trip => ferryRouteIds.has(trip.route_id)).slice(0, 20)) {
+    assert.equal(schedule.trip(`wtr:${trip.trip_id}`)?.routeId, `wtr:${trip.route_id}`);
+  }
+});
+
 test("tripsOn exposes only active operator trips with blocks, endpoints, and epoch milliseconds", async () => {
   const partner = feed({ operatorId: "waterway", prefix: "wtr:", plans: [
     plan("night", "25:10:00"), plan("inactive", "08:00:00", { serviceId: "off" }),
