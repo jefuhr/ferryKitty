@@ -311,3 +311,31 @@ importer prints this coverage per route on every run. a missing or unreadable
 **this has to be redone whenever the GTFS feed changes.** trip numbers are reissued each schedule
 period, so an old mapping silently stops matching. [`ferryAssignments.md`](../ferryAssignments.md)
 is the step-by-step runbook.
+
+## Local slip survey editor
+
+Run `npm run harbor:slips` and open the printed `http://127.0.0.1:8095` URL. Use
+`npm run harbor:slips -- --port 8096 --slips /absolute/path/to/slips.csv` to edit a
+separate survey. This maintainer tool uses Node 22+ and locally served Leaflet
+1.9.4, with no build step. Only OpenStreetMap raster tiles leave the machine.
+
+Choose a landing and slip in the sidebar, then drag a marker or apply exact
+latitude/longitude. Add a slip by name, enable **Add point on map click**, and
+click the map for each survey point. Rename, delete, and Undo operate in the
+current tab; Undo remains available after saving. Zoom goes to level 24 by
+overzooming level-19 tiles, so nearby points can be separated. Empty new slips
+must receive a point or be deleted before saving.
+
+**Save CSV** is the only action that writes the survey. It validates names and
+coordinates (latitude 40.35–41.05, longitude -74.4–-73.65), preserves untouched
+rows and coordinate text, and atomically replaces the file. If another process
+changed the file since loading, saving is refused: preserve any desired edits
+before reloading and reconciling them. Unsaved edits and Undo history last only
+for the current tab session.
+
+The optional recorded-dwell layer reads `state/harbor.db` with `node:sqlite` in
+read-only mode; a missing database quietly hides the layer. At most the latest
+50,000 dwells are shown. Partner terminals and partner-only board landings are
+reference markers: the current slip loader accepts only names from
+`gtfs/stops.txt` and the `Pier C` yard, so it cannot store partner-terminal slips.
+Verification details are in [`tools/slip-editor/verification.md`](../tools/slip-editor/verification.md).

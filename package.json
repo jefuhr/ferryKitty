@@ -23,6 +23,7 @@
     "stamp:bump": "node scripts/stamp-assets.js --bump",
     "test:harbor": "node scripts/check-harbor-api.mjs",
     "harbor:collect": "node server.js",
+    "harbor:slips": "node scripts/harbor-slip-editor.mjs",
     "harbor:calibrate": "node scripts/harbor-calibrate.mjs",
     "harbor:research": "node scripts/harbor-research.mjs",
     "test:mobile-browser": "node scripts/check-mobile-browser.cjs",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@mapbox/vector-tile": "^2.0.4",
     "jsdom": "^30.0.1",
+    "leaflet": "1.9.4",
     "pbf": "^4.0.1",
     "playwright": "^1.63.0",
     "polygon-clipping": "^0.15.7"
