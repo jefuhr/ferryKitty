@@ -11,6 +11,9 @@ L.control.scale({ imperial: false, maxWidth: 150 }).addTo(map);
 const surveyLayer = L.layerGroup().addTo(map);
 const referenceLayer = L.layerGroup().addTo(map);
 const dwellLayer = L.layerGroup();
+const boatLayer = L.layerGroup().addTo(map);
+const boatMarkers = new Map();
+let boats = new Map(), selectedBoatId = null, refreshingBoats = false;
 let points = [], landings = [], terminals = [], drafts = [], history = [];
 let selected = { landing: null, slip: null, pointId: null };
 let revision, baseline, saving = false, loaded = false;
@@ -104,6 +107,72 @@ function renderList() {
   }
   $("list").replaceChildren(list);
 }
+function renderBoatDetails() {
+  const boat = boats.get(selectedBoatId);
+  $("boat-details").hidden = !selectedBoatId || !$("boats").checked;
+  $("boat-name").textContent = boat?.name ?? "Boat unavailable";
+  $("boat-readout").textContent = boat ? `${boat.operatorName} · ${boat.state}${boat.stale || boat.ageSeconds > 300 ? " · old fix" : ""}
+${boat.speedKnots === null ? "Unknown speed" : `${boat.speedKnots.toFixed(1)} knots`} · ${boat.ageSeconds === null ? "Unknown fix age" : `${Math.round(boat.ageSeconds)} s old`}
+${boat.latitude.toFixed(7)}, ${boat.longitude.toFixed(7)}` : "No current position from the tracker.";
+  $("boat-add").disabled = saving || !loaded || !selected.slip || !boat || !inHarbor(boat.latitude, boat.longitude);
+  $("boat-add").title = !selected.slip ? "Select a slip first." : boat && !inHarbor(boat.latitude, boat.longitude) ? "This boat is outside the survey bounds." : "Adds an unsaved survey point for the selected slip.";
+}
+async function refreshBoats() {
+  if (refreshingBoats) return;
+  refreshingBoats = true;
+  try {
+    const response = await fetch("/api/boats", { signal: AbortSignal.timeout(4000) });
+    const data = await response.json();
+    if (!response.ok || !data.available || !Array.isArray(data.boats)) throw new Error("Boats unavailable");
+    boats = new Map(data.boats.map((boat) => [boat.mmsi ?? `${boat.operatorName}|${boat.name}`, boat]));
+    $("boats-status").textContent = `${boats.size} boats`;
+  } catch {
+    boats = new Map();
+    $("boats-status").textContent = "boats unavailable";
+  } finally { refreshingBoats = false; }
+  // Update only boat layers and the boat readout: survey markers, inputs and map view stay put.
+  for (const [id, marker] of boatMarkers) {
+    if (!boats.has(id)) { boatLayer.removeLayer(marker); boatMarkers.delete(id); }
+  }
+  for (const [id, boat] of boats) {
+    let marker = boatMarkers.get(id);
+    if (!marker) {
+      const symbol = textElement("span", "▲", "boat-symbol");
+      symbol.setAttribute("aria-hidden", "true");
+      marker = L.marker([boat.latitude, boat.longitude], {
+        icon: L.divIcon({ html: symbol, iconSize: [24, 24], iconAnchor: [12, 12], className: "boat-marker" }),
+        title: boat.name, alt: `${boat.name} ferry boat`, bubblingMouseEvents: false, zIndexOffset: 500
+      }).addTo(boatLayer);
+      marker.getElement()?.setAttribute("aria-label", boat.name);
+      marker.bindTooltip(textElement("span", boat.name), { permanent: true, direction: "right", offset: [13, 0] });
+      marker.on("click", () => { selectedBoatId = id; renderBoatDetails(); });
+      boatMarkers.set(id, marker);
+    }
+    const old = boat.stale || boat.ageSeconds > 300;
+    marker.setLatLng([boat.latitude, boat.longitude]).setOpacity(old ? .4 : 1);
+    marker.getTooltip().setContent(textElement("span", boat.name)).setOpacity(old ? .45 : .95);
+    const symbol = marker.getElement()?.querySelector(".boat-symbol");
+    if (symbol) symbol.style.transform = `rotate(${boat.bearing ?? 0}deg)`;
+  }
+  renderBoatDetails();
+}
+$("boats").addEventListener("change", () => {
+  if ($("boats").checked) boatLayer.addTo(map);
+  else boatLayer.remove();
+  renderBoatDetails();
+});
+$("boat-add").addEventListener("click", () => {
+  const boat = boats.get(selectedBoatId);
+  if (saving || !loaded || !selected.slip || !boat || !inHarbor(boat.latitude, boat.longitude)) return;
+  change(() => {
+    const point = { id: `new-${crypto.randomUUID()}`, landing: selected.landing, slip: selected.slip, latitude: boat.latitude, longitude: boat.longitude };
+    points.push(point);
+    drafts = drafts.filter((draft) => draft.landing !== point.landing || draft.slip !== point.slip);
+    selected.pointId = point.id;
+  });
+  message(`Added a point at ${boat.name}. Save CSV to write it.`);
+});
+
 function renderControls() {
   const landing = landings.find((item) => item.name === selected.landing);
   const point = selectedPoint();
@@ -126,6 +195,7 @@ function renderControls() {
   document.querySelector("aside").inert = saving;
   $("map").inert = saving;
   document.title = `${dirty() ? "* " : ""}Slip survey editor`;
+  renderBoatDetails();
 }
 function referenceMarker(reference, label, berth = false) {
   const position = berth ? reference.berth : reference;
@@ -325,3 +395,5 @@ async function load() {
   } catch (error) { $("dwell-status").textContent = `Dwell layer unavailable: ${error.message}`; }
 }
 load();
+refreshBoats();
+setInterval(refreshBoats, 10_000);

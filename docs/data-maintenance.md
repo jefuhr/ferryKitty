@@ -319,6 +319,18 @@ Run `npm run harbor:slips` and open the printed `http://127.0.0.1:8095` URL. Use
 separate survey. This maintainer tool uses Node 22+ and locally served Leaflet
 1.9.4, with no build step. Only OpenStreetMap raster tiles leave the machine.
 
+**Boats** is on by default and refreshes every 10 seconds from the local tracker
+at `http://127.0.0.1:8090`. Override it with `--tracker http://localhost:8090`;
+only local HTTP URLs on `127.0.0.1` or `localhost` are accepted, redirects are
+refused, and requests time out after 3 seconds. If the tracker is unavailable,
+the survey remains editable and a small “boats unavailable” note is shown.
+Triangle markers and name labels identify boats; fixes marked stale or older
+than 300 seconds are faded. Click a boat to see its operator, state, speed,
+fix age and coordinates. With a slip selected, **Add point at this boat** adds
+an ordinary unsaved survey point that Undo can reverse. Refreshing boats does
+not move the map or reset survey inputs, and boat positions enter the CSV only
+when explicitly added to a slip and saved.
+
 Choose a landing and slip in the sidebar, then drag a marker or apply exact
 latitude/longitude. Add a slip by name, enable **Add point on map click**, and
 click the map for each survey point. Rename, delete, and Undo operate in the
@@ -338,4 +350,5 @@ read-only mode; a missing database quietly hides the layer. At most the latest
 50,000 dwells are shown. Partner terminals and partner-only board landings are
 reference markers: the current slip loader accepts only names from
 `gtfs/stops.txt` and the `Pier C` yard, so it cannot store partner-terminal slips.
-Verification details are in [`tools/slip-editor/verification.md`](../tools/slip-editor/verification.md).
+Verification details are in [`tools/slip-editor/verification.md`](../tools/slip-editor/verification.md)
+and [`tools/slip-editor/boats-verification.md`](../tools/slip-editor/boats-verification.md).

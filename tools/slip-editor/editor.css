@@ -62,3 +62,9 @@ footer { min-height: 25px; padding: 4px 9px; border-top: 1px solid var(--line); 
   .leaflet-bar a { background: #1e2e3b; color: #e0e9ed; border-color: #536c7b; }
 }
 @media (max-width: 700px) { aside { flex-basis: 245px; width: 245px; } #pointer, #dwell-status { display: none; } header { gap: 5px; } }
+
+.boat-marker { background: transparent; border: 0; }
+.boat-symbol { display: block; color: #d82d89; font: 24px/24px sans-serif; text-align: center; text-shadow: 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white; }
+#boat-details { border-top: 1px solid var(--line); margin-top: 7px; padding-top: 5px; }
+#boat-name, #boat-readout { margin: 0 0 4px; font-size: 12px; }
+#boat-readout { white-space: pre-line; font-variant-numeric: tabular-nums; }
