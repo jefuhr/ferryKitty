@@ -443,7 +443,7 @@ async function remembering(t, options = {}) {
   seedRoster(db, roster);
   const store = createHarborStore(db);
   // The same object the harness keeps advancing, so its clock stays the one the feed moves.
-  const world = await harness(t, { stateDir, extra: { store } });
+  const world = await harness(t, { stateDir, extra: { store, ...(options.extra || {}) } });
   world.store = store;
   return world;
 }
@@ -709,4 +709,18 @@ test("a boat heard once at each pier, minutes apart, still gets its trip and has
   const onward = world.vessel("tst:partner-queen");
   assert.equal(onward.tripId, "tst:H1");
   assert.equal(onward.tripConfidence, 0.9);
+});
+
+test("with a database, a transponder the roster says to ignore raises no conflict and takes no hull", async (t) => {
+  // Failure mode: an unrelated boat with a ferry's name files the same conflict again after every
+  // database reset, or takes the name while the ferry's own transponder has yet to be heard.
+  const ignoring = { ...roster, ignoredTransponders: [{ mmsi: "367000022", name: "TEST FERRY 2", reason: "A different vessel with the same name." }] };
+  const world = await remembering(t, { extra: { roster: ignoring } });
+  const here = { latitude: 40.6, longitude: -74.05 };
+  world.feed([staticData("367000022", "TEST FERRY 2", 60), position("367000022", here, world.clock + 1000)]);
+  assert.deepEqual(world.store.listAisLinks({ vesselId: "test-ferry-two" }), []);
+  world.feed([staticData("367000002", "TEST FERRY 2@@@", 60), position("367000002", here, world.clock + 2000)]);
+  assert.deepEqual(world.store.listAisLinks({ vesselId: "test-ferry-two" }).map(({ mmsi }) => mmsi), ["367000002"]);
+  world.feed([position("367000022", here, world.clock + 60_000)]);
+  assert.equal(world.store.listConflicts().length, 0);
 });

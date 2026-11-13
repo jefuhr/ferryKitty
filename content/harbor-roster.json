@@ -7149,5 +7149,23 @@
         }
       ]
     }
+  ],
+  "ignoredTransponders": [
+    {
+      "mmsi": "368197680",
+      "name": "UNITY!",
+      "callSign": "WDM3489",
+      "reason": "A different vessel from NYC Ferry's Unity (368081150, WDK7098): separately licensed as Unity under documentation number 653524, about 27 m long, heard stationary and at no ferry terminal. Reviewed by the project owner on 2026-11-13.",
+      "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+      "retrievedAt": "2026-11-12"
+    },
+    {
+      "mmsi": "368012560",
+      "name": "BROOKLYN",
+      "callSign": "WDJ8046",
+      "reason": "A different vessel from NY Waterway's Brooklyn (366851670, WDA8190): separately licensed as Brooklyn under number 9265718, heard for a few minutes on 2026-11-12. Reviewed by the project owner on 2026-11-13.",
+      "url": "https://data.fcc.gov/download/pub/uls/complete/l_ship.zip",
+      "retrievedAt": "2026-11-12"
+    }
   ]
 }

@@ -158,3 +158,29 @@ test("two normalized name matches are ambiguous, including aliases, but MMSI sti
   assert.deepEqual(resolveIdentity({ mmsi: "367000001", staticData: { name: "TEST FERRY TWO" } }, bound), { vesselId: "test-ferry-one", source: "roster" });
   assert.deepEqual(resolveIdentity({ mmsi: "367099999", staticData: { name: "TEST FERRY TWO" } }, bound), { vesselId: "test-ferry-two", source: "ais-name" });
 });
+
+test("an ignored transponder is never matched to a hull by name, and cannot be learned", () => {
+  const source = { ...fixtureRoster, ignoredTransponders: [{ mmsi: "367099999", name: "TEST FERRY TWO", reason: "A different vessel with the same name." }] };
+  const roster = buildRoster(source, [{ mmsi: "367099999", vesselId: "test-ferry-two", source: "ais-name", at: 1 }]);
+  assert.deepEqual([...roster.ignored], ["367099999"]);
+  assert.equal(roster.byMmsi.has("367099999"), false);
+  assert.equal(roster.byId.get("test-ferry-two").mmsi, null);
+  assert.equal(resolveIdentity({ mmsi: "367099999", staticData: { name: "Test Ferry Two" } }, roster), null);
+  // Any other transponder with that name is still matched.
+  assert.deepEqual(resolveIdentity({ mmsi: "367088888", staticData: { name: "Test Ferry Two" } }, roster), { vesselId: "test-ferry-two", source: "ais-name" });
+  assert.equal(buildRoster(fixtureRoster).ignored.size, 0);
+});
+
+test("the committed roster's ignored transponders are well formed and are not any vessel's own", () => {
+  const committed = JSON.parse(readFileSync(new URL("../content/harbor-roster.json", import.meta.url), "utf8"));
+  const ignored = committed.ignoredTransponders;
+  assert.ok(Array.isArray(ignored) && ignored.length >= 2);
+  assert.equal(new Set(ignored.map((item) => item.mmsi)).size, ignored.length);
+  const own = new Set(committed.vessels.map((vessel) => vessel.mmsi).filter(Boolean));
+  for (const item of ignored) {
+    assert.match(item.mmsi, /^\d{9}$/);
+    assert.equal(own.has(item.mmsi), false, item.mmsi);
+    assert.ok(item.name && item.reason, item.mmsi);
+  }
+  assert.throws(() => buildRoster({ ...committed, ignoredTransponders: [{ mmsi: [...own][0], name: "X", reason: "x" }] }), /ignored/i);
+});
