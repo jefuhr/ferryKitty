@@ -55,6 +55,35 @@ export async function readDwells(dwellPath) {
   } finally { database.close(); }
 }
 
+function localTrackerUrl(value) {
+  let url;
+  try { url = new URL(value); } catch { /* Report the same validation error for malformed URLs. */ }
+  if (!url || url.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(url.hostname) || url.username || url.password) {
+    throw new Error("The tracker must use a local HTTP URL on 127.0.0.1 or localhost, without credentials.");
+  }
+  return new URL("/api/harbor/vessels", url.origin);
+}
+
+async function readBoats(trackerUrl) {
+  try {
+    const response = await fetch(trackerUrl, { signal: AbortSignal.timeout(3000), redirect: "error" });
+    if (!response.ok) return { available: false, boats: [] };
+    const data = await response.json();
+    if (!Array.isArray(data?.vessels)) return { available: false, boats: [] };
+    const numeric = (value) => Number.isFinite(value) ? value : null;
+    const boats = data.vessels.filter((boat) => boat && Number.isFinite(boat.latitude) && Number.isFinite(boat.longitude)
+      && Math.abs(boat.latitude) <= 90 && Math.abs(boat.longitude) <= 180).map((boat) => ({
+      name: typeof boat.name === "string" ? boat.name : "Unnamed boat",
+      operatorName: typeof boat.operatorName === "string" ? boat.operatorName : "Unknown operator",
+      latitude: boat.latitude, longitude: boat.longitude, bearing: numeric(boat.bearing),
+      speedKnots: numeric(boat.speedKnots), ageSeconds: numeric(boat.ageSeconds),
+      state: typeof boat.state === "string" ? boat.state : "unknown", stale: boat.stale === true,
+      mmsi: ["string", "number"].includes(typeof boat.mmsi) ? String(boat.mmsi) : null
+    }));
+    return { available: true, boats };
+  } catch { return { available: false, boats: [] }; }
+}
+
 function publicSurvey(survey, meta) {
   const landings = [...meta.landings];
   for (const point of survey.points) {
@@ -87,7 +116,8 @@ async function requestJson(request) {
   catch { throw new Error("The save request must contain valid JSON."); }
 }
 
-export async function startEditor({ port = 8095, slipsPath = path.join(ROOT, "content/harbor-slips.csv"), dwellPath = path.join(ROOT, "state/harbor.db") } = {}) {
+export async function startEditor({ port = 8095, slipsPath = path.join(ROOT, "content/harbor-slips.csv"), dwellPath = path.join(ROOT, "state/harbor.db"), trackerUrl = "http://127.0.0.1:8090" } = {}) {
+  const boatsUrl = localTrackerUrl(trackerUrl);
   const meta = await metadata();
   // Fail before listening if the input cannot safely round trip through the tracker.
   loadSurvey(await readFile(slipsPath, "utf8"), meta);
@@ -110,6 +140,7 @@ export async function startEditor({ port = 8095, slipsPath = path.join(ROOT, "co
       if (pathname === "/api/survey" && request.method === "GET") {
         return json(200, publicSurvey(loadSurvey(await readFile(slipsPath, "utf8"), meta), meta));
       }
+      if (pathname === "/api/boats" && request.method === "GET") return json(200, await readBoats(boatsUrl));
       if (pathname === "/api/dwells" && request.method === "GET") {
         try { return json(200, await readDwells(dwellPath)); }
         catch (error) { return json(200, { available: false, points: [], message: `Dwell layer unavailable: ${error.message}` }); }
@@ -163,7 +194,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       const flag = process.argv[index], value = process.argv[++index];
       if (flag === "--port" && /^\d+$/.test(value ?? "") && Number(value) <= 65535) options.port = Number(value);
       else if (flag === "--slips" && value) options.slipsPath = path.resolve(value);
-      else throw new Error("Usage: npm run harbor:slips -- [--port 8095] [--slips path/to/slips.csv]");
+      else if (flag === "--tracker" && value) options.trackerUrl = value;
+      else throw new Error("Usage: npm run harbor:slips -- [--port 8095] [--slips path/to/slips.csv] [--tracker http://127.0.0.1:8090]");
     }
     const { url } = await startEditor(options);
     console.log(`Slip survey editor: ${url}`);

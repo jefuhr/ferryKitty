@@ -15,6 +15,8 @@
     <span id="dirty" role="status">Loading…</span>
     <button id="undo" disabled title="Undo (Ctrl/Cmd+Z)">Undo</button>
     <button id="save" disabled>Save CSV</button>
+    <label><input id="boats" type="checkbox" checked> Boats</label>
+    <small id="boats-status" role="status">Loading boats…</small>
     <label id="dwell-control" hidden><input id="dwells" type="checkbox"> Recorded dwells</label>
     <small id="dwell-status"></small>
     <span id="zoom"></span>
@@ -43,6 +45,11 @@
           <div class="row"><button>Apply coordinates</button><button id="delete-point" class="danger" type="button">Delete point</button></div>
           <p id="nearest"></p>
         </form>
+        <section id="boat-details" hidden aria-label="Selected boat">
+          <h3 id="boat-name"></h3>
+          <p id="boat-readout"></p>
+          <button id="boat-add" type="button" disabled>Add point at this boat</button>
+        </section>
         <p class="help">Drag any survey point to move it. Select a slip, enable map clicks and click to add another point. New slips need at least one point before saving. Changes stay in this tab until Save CSV.</p>
       </section>
     </aside>
