@@ -161,6 +161,8 @@ test("Thresholds expose every state, age, hysteresis, and history limit", () => 
     dockRadiusMetres: 35,
     dockMinFixes: 2,
     dockMinSpanMs: 30_000,
+    briefCallMinGapMs: 60_000,
+    briefCallMaxGapMs: 600_000,
     mooredNavStatus: 5,
     departureMinSpeedKnots: 2,
     departureMinFixes: 2,
@@ -291,6 +293,57 @@ test("Interrupted dwells and a different landing reset pending docking evidence"
   assert.equal(result.track.state, "underway");
   assert.equal(result.track.pending.landingStopId, "home-port");
   assert.equal(result.track.pending.since, START + 30_000);
+});
+
+test("One stopped fix followed minutes later by a fix under way counts as a short call", () => {
+  const away = offsetPoint(north, 90, 600);
+  const result = replay([fixAt(0), fixAt(180, away, 8)]);
+  assert.deepEqual(result.events.map((event) => event.type), ["docked", "departed"]);
+  const [arrived, left] = result.events;
+  assert.equal(arrived.at, START);
+  assert.equal(arrived.landingStopId, "9002");
+  assert.equal(arrived.brief, true);
+  assert.equal(left.landingStopId, "9002");
+  assert.equal(left.dockedAt, START);
+  assert.equal(left.brief, true);
+  // 600 metres at eight knots is about 146 seconds, so the boat left roughly 34 seconds in.
+  assert.ok(left.departedAt > START + 30_000 && left.departedAt < START + 40_000, String(left.departedAt - START));
+  assert.equal(result.track.dock, null);
+  assert.equal(result.track.pending, null);
+  assert.notEqual(result.track.state, "docked");
+  assert.equal(result.track.lastDock.landingStopId, "9002");
+  assert.equal(result.track.lastDock.since, START);
+  assert.equal(result.track.lastDock.until, left.departedAt);
+});
+
+test("A short call never starts before the stopped fix and falls back to the fix time without a usable speed", () => {
+  const fast = replay([fixAt(0), fixAt(90, offsetPoint(north, 90, 2000), 8)]).events.at(-1);
+  assert.equal(fast.departedAt, START);
+  const slow = replay([fixAt(0), fixAt(180, offsetPoint(north, 90, 100), 0.3)]).events.at(-1);
+  assert.equal(slow.type, "departed");
+  assert.equal(slow.departedAt, START + 180_000);
+});
+
+test("A short call needs sparse reports, a recent stop, and a boat that has really left", () => {
+  const away = offsetPoint(north, 90, 600);
+  // Frequent reports can prove a dwell the ordinary way, so one stopped report among them is a pause.
+  assert.deepEqual(replay([fixAt(0), fixAt(59.999, away, 8)]).events, []);
+  assert.equal(replay([fixAt(0), fixAt(60, away, 8)]).events.length, 2);
+  assert.equal(replay([fixAt(0), fixAt(600, away, 8)]).events.length, 2);
+  assert.deepEqual(replay([fixAt(0), fixAt(600.001, away, 8)]).events, []);
+  // Still beside the berth, or with nothing known about its speed there: not a departure.
+  assert.deepEqual(replay([fixAt(0), fixAt(180, offsetPoint(north, 90, 36), 0.6)]).events, []);
+  assert.deepEqual(replay([fixAt(0), fixAt(180, north, null)]).events, []);
+  // A boat that never stopped at the landing made no call.
+  assert.deepEqual(replay([fixAt(0, north, 0.6), fixAt(180, away, 8)]).events, []);
+});
+
+test("A short call at one landing leaves a stop at the next one pending", () => {
+  const result = replay([fixAt(0), fixAt(240, yard)]);
+  assert.deepEqual(result.events.map((event) => event.type), ["docked", "departed"]);
+  assert.equal(result.events[1].landingStopId, "9002");
+  assert.equal(result.track.pending.landingStopId, "home-port");
+  assert.equal(result.track.pending.since, START + 240_000);
 });
 
 test("High-rate fixes preserve pending dwell time beyond the twenty-fix recent buffer", () => {

@@ -221,18 +221,19 @@ States, and the constants in `THRESHOLDS`:
 - Freshness: a fix is `stale` after 90 s when the last known speed is 2 kn or more and after 6 minutes otherwise. Staleness alone does not change the state; 20 minutes does.
 - While docked, each new fix is appended to `dock.points` (last 10) and the slip is re-assigned with `assignSlip`, so confidence can improve during a dwell. A docked vessel's slip does not change to a different slip unless the new one has `p` ≥ 0.6.
 - Jitter must not flap the state: a docked vessel reporting 0.6 kn once, or 40 m once, stays docked.
+- Short calls: relayed AIS can be minutes apart, so a turnaround often yields one stopped fix, not two. When a `pending` stop is followed between 60 s and 10 min later by a fix that has left the berth (speed ≥ 2 kn, or beyond the exit distance above), the tracker emits `docked` and `departed` together, both with `brief: true`, and sets `lastDock`; the vessel is never in the `docked` state. `docked.at` and `dockedAt` are the first stopped fix. `departedAt` is the leaving fix's time less its distance from the stopped fix at its reported speed, and never earlier than the last stopped fix.
 
 Events, each `{ type, key, at, ... }`:
 
-- `docked` — `{ landingStopId, slipId, confidence }`
+- `docked` — `{ landingStopId, slipId, confidence }`, plus `brief: true` for a short call
 - `slip-changed` — `{ landingStopId, slipId, confidence }`
-- `departed` — `{ landingStopId, slipId, dockedAt, departedAt }` (emitted on leaving `docked` or `laid-up`)
+- `departed` — `{ landingStopId, slipId, dockedAt, departedAt }` (emitted on leaving `docked` or `laid-up`), plus `brief: true` for a short call
 - `laid-up` — `{ landingStopId, slipId }`
 - `lost` — the track went `unknown` from age
 
 ## Schedule
 
-`buildHarborSchedule({ root })` reads every GTFS directory the board bundles (root NYC Ferry plus the partner directories in `PARTNER_FEEDS`) with the existing `parseCsv` and `timeToSeconds`, and returns an index:
+`buildHarborSchedule({ root })` reads every GTFS directory the board bundles (root NYC Ferry plus the partner directories in `PARTNER_FEEDS`) with the existing `parseCsv` and `timeToSeconds`, and returns an index. Trips on bus routes (`route_type` 3 in the feed's `routes.txt`) are left out, except routes listed in that feed's `ferryRouteIds` in `PARTNER_FEEDS`, which the feed mistypes; `operators.get(id).tripCount` counts the trips kept. The index:
 
 ```js
 {

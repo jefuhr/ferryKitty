@@ -684,3 +684,29 @@ test("a boat is matched against every timetable its operator publishes, not only
   assert.equal(side.tripId, "tx2:X1");
   assert.equal((await run(roster.operators)).tripId, null);
 });
+
+test("a boat heard once at each pier, minutes apart, still gets its trip and has the next call confirmed", async (t) => {
+  // Failure mode: relayed AIS reports a boat every three or four minutes, a Hudson crossing turns
+  // round in five, and two stopped fixes never land in one call. No dock, no departure, no trip.
+  const week = { service_id: "wk", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "0", sunday: "0", start_date: "20260101", end_date: "20271231" };
+  const call = (stop, sequence, time) => ({ trip_id: "H1", stop_id: stop, stop_sequence: String(sequence), arrival_time: time, departure_time: time });
+  const crossing = await buildHarborSchedule({ tables: [{ operatorId: "tst", prefix: "tst:",
+    trips: [{ trip_id: "H1", route_id: "HR", service_id: "wk" }],
+    stopTimes: [call("A", 1, "10:05:00"), call("B", 2, "10:13:00"), call("C", 3, "10:25:00")], calendar: [week], calendarDates: [] }] });
+  const pierA = { landingStopId: "tst:A", landingId: null, name: "West Pier", latitude: 40.57, longitude: -74.06 };
+  const pierB = { ...pierA, landingStopId: "tst:B", name: "East Pier", ...offsetPoint(pierA, 90, 3000) };
+  const world = await harness(t, { extra: { schedule: crossing, landings: [...landings, pierA, pierB] } });
+  const at = world.clock;
+  world.feed([staticData("367000003", "PARTNER QUEEN", 60),
+    position("367000003", pierA, at + 250_000, { sog: 0 }),
+    position("367000003", offsetPoint(pierA, 90, 1200), at + 450_000, { sog: 12 })]);
+  const sailing = world.vessel("tst:partner-queen");
+  assert.equal(sailing.tripId, "tst:H1");
+  assert.equal(sailing.tripConfidence, 0.5);
+  assert.notEqual(sailing.state, "docked");
+  world.feed([position("367000003", pierB, at + 800_000, { sog: 0.1 }),
+    position("367000003", offsetPoint(pierB, 90, 900), at + 1_000_000, { sog: 12 })]);
+  const onward = world.vessel("tst:partner-queen");
+  assert.equal(onward.tripId, "tst:H1");
+  assert.equal(onward.tripConfidence, 0.9);
+});
