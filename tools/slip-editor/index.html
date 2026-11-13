@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slip survey editor</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/vendor/leaflet.css">
+  <link rel="stylesheet" href="/editor.css">
+  <script type="module" src="/editor.js"></script>
+</head>
+<body>
+  <header>
+    <strong>Slip survey editor</strong>
+    <span id="dirty" role="status">Loading…</span>
+    <button id="undo" disabled title="Undo (Ctrl/Cmd+Z)">Undo</button>
+    <button id="save" disabled>Save CSV</button>
+    <label id="dwell-control" hidden><input id="dwells" type="checkbox"> Recorded dwells</label>
+    <small id="dwell-status"></small>
+    <span id="zoom"></span>
+  </header>
+  <main>
+    <aside aria-label="Survey controls">
+      <input id="filter" type="search" placeholder="Filter landings and slips" aria-label="Filter landings and slips">
+      <div id="list" aria-label="Landings and slips"></div>
+      <section id="editing">
+        <h2 id="selection">Choose a landing or point</h2>
+        <form id="new-slip-form">
+          <label for="new-slip">New slip name</label>
+          <div class="row"><input id="new-slip" maxlength="200" placeholder="e.g. Slip 2" required><button id="add-slip">Add slip</button></div>
+        </form>
+        <div id="slip-controls" hidden>
+          <form id="rename-form">
+            <label for="slip-name">Selected slip name</label>
+            <div class="row"><input id="slip-name" maxlength="200" required><button>Rename</button></div>
+          </form>
+          <label class="add-mode"><input id="add-mode" type="checkbox"> Add point on map click</label>
+          <button id="delete-slip" class="danger">Delete whole slip</button>
+        </div>
+        <form id="point-form" hidden>
+          <label for="latitude">Latitude</label><input id="latitude" type="number" step="any" min="40.35" max="41.05" required>
+          <label for="longitude">Longitude</label><input id="longitude" type="number" step="any" min="-74.4" max="-73.65" required>
+          <div class="row"><button>Apply coordinates</button><button id="delete-point" class="danger" type="button">Delete point</button></div>
+          <p id="nearest"></p>
+        </form>
+        <p class="help">Drag any survey point to move it. Select a slip, enable map clicks and click to add another point. New slips need at least one point before saving. Changes stay in this tab until Save CSV.</p>
+      </section>
+    </aside>
+    <div id="map" aria-label="Harbor map. Drag to pan and scroll to zoom."></div>
+  </main>
+  <footer><span id="message" role="status" aria-live="polite">Loading survey…</span><span id="pointer"></span></footer>
+</body>
+</html>
