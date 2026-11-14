@@ -448,6 +448,157 @@ async function remembering(t, options = {}) {
   return world;
 }
 
+test("a schedule trip held overnight expires without deleting its observation", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  assert.equal(world.vessel("test-ferry-one").tripId, "T1");
+  world.clock = Date.parse("2026-11-12T08:46:00-05:00");
+  await world.service.tick();
+  const vessel = world.vessel("test-ferry-one");
+  assert.equal(vessel.tripId, null);
+  assert.equal(vessel.tripSource, null);
+  assert.equal(vessel.assignment, null);
+  assert.equal(world.store.listTripObservations({ vesselId: "test-ferry-one" }).length, 1);
+  await world.service.stop();
+  const saved = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  assert.equal(saved.tracks.find(track => track.vesselId === "test-ferry-one").trip, null);
+});
+
+test("restored overnight schedule trips expire before the first response", async (t) => {
+  const world = await harness(t);
+  world.feed(arrival);
+  await world.service.stop();
+  const restored = await harness(t, { stateDir: world.stateDir,
+    extra: { now: () => Date.parse("2026-11-12T08:46:00-05:00") } });
+  assert.equal(restored.vessel("test-ferry-one").tripId, null);
+  await restored.service.stop();
+});
+
+for (const [label, minutesAfterArrival, moving, expected] of [
+  ["before the grace limit", 19, false, "T1"],
+  ["at the grace limit", 20, false, "T1"],
+  ["stopped after the grace limit", 21, false, null],
+  ["fresh and underway after the grace limit", 21, true, "T1"],
+  ["fresh and underway at the hard limit", 60, true, "T1"],
+  ["fresh and underway past the hard limit", 61, true, null]
+]) {
+  test(`schedule trip expiry: ${label}`, async (t) => {
+    const world = await harness(t);
+    world.feed(arrival);
+    world.clock = Date.parse("2026-11-11T10:20:00-05:00") + minutesAfterArrival * 60_000;
+    world.feed([position("367000001", { latitude: 40.7, longitude: -74.2 }, world.clock, { sog: moving ? 8 : 0 })]);
+    await world.service.tick();
+    assert.equal(world.vessel("test-ferry-one").tripId, expected);
+    await world.service.stop();
+  });
+}
+
+test("a late schedule trip expires when its moving fix becomes stale", async (t) => {
+  const world = await harness(t);
+  world.feed(arrival);
+  world.clock = Date.parse("2026-11-11T10:41:00-05:00");
+  world.feed([position("367000001", { latitude: 40.7, longitude: -74.2 }, world.clock)]);
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-one").tripId, "T1");
+  world.clock += 90_001;
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+  await world.service.stop();
+});
+
+test("a late schedule trip expires when a fresh moving boat docks", async (t) => {
+  const world = await harness(t);
+  world.feed(arrival);
+  world.clock = Date.parse("2026-11-11T10:41:00-05:00");
+  world.feed([position("367000001", { latitude: 40.7, longitude: -74.2 }, world.clock)]);
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-one").tripId, "T1");
+  const dockAt = world.clock + 1000;
+  world.feed([0, 40, 80].map(seconds => position("367000001", { latitude: 40.500063, longitude: -74 }, dockAt + seconds * 1000, { sog: 0.1 })));
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-one").state, "docked");
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+  await world.service.stop();
+});
+
+for (const state of ["docked", "laid-up", "unknown", "underway"]) {
+  test(`restored ${state} schedule trips expire at the grace limit without a fresh moving fix`, async (t) => {
+    const world = await harness(t);
+    world.feed(arrival);
+    await world.service.stop();
+    const file = path.join(world.stateDir, "harbor-tracks.json");
+    const saved = JSON.parse(await readFile(file, "utf8"));
+    const track = saved.tracks.find(item => item.vesselId === "test-ferry-one");
+    track.state = state;
+    track.moving = false;
+    track.fix.sogKnots = 0;
+    track.fix.at = Date.parse("2026-11-11T10:41:00-05:00");
+    await writeFile(file, JSON.stringify(saved));
+    const restored = await harness(t, { stateDir: world.stateDir, extra: { now: () => track.fix.at } });
+    assert.equal(restored.vessel("test-ferry-one").tripId, null);
+    await restored.service.stop();
+  });
+}
+
+test("expiring a confirmed trip preserves its observation and an upcoming inherited run", async (t) => {
+  const extended = await buildHarborSchedule({ tables: [{ operatorId: "nycf", prefix: "",
+    trips: [{ trip_id: "T1", route_id: "TR", service_id: "wk" }, { trip_id: "T2", route_id: "TR", service_id: "wk" }],
+    stopTimes: [
+      { trip_id: "T1", stop_id: "9002", stop_sequence: "1", arrival_time: "10:08:00", departure_time: "10:08:00" },
+      { trip_id: "T1", stop_id: "9001", stop_sequence: "2", arrival_time: "10:20:00", departure_time: "10:20:00" },
+      { trip_id: "T2", stop_id: "9001", stop_sequence: "1", arrival_time: "10:45:00", departure_time: "10:45:00" },
+      { trip_id: "T2", stop_id: "9002", stop_sequence: "2", arrival_time: "11:00:00", departure_time: "11:00:00" }
+    ],
+    calendar: [{ service_id: "wk", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "0", sunday: "0", start_date: "20260101", end_date: "20271231" }],
+    calendarDates: [] }] });
+  const world = await remembering(t, { extra: { schedule: extended } });
+  world.feed(arrival);
+  const at = Date.parse("2026-11-11T10:21:00-05:00");
+  world.feed([0, 40, 80].map(seconds => position("367000001", { latitude: 40.500063, longitude: -74 }, at + seconds * 1000, { sog: 0.1 })));
+  assert.equal(world.vessel("test-ferry-one").tripConfidence, 0.9);
+  world.clock = Date.parse("2026-11-11T10:41:00-05:00");
+  await world.service.tick();
+  const vessel = world.vessel("test-ferry-one");
+  assert.equal(vessel.tripId, null);
+  assert.equal(vessel.assignment.source, "run");
+  assert.equal(vessel.assignment.nextTrips[0].tripId, "T2");
+  assert.equal(world.store.listTripObservations({ vesselId: "test-ferry-one" }).length, 1);
+  await world.service.stop();
+});
+
+for (const [date, lastTime, arrivalAt] of [
+  ["2026-11-13", "25:20:00", "2026-11-14T01:20:00-05:00"],
+  ["2026-03-07", "27:20:00", "2026-03-08T03:20:00-04:00"],
+  ["2026-10-31", "26:20:00", "2026-11-01T02:20:00-05:00"]
+]) {
+  test(`schedule expiry uses ${date} service-day times across midnight and DST`, async (t) => {
+    const world = await harness(t);
+    world.feed(arrival);
+    await world.service.stop();
+    const file = path.join(world.stateDir, "harbor-tracks.json");
+    const saved = JSON.parse(await readFile(file, "utf8"));
+    const track = saved.tracks.find(item => item.vesselId === "test-ferry-one");
+    track.trip.serviceDate = date;
+    track.fix.at = Date.parse(arrivalAt) - 60 * 60_000;
+    await writeFile(file, JSON.stringify(saved));
+    const overnight = await buildHarborSchedule({ tables: [{ operatorId: "nycf", prefix: "",
+      trips: [{ trip_id: "T1", route_id: "TR", service_id: "night" }],
+      stopTimes: [
+        { trip_id: "T1", stop_id: "9002", stop_sequence: "1", arrival_time: "23:00:00", departure_time: "23:00:00" },
+        { trip_id: "T1", stop_id: "9001", stop_sequence: "2", arrival_time: lastTime, departure_time: lastTime }
+      ],
+      calendar: [{ service_id: "night", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "1", sunday: "1", start_date: "20260101", end_date: "20271231" }],
+      calendarDates: [] }] });
+    let clock = Date.parse(arrivalAt) + 19 * 60_000;
+    const restored = await harness(t, { stateDir: world.stateDir, extra: { schedule: overnight, now: () => clock } });
+    assert.equal(restored.vessel("test-ferry-one").tripId, "T1");
+    clock += 60_001;
+    await restored.service.tick();
+    assert.equal(restored.vessel("test-ferry-one").tripId, null);
+    await restored.service.stop();
+  });
+}
+
 test("with a database, a dwell, a sighting and a matched trip are written down as they happen", async (t) => {
   const world = await remembering(t);
   world.feed(arrival);

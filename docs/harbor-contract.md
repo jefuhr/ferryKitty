@@ -251,6 +251,8 @@ Ids are the namespaced ones the rest of the board uses (`wtr:…`, `sea:…`). S
 
 `confirmArrival({ schedule, trip, landingStopId })` returns the trip with `confidence: 0.9` and `nextSequence` advanced when the landing is the trip's next call, the trip unchanged when the landing is a later call, and null when the landing is not on the rest of the trip. After the final call `nextSequence` is null.
 
+The service clears a live `source: "schedule"` trip after its final scheduled arrival plus 20 minutes (`SCHEDULE_TRIP_GRACE_MS`). A fresh moving track in `underway`, `departing`, or `arriving` state may retain that trip until it docks, stops, or becomes stale, subject to a hard limit of final arrival plus 60 minutes (`SCHEDULE_TRIP_MOVING_LIMIT_MS`). Both limits use the trip's service date and local timetable, including times after 24:00 and daylight-saving changes. Restored tracks are checked before the first response, and running tracks are checked during ticks, operator-feed refreshes, and response reads. Expiry clears the live trip label while preserving durable observations, dated ownership, and an inherited run that still has upcoming trips. Trips without a resolvable scheduled arrival retain their existing lifecycle behavior; no cutoff is inferred for them. The separate 180-second `operator-rt` authority limit is unchanged.
+
 ## Fusion with operator realtime
 
 The board already polls NYC Ferry's GTFS-realtime feeds. `normalizeVehiclePositions(vehicleFeed, fleet)` in `lib/realtime.js` gives `{ id, tripId, latitude, longitude, bearing, speed /* m/s */, status, stopSequence, boatName, vesselNumber, updatedAtEpochSeconds }`.
