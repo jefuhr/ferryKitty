@@ -273,6 +273,43 @@ test("an unresolved dated lookup stays null while an already-matched route disam
   assert.deepEqual(confirmArrival({ schedule, trip, landingStopId: "9003" }), { ...trip, confidence: 0.9, nextSequence: 70 });
 });
 
+test("identical passenger and crew calendar aliases resolve once after date eligibility", async () => {
+  const passenger = liveCandidate({ serviceId: "passenger" });
+  const crew = liveCandidate({ serviceId: "crew", dates: ["2026-11-11"] });
+  const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+    trips: new Map([["live-44", [passenger, crew]]]),
+    calendars: [liveCalendar("passenger"), liveCalendar("crew")]
+  }) });
+  assert.equal(schedule.trip("live-44"), null, "an undated lookup retains calendar ambiguity");
+  assert.equal(schedule.trip("live-44", "2026-11-11").routeId, "R");
+  assert.equal(schedule.tripsOn("nycf", "2026-11-11").length, 1);
+  assert.equal(schedule.ambiguousTripsOn("nycf", "2026-11-11"), 0);
+  assert.equal(schedule.departuresFrom("9001", "nycf", "2026-11-11").length, 1);
+  assert.equal(depart(schedule).tripId, "live-44");
+  assert.equal(schedule.trip("live-44", "2026-11-12").serviceId, "passenger");
+  assert.equal(schedule.departuresFrom("9001", "nycf", "2026-11-12")[0].serviceId, "passenger");
+});
+
+for (const difference of ["route", "stop", "sequence", "arrival", "departure"]) {
+  test(`active aliases with different ${difference} remain ambiguous`, async () => {
+    const passenger = liveCandidate({ serviceId: "passenger" });
+    const crew = liveCandidate({ serviceId: "crew" });
+    if (difference === "route") crew.routeId = "OTHER";
+    if (difference === "stop") crew.stops[1].stopId = "other";
+    if (difference === "sequence") crew.stops[1].sequence += 1;
+    if (difference === "arrival") crew.stops[1].arrivalSeconds += 1;
+    if (difference === "departure") crew.stops[1].departureSeconds += 1;
+    const schedule = await buildHarborSchedule({ tables: [], serviceTrips: serviceIndex({
+      trips: new Map([["live-44", [passenger, crew]]]),
+      calendars: [liveCalendar("passenger"), liveCalendar("crew")]
+    }) });
+    assert.equal(schedule.trip("live-44", "2026-11-11"), null);
+    assert.equal(schedule.tripsOn("nycf", "2026-11-11").length, 0);
+    assert.equal(schedule.ambiguousTripsOn("nycf", "2026-11-11"), 1);
+    assert.equal(schedule.departuresFrom("9001", "nycf", "2026-11-11").length, 2);
+  });
+}
+
 test("a layered candidate's dates list further restricts its active calendar", async () => {
   const serviceTrips = serviceIndex({ trips: new Map([["dated-live", [liveCandidate({ dates: ["2026-11-12"] })]]]) });
   const schedule = await buildHarborSchedule({ tables: [], serviceTrips });
