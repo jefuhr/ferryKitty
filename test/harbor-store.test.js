@@ -527,3 +527,70 @@ test("multi-row methods use the injected transaction and prepare nothing after c
     assert.equal(calls, 4);
   } finally { db.database.prepare = original; }
 });
+
+// Trip ownership failure modes: withdrawn rows survive, a released live trip is re-guessed,
+// arrival updates erase departure evidence, and an insertion failure commits a partial transfer.
+test("a stronger trip claim atomically removes the superseded row and preserves unrelated history", async (t) => {
+  const { store, db } = await fixture(t);
+  store.recordTripObservation(observation({ confidence: 0.5 }));
+  store.recordTripObservation(observation({ tripId: "other-trip" }));
+  store.recordTripObservation(observation({ serviceDate: "20261111" }));
+  store.recordTripObservation(observation({ trackKey: "111111111", vesselId: "locked", source: "operator-rt", confidence: 1 }));
+  assert.deepEqual(store.listTripObservations({ serviceDate: "20261112" }).filter(row => row.tripId === "trip").map(row => row.trackKey), ["111111111"]);
+  assert.equal(store.listTripObservations({ vesselId: "free" }).length, 2);
+  assert.equal(db.database.prepare("SELECT COUNT(*) AS n FROM trip_observations").get().n, 3);
+  // A later guess cannot reclaim the trip even after the operator moves on to another trip.
+  assert.equal(store.recordTripObservation(observation({ confidence: 0.9 })), false);
+  assert.equal(store.listTripObservations({ serviceDate: "20261112" }).filter(row => row.tripId === "trip").length, 1);
+});
+
+test("arrival confirmation retains the same boat's departure evidence", async (t) => {
+  const { store } = await fixture(t);
+  store.recordTripObservation(observation({ confidence: 0.5, terminalId: "A", departedAt: 200 }));
+  store.recordTripObservation(observation({ terminalId: null, departedAt: null, arrivedTerminalId: "B", arrivedAt: 500 }));
+  const [row] = store.listTripObservations();
+  assert.equal(row.terminalId, "A");
+  assert.equal(row.departedAt, 200);
+  assert.equal(row.arrivedAt, 500);
+});
+
+test("a failed replacement rolls back the superseded trip deletion", async (t) => {
+  const { store } = await fixture(t);
+  store.recordTripObservation(observation({ confidence: 0.5 }));
+  assert.throws(() => store.recordTripObservation(observation({ trackKey: "111111111", source: "operator-rt", confidence: null })));
+  assert.deepEqual(store.listTripObservations().map(row => row.trackKey), ["222222222"]);
+});
+
+test("confirmed arrival outranks an unconfirmed departure and equal guesses use scheduled evidence", async (t) => {
+  const { store } = await fixture(t);
+  const { buildHarborSchedule } = await import("../lib/harbor-schedule.js");
+  const schedule = await buildHarborSchedule({ tables: [{ operatorId: "op", trips: [{ trip_id: "trip", route_id: "R", service_id: "all" }],
+    stopTimes: [{ trip_id: "trip", stop_id: "A", stop_sequence: "1", departure_time: "10:00:00" },
+      { trip_id: "trip", stop_id: "B", stop_sequence: "2", arrival_time: "10:20:00" }],
+    calendar: [{ service_id: "all", monday: "1", tuesday: "1", wednesday: "1", thursday: "1", friday: "1", saturday: "1", sunday: "1", start_date: "20260101", end_date: "20261231" }] }] });
+  const at = Date.parse("2026-11-12T10:00:00-05:00");
+  const a = observation({ confidence: 0.5, terminalId: "A", departedAt: at + 120_000 });
+  const b = observation({ trackKey: "111111111", vesselId: "locked", confidence: 0.5, terminalId: "A", departedAt: at + 30_000 });
+  assert.equal(store.recordTripObservation(a, { schedule }), true);
+  assert.equal(store.recordTripObservation(b, { schedule }), true);
+  assert.equal(store.recordTripObservation({ ...a, confidence: 0.9, arrivedAt: at + 1200_000, arrivedTerminalId: "B" }, { schedule }), true);
+  assert.equal(store.recordTripObservation(b, { schedule }), false);
+  assert.equal(store.listTripObservations()[0].trackKey, a.trackKey);
+  // The same trip on tomorrow's service day is independent, including dashed input dates.
+  assert.equal(store.recordTripObservation({ ...b, serviceDate: "2026-11-13" }, { schedule }), true);
+  assert.equal(store.listTripObservations().length, 2);
+});
+
+test("startup reconciliation deletes legacy duplicates by precedence without changing other service dates", async (t) => {
+  const { store, db } = await fixture(t);
+  const insert = db.database.prepare(`INSERT INTO trip_observations
+    (track_key, operator_id, trip_id, service_date, source, confidence) VALUES (?, 'op', 'legacy', ?, ?, ?)`);
+  insert.run("A", "20261112", "schedule", 0.9);
+  insert.run("B", "20261112", "operator-rt", 1);
+  insert.run("C", "20261112", "operator-rt", 1);
+  insert.run("A", "20261113", "schedule", 0.5);
+  assert.equal(store.reconcileTripObservations(), 2);
+  assert.deepEqual(store.listTripObservations({ serviceDate: "20261112" }).map(row => row.trackKey), ["C"]);
+  assert.deepEqual(store.listTripObservations({ serviceDate: "20261113" }).map(row => row.trackKey), ["A"]);
+  assert.equal(store.reconcileTripObservations(), 0);
+});
