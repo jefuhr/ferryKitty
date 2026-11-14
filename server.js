@@ -285,7 +285,7 @@ async function serve(response, file) {
 async function handle(request, response) {
   const url = new URL(request.url, `http://${request.headers.host || `${HOST}:${PORT}`}`);
   if (await handleRidePush(request, response, ridePush)) return;
-  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"ferry-kitty", now:new Date().toISOString(), counters: buildStats() });
+  if (url.pathname === "/healthz" || url.pathname === "/api/health") return json(response, 200, { ok:true, service:"ferry-kitty", now:new Date().toISOString(), counters: buildStats(), realtime: realtimeService.status() });
   // Public aggregate request statistics.
   if (url.pathname === "/api/stats") return json(response, 200, buildStats());
   // The change log, written by hand in content/changelog.json. Read off disk on every request
@@ -384,8 +384,8 @@ async function handle(request, response) {
     });
   }
   // Every passenger ferry the tracker knows, from AIS first and the operator's feed second. The
-  // operator's feed is only read when somebody asks, exactly as /api/boats reads it, so this adds
-  // no polling of its own; AIS arrives on its own connection whether anyone is asking or not.
+  // operator's feed refreshes in the background for headless collection. Requests share that
+  // cache and can refresh it when due; AIS arrives on its own connection.
   if (url.pathname === "/api/harbor/vessels") {
     await realtimeService.getCurrent().catch(() => null);
     const current = harborService.getCurrent({ includeUnrostered: url.searchParams.get("include") === "unrostered",
@@ -474,6 +474,7 @@ server.listen(PORT, HOST, () => {
   counters.start();
   ridePush?.start();
   void harborService.start();
+  void realtimeService.start();
 });
-const shutdown = () => server.close(() => void Promise.all([counters.stop(), ridePush?.stop(), harborService.stop()]).finally(() => { statsStore.close(); harborDb?.close(); process.exit(0); }));
+const shutdown = () => server.close(() => void realtimeService.stop().then(() => Promise.all([counters.stop(), ridePush?.stop(), harborService.stop()])).finally(() => { statsStore.close(); harborDb?.close(); process.exit(0); }));
 process.on("SIGINT", shutdown); process.on("SIGTERM", shutdown);
