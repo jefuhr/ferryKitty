@@ -47,3 +47,29 @@ test("a database that cannot be written or read costs the record, never the answ
   assert.deepEqual([...memory.allocate([{ vesselId: "boat", operatorId: "nycf", track: null }])], []);
   assert.ok(warnings.length > 0);
 });
+
+test("operator and confirmed schedule assignments outrank inherited runs independent of fleet order", () => {
+  const at = local("2026-11-13T06:05:00Z");
+  const memory = createHarborMemory({ store: fakeStore(), schedule, now: () => at });
+  const inherited = { vesselId: "A", operatorId: "nycf", track: { run: memory.runFor("nycf", { tripId: "N1", serviceDate: "20261112" }) } };
+  for (const source of ["operator-rt", "schedule"]) {
+    const direct = { vesselId: "B", operatorId: "nycf", track: { key: "B", trip: { tripId: "N1", serviceDate: "20261112", source, confidence: source === "schedule" ? 0.9 : 1, observedAt: at } } };
+    for (const items of [[inherited, direct], [direct, inherited]]) {
+      const result = memory.allocate(items, at);
+      assert.ok(result.has("B"));
+      assert.equal(result.has("A"), false);
+    }
+  }
+});
+
+test("a stored pattern beats a stored model claim even when the model boat is listed first", () => {
+  const at = local("2026-11-13T06:05:00Z");
+  const store = fakeStore({ listEstimates: () => [
+    { vesselId: "A", runId: "nycf:20261113:1", confidence: 0.8, source: "model" },
+    { vesselId: "B", runId: "nycf:20261113:1", confidence: 0.7, source: "pattern" }
+  ] });
+  const memory = createHarborMemory({ store, schedule, now: () => at });
+  const result = memory.allocate(["A", "B"].map(vesselId => ({ vesselId, operatorId: "nycf", track: null })), at);
+  assert.equal(result.get("B")?.source, "pattern");
+  assert.equal(result.has("A"), false);
+});

@@ -724,3 +724,127 @@ test("with a database, a transponder the roster says to ignore raises no conflic
   world.feed([position("367000022", here, world.clock + 60_000)]);
   assert.equal(world.store.listConflicts().length, 0);
 });
+
+// Trip ownership must agree in the live picture, inherited assignment, and durable record.
+test("an operator naming boat B withdraws boat A's stored guess and inherited run", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  const at = world.clock + 10 * 60_000;
+  world.feed([0, 40, 80].map(seconds => position("367000001", { latitude: 40.500063, longitude: -74 }, at + seconds * 1000, { sog: 0.1 })));
+  assert.equal(world.vessel("test-ferry-one").tripConfidence, 0.9);
+  world.service.observeOperatorFeed({ now: world.clock, vehicleFeed: vehicleFeed([
+    { label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: world.clock, tripId: "T1", sequence: 3 }
+  ]) });
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+  assert.equal(world.vessel("test-ferry-one").assignment, null);
+  assert.deepEqual(world.store.listTripObservations({ serviceDate: "20261111" }).map(row => [row.vesselId, row.source]), [["test-ferry-two", "operator-rt"]]);
+  await world.service.stop();
+  const saved = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  assert.equal(saved.tracks.find(track => track.key === "367000001").run, null);
+});
+
+test("two boats departing inside the match window give the trip to the closest departure", async (t) => {
+  const world = await remembering(t);
+  // A leaves 110 seconds late. B's delayed AIS reports establish an on-time departure.
+  world.feed(arrival);
+  world.feed([staticData("367000002", "TEST FERRY 2", 60)]);
+  for (const raw of arrival) {
+    const record = normalizeAisMessage(raw, Number.MAX_SAFE_INTEGER);
+    if (record?.kind !== "fix") continue;
+    world.feed([position("367000002", record.fix, record.fix.at - 110_000,
+      { sog: record.fix.sogKnots, cog: record.fix.cogDegrees, heading: record.fix.headingDegrees })]);
+  }
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+  assert.equal(world.vessel("test-ferry-two").tripId, "T1");
+  assert.deepEqual(world.store.listTripObservations({ serviceDate: "20261111" }).map(row => row.vesselId), ["test-ferry-two"]);
+});
+
+test("a stored operator claim prevents a later timetable guess after the live operator trip expires", async (t) => {
+  const world = await remembering(t);
+  world.service.observeOperatorFeed({ now: world.clock, vehicleFeed: vehicleFeed([
+    { label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: world.clock, tripId: "T1", sequence: 2 }
+  ]) });
+  world.clock += 4 * 60_000;
+  await world.service.tick();
+  assert.equal(world.vessel("test-ferry-two").tripId, null);
+  world.feed(arrival);
+  assert.equal(world.vessel("test-ferry-one").tripId, null);
+  assert.deepEqual(world.store.listTripObservations({ serviceDate: "20261111" }).map(row => row.vesselId), ["test-ferry-two"]);
+});
+
+test("two fresh operator hulls naming one trip leave only the newest report as its owner", async (t) => {
+  const world = await remembering(t);
+  const entries = [
+    { label: "H901", point: { latitude: 40.55, longitude: -74.03 }, at: world.clock - 1000, tripId: "T1", sequence: 2 },
+    { label: "H902", point: { latitude: 40.54, longitude: -74.02 }, at: world.clock, tripId: "T1", sequence: 2 }
+  ];
+  for (const order of [entries, [...entries].reverse()]) {
+    world.service.observeOperatorFeed({ now: world.clock, vehicleFeed: vehicleFeed(order) });
+    assert.equal(world.vessel("test-ferry-one").tripId, null);
+    assert.equal(world.vessel("test-ferry-two").tripId, "T1");
+    assert.deepEqual(world.store.listTripObservations({ serviceDate: "20261111" }).map(row => row.vesselId), ["test-ferry-two"]);
+  }
+});
+
+test("a restarted service cannot re-guess a persisted trip already assigned by the operator", async (t) => {
+  const first = await remembering(t);
+  first.service.observeOperatorFeed({ now: first.clock, vehicleFeed: vehicleFeed([
+    { label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: first.clock, tripId: "T1", sequence: 2 }
+  ]) });
+  await first.service.stop();
+  const second = await harness(t, { stateDir: first.stateDir, extra: { store: first.store } });
+  second.clock += 4 * 60_000;
+  await second.service.tick();
+  second.feed(arrival);
+  assert.equal(second.vessel("test-ferry-one").tripId, null);
+  assert.deepEqual(first.store.listTripObservations().map(row => row.vesselId), ["test-ferry-two"]);
+});
+
+test("an operator replacement also clears a run held after the guessed trip expired", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  const at = world.clock + 10 * 60_000;
+  world.feed([0, 40, 80].map(seconds => position("367000001", { latitude: 40.500063, longitude: -74 }, at + seconds * 1000, { sog: 0.1 })));
+  await world.service.stop();
+  const saved = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  saved.tracks.find(track => track.key === "367000001").trip = null;
+  await writeFile(path.join(world.stateDir, "harbor-tracks.json"), JSON.stringify(saved));
+  const again = await harness(t, { stateDir: world.stateDir, extra: { store: world.store } });
+  again.service.observeOperatorFeed({ now: again.clock, vehicleFeed: vehicleFeed([
+    { label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: again.clock, tripId: "T1", sequence: 2 }
+  ]) });
+  await again.service.stop();
+  const after = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  assert.equal(after.tracks.find(track => track.key === "367000001").run, null);
+});
+
+test("a failed durable transfer leaves the previously accepted live and stored owner intact", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  const record = world.store.recordTripObservation;
+  world.store.recordTripObservation = () => { throw new Error("simulated write failure"); };
+  t.after(() => { world.store.recordTripObservation = record; });
+  world.service.observeOperatorFeed({ now: world.clock, vehicleFeed: vehicleFeed([
+    { label: "H902", point: { latitude: 40.55, longitude: -74.03 }, at: world.clock, tripId: "T1", sequence: 2 }
+  ]) });
+  assert.equal(world.vessel("test-ferry-one").tripId, "T1");
+  assert.equal(world.vessel("test-ferry-two").tripId, null);
+  assert.deepEqual(world.store.listTripObservations().map(row => row.vesselId), ["test-ferry-one"]);
+});
+
+test("a saved inherited run cannot revive a trip durably transferred to another hull", async (t) => {
+  const world = await remembering(t);
+  world.feed(arrival);
+  const at = world.clock + 10 * 60_000;
+  world.feed([0, 40, 80].map(seconds => position("367000001", { latitude: 40.500063, longitude: -74 }, at + seconds * 1000, { sog: 0.1 })));
+  await world.service.stop();
+  const saved = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  saved.tracks.find(track => track.key === "367000001").trip = null;
+  await writeFile(path.join(world.stateDir, "harbor-tracks.json"), JSON.stringify(saved));
+  world.store.recordTripObservation({ trackKey: "vessel:test-ferry-two", vesselId: "test-ferry-two", operatorId: "nycf",
+    tripId: "T1", serviceDate: "20261111", confidence: 1, source: "operator-rt" });
+  const again = await harness(t, { stateDir: world.stateDir, extra: { store: world.store } });
+  await again.service.stop();
+  const after = JSON.parse(await readFile(path.join(world.stateDir, "harbor-tracks.json"), "utf8"));
+  assert.equal(after.tracks.find(track => track.key === "367000001").run, null);
+});

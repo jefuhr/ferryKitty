@@ -331,7 +331,10 @@ linkAis({ mmsi, vesselId, source, confidence, at, name, callSign })   // returns
 listAisLinks({ vesselId })
 recordConflict({ kind, mmsi, vesselId, detail, at })                  // upsert on (kind, mmsi, vesselId)
 listConflicts({ resolved = false })
-recordTripObservation({ trackKey, mmsi, vesselId, operatorId, tripId, routeId, runId, serviceDate, terminalId, departedAt, arrivedTerminalId, arrivedAt, confidence, source })  // upsert on (trackKey, tripId, serviceDate)
+recordTripObservation({ trackKey, mmsi, vesselId, operatorId, tripId, routeId, runId, serviceDate, terminalId, departedAt, arrivedTerminalId, arrivedAt, confidence, source }, { schedule } = {})  // atomically accepts one owner per operator/trip/date; returns false if superseded
+getTripObservation({ operatorId, tripId, serviceDate })  // accepted owner or null
+withdrawTripObservation({ trackKey, operatorId, tripId, serviceDate })  // removes only this owner's contradicted observation
+reconcileTripObservations({ schedule } = {})  // transactionally removes legacy competing rows; returns the number removed
 listTripObservations({ operatorId, serviceDate, vesselId })
 saveRuns(operatorId, serviceDate, runs)     // replaces that operator-day
 listRuns(operatorId, serviceDate)
@@ -387,6 +390,10 @@ run = { runId: "waterway:20261112:3", signature: "wtr:2439137>07:10>wtr:rt-1", s
 - `estimateFromPatterns({ vesselId, operatorId, dayType, patterns, runs })` → `{ runId, runSignature, routeId, confidence, source: "pattern", evidence } | null`. Confidence is the vessel's share of that run's observations on that day type, capped at 0.8, and null below 3 observations.
 
 Precedence when sources disagree, highest first: `operator-rt`, a confirmed `schedule` match (0.9), `run` (inherited from a confirmed trip earlier in the run), `pattern`, `model`.
+
+Trip ownership is exclusive per operator, trip id, and normalized service date, including after the live trip expires or the boat moves on. A tentative schedule departure (0.5) sits below inherited `run` evidence and above `pattern`. For equal-standing timetable claims, a confirming arrival beats a departure without an arrival; otherwise the departure closest to the scheduled call at the observed landing wins. Missing landing/time evidence sorts last, and an exact tie uses the lexicographically smaller track key. Realtime conflicts use the newest operator report timestamp, then the same stable key. Existing realtime-only duplicate rows have no stored report timestamp, so startup cleanup retains the most recently inserted realtime row.
+
+Accepting a stronger claim removes the losing observation in the same transaction as the winning write; it also clears the losing live trip and inherited run. Superseded observations are deleted, not retained as unmarked history. An arrival update for the same owner preserves its known departure fields. A failed durable write rejects the proposed transfer while retaining the previous live and stored owner; the boats remain visible and a warning records the failure. Startup reconciles existing duplicate observations before restoring live claims, including checking inherited runs against their anchor trip's durable owner. No schema change is required. Fleet-wide allocation reserves direct trips and inherited runs in source order, and considers stored patterns for all boats before stored models. A lower-priority competing assignment is omitted from the API; vessel history and pattern learning read only the surviving accepted observations. See `docs/harbor-double-claim.md` for measured cases and verification limits.
 
 ### Claude
 
